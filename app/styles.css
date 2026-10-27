@@ -350,3 +350,4 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:var(--fs-small)
 .composer .price.low{color:var(--accent)}
 body:not(:has(#composer)) .fab{bottom:24px}body:not(:has(#composer)) .pom{bottom:82px}
 @media (max-width:760px){body:not(:has(#composer)) .fab{bottom:86px}}.tg body:not(:has(#composer)) .fab{bottom:86px}
+.rec .rz{color:var(--ink);opacity:.75;font-size:var(--fs-label);line-height:1.3}

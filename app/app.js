@@ -35,7 +35,7 @@
     lastError: '',
   };
   function spend(k, ostatok) { S.credits = typeof ostatok === 'number' ? ostatok : Math.max(0, Math.round((S.credits - (k || 0)) * 10) / 10); store.set('credits', S.credits); drawCredits(); }
-  function drawCredits() { $('#cred').textContent = S.credits; $('#credbar').style.width = Math.min(100, S.credits / 3) + '%'; }
+  function drawCredits() { $('#cred').textContent = S.credits; $('#credbar').style.width = Math.min(100, S.credits / 3) + '%'; const ta = document.getElementById('ask'); if (ta) ta.dispatchEvent(new Event('input')); }
   drawCredits();
 
   // ---------- Telegram Mini App ----------
@@ -56,7 +56,7 @@
     return j;
   }
   api('/api/status').then((s) => { S.status = s; }).catch(() => {});
-  api('/api/ceny').then((c) => { S.ceny = c; const p = $('#price'); if (p) p.textContent = priceLabel(S.tip); }).catch(() => {});
+  api('/api/ceny').then((c) => { S.ceny = c; const ta = document.getElementById('ask'); if (ta) ta.dispatchEvent(new Event('input')); }).catch(() => {});
   api('/api/recepty').then((r) => { S.recepty = arr(r.recepty); const box = $('#recepty'); if (box) box.innerHTML = receptyHtml(); }).catch(() => {});
   // цена до запуска = тем же расчётом, что резерв на сервере (Plumar: «цена под кнопкой совпадает со счётом»)
   const priceOf = (tip) => (S.ceny.zadanie && S.ceny.zadanie[tip]) || 3;
@@ -110,7 +110,7 @@
         <p>Скажите голосом или текстом, пришлите ссылку на чужой рилс как пример подачи — и за вас работает команда: копирайтер, промптер, три художника, рилсмейкер. К каждому посту три картинки на выбор.</p>
         <div class="examples" id="examples">${EXAMPLES.map(([t, e]) => `<button data-tip="${t}" data-text="${esc(e)}">${esc(e)}</button>`).join('')}</div>
       </section>
-      <section class="recwrap"><div class="rechead"><span class="caps">Рецепты · готовая задача за 3 поля</span><span class="dim small">цена видна до запуска · списываем только за готовое</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
+      <section class="recwrap"><div class="rechead"><span class="caps">Рецепты · заполните 2–3 поля — остальное сделает JASA</span><span class="dim small">цена видна до запуска · списываем только за готовое</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
       <div class="feed" id="feed"></div>
       <div class="composer" id="composer">
         <div class="box">
@@ -121,7 +121,7 @@
             <div class="send">
               <button class="chip ${S.yazyk === 'kz' ? 'on' : ''}" id="lang" title="Язык результата">${S.yazyk === 'kz' ? 'Қаз' : 'Рус'}</button>
               <button class="icobtn" id="mic" title="Сказать голосом"><svg><use href="#i-mic"/></svg></button>
-              <span class="price" id="price" title="Больше этой суммы не спишем. Текст — по факту, картинки — только готовые">${priceLabel(S.tip)}</span>
+              <span class="price" id="price" title="Больше этой суммы не спишем. Текст — по факту, картинки — только готовые. Голосовой ввод — 1 кр отдельно">${priceLabel(S.tip)}</span>
               <button class="icobtn go" id="go" title="Сделать"><svg><use href="#i-send"/></svg></button>
             </div>
           </div>
@@ -130,7 +130,7 @@
     const ta = $('#ask');
     // тип задания, выбранная кнопка и цена меняются только здесь — цена не отстаёт от типа
     // как у Plumar One: цена переводится в результат — «хватит на N таких»
-    const drawPrice = () => { const link = LINK_RE.test(ta.value) ? (S.ceny.transcribe || 1) : 0; const n = Math.floor((+S.credits || 0) / (priceOf(S.tip) + link)); $('#price').textContent = priceLabel(S.tip, link) + (n > 0 ? ' · хватит на ' + n : ' · не хватает'); $('#price').classList.toggle('low', n < 1); $('#price').title = link ? 'Включает разбор ссылки-примера · больше этой суммы не спишем' : 'Больше этой суммы не спишем. Текст — по факту, картинки — только готовые'; };
+    const drawPrice = () => { const link = LINK_RE.test(ta.value) ? (S.ceny.transcribe || 1) : 0; const n = Math.floor((+S.credits || 0) / (priceOf(S.tip) + link)); $('#price').textContent = priceLabel(S.tip, link) + (n > 0 ? ' · хватит на ' + n : ' · не хватает'); $('#price').classList.toggle('low', n < 1); $('#price').title = link ? 'Включает разбор ссылки-примера · больше этой суммы не спишем' : 'Больше этой суммы не спишем. Текст — по факту, картинки — только готовые. Голосовой ввод — 1 кр отдельно'; };
     const setTip = (tip) => { S.tip = TIPS[tip] ? tip : 'post'; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c.dataset.tip === S.tip)); drawPrice(); };
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(200, ta.scrollHeight) + 'px'; drawPrice(); };
     ta.addEventListener('input', grow);
@@ -142,6 +142,7 @@
     $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); send(); });
     $('#go').addEventListener('click', send);
     voice($('#mic'), (t) => { ta.value = (ta.value ? ta.value + ' ' : '') + t; grow(); });
+    drawPrice();
     const pre = sessionStorage.getItem('jasa:prefill');
     if (pre) { const p = JSON.parse(pre); sessionStorage.removeItem('jasa:prefill'); setTip(p.tip); ta.value = p.text; grow(); }
     S.feed.slice().reverse().slice(0, 8).forEach((item) => $('#feed').appendChild(sheet(item)));
@@ -174,11 +175,11 @@
 
   function receptyHtml() {
     if (!S.recepty.length) return '<span class="dim small">Рецепты загружаются…</span>';
-    return S.recepty.map((r) => `<button class="rec" data-rec="${esc(r.id)}"><span class="kind">${esc(TIPS[r.tip] || r.tip)}</span><b>${esc(r.nazvanie)}</b><small>${esc(r.dlya)}</small><span class="rp">${esc(priceLabel(r.tip))}</span></button>`).join('');
+    return S.recepty.map((r) => `<button class="rec" data-rec="${esc(r.id)}"><span class="kind">${esc(TIPS[r.tip] || r.tip)}</span><b>${esc(r.nazvanie)}</b><small>${esc(r.dlya)}</small>${r.rezultat ? `<small class="rz">${esc(r.rezultat)}</small>` : ''}<span class="rp">${esc(priceLabel(r.tip))}</span></button>`).join('');
   }
   function receptForm(r, onGo) {
     const m = document.createElement('div'); m.className = 'modal';
-    m.innerHTML = `<form class="mbox" autocomplete="off"><button type="button" class="lbx mx" aria-label="Закрыть">×</button><span class="caps">${esc(TIPS[r.tip] || r.tip)} · рецепт</span><h3 style="margin:6px 0 4px">${esc(r.nazvanie)}</h3><p class="small muted" style="margin-bottom:14px">${esc(r.opisanie)}</p>
+    m.innerHTML = `<form class="mbox" autocomplete="off"><button type="button" class="lbx mx" aria-label="Закрыть">×</button><span class="caps">${esc(TIPS[r.tip] || r.tip)} · рецепт</span><h3 style="margin:6px 0 4px">${esc(r.nazvanie)}</h3><p class="small muted" style="margin-bottom:6px">${esc(r.opisanie)}</p>${r.rezultat ? `<p class="small" style="margin-bottom:14px"><b>Получите:</b> ${esc(r.rezultat)}</p>` : ''}${r.tip === 'afisha' ? '<p class="small dim" style="margin:-6px 0 14px">Проверьте дату, цену и написание на картинке перед печатью.</p>' : ''}
       ${r.polya.map((p, i) => `<div class="field"><label for="rf${i}">${esc(p.label)}</label><input id="rf${i}" data-k="${esc(p.k)}" placeholder="${esc(p.ph)}"></div>`).join('')}
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px"><button class="btn accent" type="submit">Сделать · ${esc(priceLabel(r.tip))}</button><span class="dim small">пустое поле агент не выдумает — пометит «[уточнить]»</span></div></form>`;
     document.body.appendChild(m);
@@ -248,7 +249,7 @@
     }
   }
   const warnBlock = (w) => (w && w.length ? `<div class="warn rv"><b>Проверьте:</b> ${w.map(esc).join(' · ')}</div>` : '');
-  const actionsBlock = (extra) => `<div class="actions rv"><button class="btn sm" data-copy="self">Скопировать</button><button class="btn sm quiet">Запланировать в канал</button><button class="btn sm quiet">Ещё вариант</button>${extra || ''}<span class="dim small" style="margin-left:auto;align-self:center">при экспорте — метка «создано с помощью ИИ» (закон РК № 230-VIII)</span></div>`;
+  const actionsBlock = (extra) => `<div class="actions rv"><button class="btn sm" data-copy="self">Скопировать</button><button class="btn sm quiet">Запланировать в канал</button><button class="btn sm quiet">Ещё вариант</button>${extra || ''}<span class="dim small" style="margin-left:auto;align-self:center">при экспорте — метка ИИ в тексте и в файлах (Закон РК № 230-VIII, ст. 21)</span></div>`;
   const imgCard = (im, cls, i) => `<div class="img ${cls || ''} rv" data-i="${i == null ? '' : i}" data-prompt="${esc(im.prompt)}" data-aspect="${esc(im.aspect || '4:5')}"><div class="ph"></div>${im.url ? `<img src="${esc(im.url)}" alt="">` : '<button class="btn sm accent draw">Нарисовать · 12 кр</button>'}<div class="cap">${esc(im.caption || im.text || '')}</div></div>`;
 
   function threeImgs(item) {
@@ -449,7 +450,7 @@
       <div class="two">
         <div class="card">
           <div class="field"><label>Ссылка на ваш Instagram или Telegram-канал</label><input id="handle" placeholder="https://instagram.com/… или t.me/…" value="${esc((S.brend && S.brend.handle) || '')}"></div>
-          <div class="warn" style="margin:-4px 0 14px"><b>Анализ аккаунта:</b> по ссылке платформа пройдёт по всем вашим постам, темам, охватам и комментариям и соберёт ДНК автоматически. Для полного анализа и автопостинга вы дадите доступ к аккаунту через Meta — кнопка появится в первой волне. Пока вставьте 3–5 постов ниже.</div>
+          <div class="warn" style="margin:-4px 0 14px"><b>Анализ аккаунта:</b> по ссылке платформа пройдёт по всем вашим постам, темам, охватам и комментариям и соберёт ДНК автоматически. Для полного анализа и автопостинга вы дадите доступ к аккаунту через Meta — кнопка появится скоро. Пока вставьте 3–5 постов ниже.</div>
           <div class="field"><label>Ваши посты или описание</label><textarea id="posts" placeholder="Вставьте 3–5 постов целиком или напишите: кто вы, что продаёте, кому, как любите говорить с людьми">${esc((S.brend && S.brend.source) || '')}</textarea></div>
           <div style="display:flex;gap:8px;align-items:center"><button class="btn accent" id="mkdna">Собрать ДНК · до 6 кр</button><button class="icobtn" id="mic2" title="Рассказать голосом"><svg><use href="#i-mic"/></svg></button><span class="dim small">Instagram/Telegram подключим на следующем шаге</span></div>
         </div>
@@ -523,7 +524,7 @@
         </div>
         <span class="caps" style="display:block;margin-top:18px">Что сделать</span>
         <div class="modes" id="modes">${MODES.map((m, i) => `<button class="chip ${i === 0 ? 'on' : ''}">${m}</button>`).join('')}</div>
-        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать агентами</button><span class="dim small">≈ 60–150 кр · 3–8 минут</span></div>
+        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать агентами</button><span class="dim small">≈ 80–700 кр, зависит от длины сценария · 3–8 минут</span></div>
       </div></div>`;
     const ta = $('#script'); const cnt = () => { $('#cnt').textContent = ta.value ? Math.round(ta.value.split(/\s+/).length / 180 * 10) / 10 + ' стр · ' + ta.value.length + ' зн' : ''; };
     ta.addEventListener('input', cnt);
@@ -599,7 +600,7 @@
   function biblioteka() {
     main.innerHTML = topbar('Библиотека', '<a class="pill" href="#/kabinet">Кабинет →</a> <a class="pill" href="#/tarify">Тарифы →</a>') + `
       <section class="depo" id="depo">
-        <div class="dhead"><div><span class="caps">Депо · ваши референсы</span><h2 style="margin:6px 0 8px">Кадры, которые вам нравятся, — в одном клике от поста</h2><p class="muted small" style="max-width:640px">Перетащите картинки сюда, вставьте из буфера (Ctrl+V) или выберите файлом. JASA прочитает кадр глазами оператора — крупность, свет, оптику, настроение — и достанет палитру. «Взять стиль» передаст художникам только свет, цвет и фактуру, без чужого сюжета.</p></div></div>
+        <div class="dhead"><div><span class="caps">Депо · ваши референсы</span><h2 style="margin:6px 0 8px">Кадры, которые вам нравятся, — в одном клике от поста</h2><p class="muted small" style="max-width:640px">Перетащите картинки сюда, вставьте из буфера (Ctrl+V) или выберите файлом. JASA прочитает кадр глазами оператора — крупность, свет, оптику, настроение — и достанет палитру. «Взять стиль» передаст художникам эти кадры и описание света, цвета и фактуры — художники стараются не повторять чужой сюжет. Чужие лица и логотипы лучше не загружать.</p></div></div>
         <div class="drop" id="drop"><input type="file" id="dfile" accept="image/*" multiple class="hide"><b>Перетащите картинки или нажмите</b><span class="dim small">JPEG, PNG, WebP · палитра бесплатно · <label class="chk"><input type="checkbox" id="dread" checked> прочитать кадр · до ${esc(S.ceny.depo_prochitat || 2)} кр</label></span></div>
         <div class="dtools"><input id="dq" placeholder="Поиск своими словами: ночь, крупный план, тёплый свет, еда…"><span class="dim small" id="dcnt"></span><button class="btn sm accent ${S.stil.length ? '' : 'hide'}" id="dgo">Сделать пост в этом стиле →</button></div>
         <div class="dgrid" id="dgrid"></div>
@@ -716,11 +717,11 @@
         <div style="margin-top:18px;display:flex;align-items:baseline;gap:10px"><b style="font:700 2.4rem var(--disp);letter-spacing:-.03em;color:var(--ink)">${esc(m.kredity)}</b><span class="muted">кредитов</span></div>
         <p class="small dim">потрачено ${esc(m.spent || 0)} · пробных было ${esc(m.trial)}</p>
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="#/sozdat">Создать</a><a class="btn sm quiet" href="#/brend">Голос бренда</a>${TG ? '' : '<button class="btn sm ghost" id="logout">Выйти</button>'}</div></div>
-      <div class="card"><span class="caps">Пополнить</span><p class="small muted" style="margin:8px 0 12px">Пакеты кредитов, оплата Kaspi или картой по заявке — в первой волне подключаем вручную, отвечаем в Telegram.</p>
+      <div class="card"><span class="caps">Пополнить</span><p class="small muted" style="margin:8px 0 12px">Пополнение — по заявке: выберите пакет, ответим в Telegram и зачислим вручную. Оплата Kaspi и картой онлайн — скоро.</p>
         <div class="chips">${[['500', '5 990 ₸'], ['2 000', '19 990 ₸'], ['10 000', '89 990 ₸']].map(([n, c]) => `<button class="chip" data-paket="${n}">${n} кр · ${c}</button>`).join('')}</div>
         <p class="small dim" style="margin-top:10px">Цены пакетов предварительные.</p></div>
       </div>
-      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:var(--accent)">−${esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто — создайте первый пост.</p>'}</div>`;
+      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:${h.vozvrat ? 'var(--ok)' : 'var(--accent)'}">${h.vozvrat ? '+' : '−'}${esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто — создайте первый пост.</p>'}</div>`;
     const lo = $('#logout'); if (lo) lo.addEventListener('click', async () => { try { await api('/api/logout', {}); } catch (e) { /* и так выйдем */ } S.session = null; store.set('session', null); S.me = null; S.stil = []; store.set('stil', []); toast('Вы вышли'); loadMe(); kabinet(); });
     k.addEventListener('click', async (e) => { const b = e.target.closest('[data-paket]'); if (!b) return; b.disabled = true; try { await api('/api/popolnit', { paket: b.dataset.paket }); toast('Заявка принята — ответим в Telegram'); } catch (er) { toast(er.message); b.disabled = false; } });
   }
@@ -745,7 +746,7 @@
       ['Pro', '24 990 ₸', 'SMM, дизайнер, агентство', ['2 500 кредитов', 'до 10 брендов-клиентов', 'команда 3 человека', 'согласование и отчёты', 'приоритетная очередь'], 'Выбрать', ''],
       ['Studio', '59 990 ₸', 'сценаристы, продюсеры', ['6 000 кредитов', 'разбор сценария агентами', 'герои, локации, кадры, видео', '10 участников, 5 проектов', 'шлюз в студийный конвейер'], 'Выбрать', ''],
     ];
-    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Платите за то, что делаете</h2><p class="muted" style="margin-top:10px">Кредит — одна единица работы: текст поста — до 6, пост с тремя картинками — до 45, картинка 2K — 12, пять секунд видео 720p — 131, разбор сценария ≈ 100–700. Kaspi, карта, годовая оплата −15 %. Цены — предварительные.</p></section>
+    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Платите за то, что делаете</h2><p class="muted" style="margin-top:10px">Кредит — одна единица работы: текст поста — до 6, пост с тремя картинками — до 45, картинка 2K — 12, пять секунд видео 720p — 131, разбор сценария ≈ 80–700, зависит от длины сценария. Пополнение — по заявке в Telegram, оплата Kaspi и картой — скоро. Цены на кнопке — действующие; цены пакетов и тарифов — предварительные.</p></section>
       <div class="tiers">${T.map(([n, p, w, li, b, c]) => `<div class="tier ${c} rv"><span class="caps">${w}</span><h3>${n}</h3><div class="price">${p}<small> /мес</small></div><ul>${li.map((l) => `<li>${l}</li>`).join('')}</ul><button class="btn ${c ? 'accent' : 'quiet'}">${b}</button></div>`).join('')}</div>`;
     $$('.rv', main).forEach((n, i) => (n.style.animationDelay = i * 80 + 'ms'));
   }
@@ -757,7 +758,7 @@
     const fab = document.createElement('button'); fab.className = 'fab'; fab.id = 'fab'; fab.title = 'Помощник'; fab.setAttribute('aria-label', 'Помощник');
     fab.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M5.6 5.6l3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/></svg>';
     const pan = document.createElement('aside'); pan.className = 'pom'; pan.id = 'pom'; pan.setAttribute('aria-label', 'Помощник JASA');
-    pan.innerHTML = `<div class="ph"><b>Помощник</b><span class="dim small">отвечает сразу · ничего не меняет без вас</span><button class="lbx px" aria-label="Закрыть">×</button></div>
+    pan.innerHTML = `<div class="ph"><b>Помощник</b><span class="dim small">отвечает сразу · ничего не меняет и не списывает</span><button class="lbx px" aria-label="Закрыть">×</button></div>
       <div class="pmsgs" id="pmsgs"><div class="pm a">Спросите про кредиты, цены, ошибку, вход с компьютера — отвечу сразу. Если не знаю, позову человека.</div></div>
       <div class="pchips" id="pchips">${['Сколько у меня кредитов?', 'Почему не получилось?', 'Сколько стоит видео?', 'Как войти с компьютера?', 'Как пополнить?'].map((q) => `<button class="chip">${q}</button>`).join('')}</div>
       <form class="pin" id="pform"><input id="pq" placeholder="Ваш вопрос…" autocomplete="off"><button class="icobtn go" title="Спросить"><svg><use href="#i-send"/></svg></button></form>`;
@@ -772,7 +773,7 @@
       const oshibka = /почему|не получ|ошибк|не работ|не выш/i.test(q) ? S.lastError : '';
       try {
         const r = await api('/api/pomoshch', { q, oshibka, ekran: (location.hash || '#/sozdat').slice(2) });
-        w.innerHTML = esc(r.text).replace(/\n/g, '<br>') + (arr(r.knopki).length ? '<div class="pk">' + arr(r.knopki).map(([t, h]) => /^#\//.test(h) ? `<a class="btn sm quiet" href="${esc(h)}" data-close>${esc(t)}</a>` : `<a class="btn sm quiet" href="${esc(h)}" target="_blank" rel="noopener">${esc(t)}</a>`).join('') + '</div>' : '') + (r.ist === 'model' ? '<div class="dim small" style="margin-top:6px">ответ модели · бесплатно для вас</div>' : '');
+        w.innerHTML = esc(r.text).replace(/\n/g, '<br>') + (arr(r.knopki).length ? '<div class="pk">' + arr(r.knopki).map(([t, h]) => /^#\//.test(h) ? `<a class="btn sm quiet" href="${esc(h)}" data-close>${esc(t)}</a>` : `<a class="btn sm quiet" href="${esc(h)}" target="_blank" rel="noopener">${esc(t)}</a>`).join('') + '</div>' : '') + (r.ist === 'model' ? '<div class="dim small" style="margin-top:6px">ответ ИИ · бесплатно, до 15 вопросов в день</div>' : '');
       } catch (e) { w.textContent = 'Помощник недоступен: ' + e.message; }
       msgs.scrollTop = msgs.scrollHeight;
     }
