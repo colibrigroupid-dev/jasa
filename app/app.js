@@ -244,7 +244,7 @@
   function videoPanel(item) {
     if (item.video && item.video.url) return `<div class="vid rv"><video src="${esc(API_BASE + item.video.url)}" controls playsinline loop muted autoplay style="width:100%;max-width:340px;border-radius:14px;display:block;margin-top:16px"></video><div class="dim small" style="margin-top:6px">${esc(item.video.resolution)} · ${esc(item.video.duration)} с · ${esc(item.video.kredity)} кр · создано с помощью ИИ</div></div>`;
     if (item.videoJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Снимаю ролик (${esc(item.video && item.video.resolution)}), до 5 минут…</span></div>`;
-    const pr = item.promty && item.promty.video;
+    const pr = (item.promty && item.promty.video) || (item.result && item.result.scenes ? { prompt: [item.result.hook, ...arr(item.result.scenes).map((s) => (s.t || '') + ': ' + (s.kadr || '')), 'Sound: synchronous natural noises, no music. Photorealistic, warm light, Kazakhstani people.'].filter(Boolean).join(' ') } : null);
     return `<div class="vidpanel rv" style="margin-top:18px;padding:14px 16px;border-radius:var(--r-sm);background:var(--surface-2)">
       <span class="caps">Снять ролик</span>
       <div class="chips" style="margin:8px 0">${['480p', '720p', '1080p'].map((q, i) => `<button class="chip ${i === 1 ? 'on' : ''}" data-res="${q}">${q} · ${{ '480p': 15, '720p': 35, '1080p': 80 }[q]} кр</button>`).join('')}</div>
