@@ -35,7 +35,7 @@
     lastError: '',
   };
   function spend(k, ostatok) { S.credits = typeof ostatok === 'number' ? ostatok : Math.max(0, Math.round((S.credits - (k || 0)) * 10) / 10); store.set('credits', S.credits); drawCredits(); }
-  function drawCredits() { $('#cred').textContent = S.credits; $('#credbar').style.width = Math.min(100, S.credits / 3) + '%'; const ta = document.getElementById('ask'); if (ta) ta.dispatchEvent(new Event('input')); }
+  function drawCredits() { $('#cred').textContent = Math.floor(+S.credits || 0); $('#cred').title = S.credits + ' кр'; $('#credbar').style.width = Math.min(100, S.credits / 3) + '%'; const ta = document.getElementById('ask'); if (ta) ta.dispatchEvent(new Event('input')); }
   drawCredits();
 
   // ---------- Telegram Mini App ----------
@@ -76,10 +76,47 @@
 
   // ---------- маршруты ----------
   const routes = { sozdat, trendy, brend, kanaly, scenariy, biblioteka, tarify, kabinet };
+  // Лестница: в первый раз в меню только «Создать». Остальные разделы человек открывает сам — через «Ещё разделы»
+  // или приглашение после результата — и они остаются в меню навсегда.
+  const NAV = [
+    { r: 'sozdat', i: 'i-spark', n: 'Создать', d: 'Пост, рилс, афиша — голосом или текстом' },
+    { r: 'brend', i: 'i-dna', n: 'Мой бренд', s: 'Бренд', d: 'Чтобы посты звучали как вы' },
+    { r: 'kanaly', i: 'i-chan', n: 'Мои каналы', s: 'Каналы', d: 'Где публикуете — JASA подстроит формат' },
+    { r: 'trendy', i: 'i-trend', n: 'Тренды', tag: 'KZ', d: 'Форматы, которые заходят' },
+    { r: 'biblioteka', i: 'i-lib', n: 'Библиотека', d: 'Всё сделанное и ваши кадры для стиля' },
+    { r: 'scenariy', i: 'i-film', n: 'Кино', tag: 'Studio', d: 'Разбор сценария фильма или сериала' },
+    { r: 'tarify', i: 'i-tarif', n: 'Тарифы', d: 'Кредиты и пакеты' },
+    { r: 'kabinet', i: 'i-user', n: 'Кабинет', d: 'Вход, баланс, история' },
+  ];
+  S.open = store.get('open', null) || ['sozdat'].concat(S.feed.length ? ['brend'] : []);
+  S.made = +store.get('made', S.feed.filter((x) => x.state === 'done').length) || 0;
+  function openSec(r) { if (routes[r] && !S.open.includes(r)) { S.open.push(r); store.set('open', S.open); drawNav(); } }
+  const navLink = (x) => `<a href="#/${x.r}" data-r="${x.r}"><svg><use href="#${x.i}"/></svg>${x.n}${x.tag ? `<span class="tag">${x.tag}</span>` : ''}</a>`;
+  function drawNav() {
+    const vis = NAV.filter((x) => S.open.includes(x.r)), rest = NAV.filter((x) => !S.open.includes(x.r));
+    $('#nav').innerHTML = vis.map(navLink).join('') + (rest.length ? `<button class="navmore" type="button" data-more><svg><use href="#i-grid"/></svg>Ещё разделы<span class="tag">${rest.length}</span></button>` : '');
+    const tb = vis.filter((x) => x.r !== 'kabinet').slice(0, 4);
+    $('#tabbar').innerHTML = tb.map((x) => `<a href="#/${x.r}" data-r="${x.r}"><svg><use href="#${x.i}"/></svg>${x.s || x.n}</a>`).join('') + `<button type="button" data-more><svg><use href="#i-grid"/></svg>Ещё</button>`;
+    markNav();
+  }
+  function markNav() { const h = (location.hash || '#/sozdat').replace('#/', '').split('?')[0]; $$('#nav a, #tabbar a').forEach((a) => a.classList.toggle('on', a.dataset.r === (routes[h] ? h : 'sozdat'))); }
+  function moreSheet() {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = `<div class="mbox more"><button type="button" class="lbx mx" aria-label="Закрыть">×</button><span class="caps">Разделы</span><h3 style="margin:6px 0 4px">Откройте, что нужно</h3><p class="small muted" style="margin-bottom:14px">Открытый раздел остаётся в меню.</p>
+      <div class="morelist">${NAV.map((x) => `<a href="#/${x.r}" class="${S.open.includes(x.r) ? 'is' : ''}"><svg><use href="#${x.i}"/></svg><span><b>${x.n}</b><small>${x.d}</small></span>${S.open.includes(x.r) ? '<em>в меню</em>' : '<em>открыть</em>'}</a>`).join('')}</div></div>`;
+    document.body.appendChild(m);
+    const close = () => m.remove();
+    m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('.mx') || e.target.closest('a')) close(); });
+    document.addEventListener('keydown', function k(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', k); } });
+  }
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-more]')) { e.preventDefault(); moreSheet(); } });
+  if (S.brandId) S.open.includes('brend') || S.open.push('brend');   // бренд уже есть — его раздел сразу в меню
+  drawNav();
   function route() {
     const h = (location.hash || '#/sozdat').replace('#/', '').split('?')[0];
     const fn = routes[h] || sozdat;
-    $$('#nav a, #tabbar a').forEach((a) => a.classList.toggle('on', a.dataset.r === (routes[h] ? h : 'sozdat')));
+    openSec(routes[h] ? h : 'sozdat');
+    markNav();
     S.pollToken++;
     main.innerHTML = '';
     fn();
@@ -95,29 +132,31 @@
   // СОЗДАТЬ
   // =====================================================================
   const TIPS = { post: 'Пост', rils: 'Рилс', afisha: 'Афиша', karusel: 'Карусель', plan: 'План на неделю' };
+  // три примера: короткая подпись на кнопке, полное задание уходит в работу
   const EXAMPLES = [
-    ['post', 'Пост для кофейни в Алматы: новое сезонное меню с тыквенным латте, скидка 20 % до пятницы'],
-    ['rils', 'Рилс для фитнес-тренера: 3 ошибки новичков в зале, 20 секунд, с хуком'],
-    ['afisha', 'Афиша мастер-класса по гончарному делу, Астана, 9 ноября 15:00, 12 000 ₸'],
-    ['karusel', 'Карусель для бухгалтера: 5 штрафов ИП в Казахстане 2026 и как их избежать'],
-    ['plan', 'План на неделю для магазина детской одежды на Kaspi: цель — продажи зимней коллекции'],
+    ['post', 'Кофейня: скидка 20 % до пятницы', 'Пост для кофейни в Алматы: новое сезонное меню с тыквенным латте, скидка 20 % до пятницы'],
+    ['post', 'Акция на Kaspi на выходные', 'Пост для магазина на Kaspi: акция на выходные, скидка 15 % на зимние куртки, рассрочка 0-0-12'],
+    ['rils', 'Рилс: 3 ошибки новичка в зале', 'Рилс для фитнес-тренера: 3 ошибки новичков в зале, 20 секунд, с хуком'],
   ];
+  const TIPS_MAIN = ['post', 'rils', 'afisha'];
 
   function sozdat() {
-    main.innerHTML = topbar('Создать', brandPill()) + `
-      <section class="hero">
-        <h1>Скажи, <em>что нужно</em> — пост, рилс, афиша появятся на этом листе.</h1>
-        <p>Скажите голосом или текстом, пришлите ссылку на чужой рилс как пример подачи — и за вас работает команда: копирайтер, промптер, три художника, рилсмейкер. К каждому посту три картинки на выбор.</p>
-        <div class="examples" id="examples">${EXAMPLES.map(([t, e]) => `<button data-tip="${t}" data-text="${esc(e)}">${esc(e)}</button>`).join('')}</div>
+    const first = !S.feed.length;
+    const recOpen = store.get('recOpen', false);
+    main.innerHTML = topbar('Создать', S.made || S.brandId ? brandPill() : '') + `
+      <section class="hero ${first ? '' : 'compact'}">
+        <h1>${first ? 'Что <em>сделать</em>?' : 'Что ещё <em>сделать</em>?'}</h1>
+        ${first ? '<p>Скажите голосом или напишите. Через минуту — готовый текст и три картинки на выбор.</p>' : ''}
+        <div class="examples" id="examples">${EXAMPLES.map(([t, l, e]) => `<button data-tip="${t}" data-text="${esc(e)}">${esc(l)}</button>`).join('')}<button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}">Готовые идеи${S.recepty.length ? ' · ' + S.recepty.length : ''} ${recOpen ? '▴' : '▾'}</button></div>
       </section>
-      <section class="recwrap"><div class="rechead"><span class="caps">Рецепты · заполните 2–3 поля — остальное сделает JASA</span><span class="dim small">цена видна до запуска · списываем только за готовое</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
+      <section class="recwrap ${recOpen ? '' : 'hide'}" id="recwrap"><div class="rechead"><span class="caps">Готовые идеи · 2–3 поля, остальное сделает JASA</span><span class="dim small">цена видна до запуска</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
       <div class="feed" id="feed"></div>
       <div class="composer" id="composer">
         <div class="box">
           ${stilPill()}
-          <textarea id="ask" rows="1" placeholder="Скажите голосом (микрофон справа) или напишите: пост про открытие второго салона в Астане, тёплый тон"></textarea>
+          <textarea id="ask" rows="1" placeholder="Например: пост про открытие второго салона в Астане"></textarea>
           <div class="row">
-            <div class="chips" id="tips">${Object.entries(TIPS).map(([k, v]) => `<button class="chip ${k === S.tip ? 'on' : ''}" data-tip="${k}">${v}</button>`).join('')}</div>
+            <div class="chips" id="tips">${Object.entries(TIPS).map(([k, v]) => `<button class="chip ${k === S.tip ? 'on' : ''} ${TIPS_MAIN.includes(k) || k === S.tip || store.get('tipsAll', false) ? '' : 'hide'}" data-tip="${k}">${v}</button>`).join('')}${store.get('tipsAll', false) ? '' : '<button class="chip ghost" id="tipsmore" type="button" title="Карусель, план на неделю">ещё</button>'}</div>
             <div class="send">
               <button class="chip ${S.yazyk === 'kz' ? 'on' : ''}" id="lang" title="Язык результата">${S.yazyk === 'kz' ? 'Қаз' : 'Рус'}</button>
               <button class="icobtn" id="mic" title="Сказать голосом"><svg><use href="#i-mic"/></svg></button>
@@ -135,11 +174,15 @@
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(200, ta.scrollHeight) + 'px'; drawPrice(); };
     ta.addEventListener('input', grow);
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
-    $('#tips').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; setTip(b.dataset.tip); ta.focus(); });
+    $('#tips').addEventListener('click', (e) => {
+      if (e.target.closest('#tipsmore')) { store.set('tipsAll', true); $$('#tips .chip.hide').forEach((c) => c.classList.remove('hide')); e.target.closest('#tipsmore').remove(); return; }
+      const b = e.target.closest('.chip'); if (!b) return; setTip(b.dataset.tip); ta.focus();
+    });
+    $('#ideas').addEventListener('click', (e) => { const on = $('#recwrap').classList.toggle('hide') === false; store.set('recOpen', on); e.currentTarget.setAttribute('aria-expanded', on); e.currentTarget.textContent = 'Готовые идеи' + (S.recepty.length ? ' · ' + S.recepty.length : '') + (on ? ' ▴' : ' ▾'); });
     $('#recepty').addEventListener('click', (e) => { const b = e.target.closest('[data-rec]'); if (!b) return; const r = S.recepty.find((x) => x.id === b.dataset.rec); if (r) receptForm(r, (tip, text) => { setTip(tip); ta.value = text; grow(); send(); }); });
     const sp = $('#stilpill'); if (sp) sp.addEventListener('click', () => { S.stil = []; store.set('stil', S.stil); sp.remove(); toast('Стиль из депо снят'); });
     $('#lang').addEventListener('click', (e) => { S.yazyk = S.yazyk === 'kz' ? 'ru' : 'kz'; e.currentTarget.textContent = S.yazyk === 'kz' ? 'Қаз' : 'Рус'; e.currentTarget.classList.toggle('on', S.yazyk === 'kz'); });
-    $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); send(); });
+    $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button[data-text]'); if (!b) return; setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); send(); });
     $('#go').addEventListener('click', send);
     voice($('#mic'), (t) => { ta.value = (ta.value ? ta.value + ' ' : '') + t; grow(); });
     drawPrice();
@@ -165,16 +208,35 @@
         const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram', primer, depo: S.stil.length ? S.stil : undefined });
         Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null });
         spend(res.kredity, res.ostatok);
+        S.made += 1; store.set('made', S.made);
       } catch (e) {
         Object.assign(item, { state: 'error', error: e.message }); S.lastError = e.message;
       }
       S.feed.push(item); S.feed = S.feed.slice(-20); store.set('feed', S.feed);
-      el.replaceWith(sheet(item));
+      const done = sheet(item);
+      el.replaceWith(done);
+      if (item.state === 'done') { const inv = invite(); if (inv) done.after(inv); }
     }
+  }
+
+  // Приглашение открыть следующий раздел — одно за раз, после результата, без давления.
+  function invite() {
+    let c = null;
+    if (S.made >= 1 && !S.brandId && S.made >= +store.get('skip_brend', 0)) {
+      c = { k: 'brend', h: 'Чтобы следующий пост звучал как вы', p: 'Три ответа, полминуты: как называетесь, чем занимаетесь, как говорите с клиентами.', b: 'Давайте' };
+    } else if (S.made >= 3 && !S.open.includes('kanaly') && S.made >= +store.get('skip_kanaly', 0)) {
+      c = { k: 'kanaly', h: 'Где вы публикуете?', p: 'Добавьте свои каналы и страницы — JASA подстроит длину и формат под каждую площадку.', b: 'Добавить каналы' };
+    }
+    if (!c) return null;
+    const el = document.createElement('div'); el.className = 'invite rv';
+    el.innerHTML = `<div><b>${c.h}</b><p>${c.p}</p></div><div class="ib"><a class="btn sm accent" href="#/${c.k}">${c.b}</a><button class="btn sm quiet" type="button">Не сейчас</button></div>`;
+    el.querySelector('button').addEventListener('click', () => { store.set('skip_' + c.k, S.made + 3); el.remove(); });   // «Не сейчас» — спросим через 3 результата
+    return el;
   }
 
   function receptyHtml() {
     if (!S.recepty.length) return '<span class="dim small">Рецепты загружаются…</span>';
+    const ib = document.getElementById('ideas'); if (ib && S.recepty.length && !/· \d/.test(ib.textContent)) ib.textContent = ib.textContent.replace('Готовые идеи', 'Готовые идеи · ' + S.recepty.length);
     return S.recepty.map((r) => `<button class="rec" data-rec="${esc(r.id)}"><span class="kind">${esc(TIPS[r.tip] || r.tip)}</span><b>${esc(r.nazvanie)}</b><small>${esc(r.dlya)}</small>${r.rezultat ? `<small class="rz">${esc(r.rezultat)}</small>` : ''}<span class="rp">${esc(priceLabel(r.tip))}</span></button>`).join('');
   }
   function receptForm(r, onGo) {
@@ -427,17 +489,17 @@
   // ТРЕНДЫ (пока курация, не живой сбор)
   // =====================================================================
   const TRENDS = [
-    { t: '«Что было бы, если…» в твоей нише', fire: '↑ 340 %', g: 'linear-gradient(160deg,#15192A,#3B4A8C)', p: 'Один вопрос на экране, ответ раскрывается за 15 секунд. Заходит у экспертов и магазинов.', tip: 'rils', q: 'Рилс «что было бы, если бы ты сделал это раньше» для моей ниши' },
-    { t: 'POV: ты пришёл в Алматы первый раз', fire: '↑ 210 %', g: 'linear-gradient(160deg,#FF4D1F,#FFB38A)', p: 'Съёмка от первого лица, 3 локации, субтитры по слову. Кафе, салоны, туры.', tip: 'rils', q: 'POV-рилс: первый раз у нас, три момента, которые удивляют' },
-    { t: 'Цены «тогда и сейчас» на Kaspi', fire: '↑ 180 %', g: 'linear-gradient(160deg,#0E6B55,#19B98B)', p: 'Карусель с честным сравнением. Доверие растёт, когда показываешь цифры.', tip: 'karusel', q: 'Карусель «тогда и сейчас»: что изменилось в ценах и качестве за год' },
-    { t: 'День из жизни за 20 секунд', fire: '↑ 150 %', g: 'linear-gradient(160deg,#5B3A8C,#15192A)', p: 'Без лица, руки и процесс. Мастера, пекарни, швейные, автосервисы.', tip: 'rils', q: 'Рилс «день из жизни» без лица: руки, процесс, результат, 20 секунд' },
-    { t: 'Ответ на хейт с юмором', fire: '↑ 120 %', g: 'linear-gradient(160deg,#B8231A,#FF4D1F)', p: 'Комментарий на экран — и спокойный ответ с фактами. Поднимает охваты в 2–3 раза.', tip: 'rils', q: 'Рилс-ответ на типичный негативный комментарий в моей нише, с фактами и юмором' },
-    { t: 'Афиша-календарь на ноябрь', fire: 'сезон', g: 'linear-gradient(160deg,#C98B1F,#F2B705)', p: 'Один пост со всеми событиями месяца. Сохраняют в 5 раз чаще обычного.', tip: 'afisha', q: 'Афиша-календарь событий на ноябрь для моего бизнеса' },
+    { t: '«Что было бы, если…» в твоей нише', fire: 'рилс', g: 'linear-gradient(160deg,#15192A,#3B4A8C)', p: 'Один вопрос на экране, ответ раскрывается за 15 секунд. Заходит у экспертов и магазинов.', tip: 'rils', q: 'Рилс «что было бы, если бы ты сделал это раньше» для моей ниши' },
+    { t: 'POV: ты пришёл в Алматы первый раз', fire: 'рилс', g: 'linear-gradient(160deg,#FF4D1F,#FFB38A)', p: 'Съёмка от первого лица, 3 локации, субтитры по слову. Кафе, салоны, туры.', tip: 'rils', q: 'POV-рилс: первый раз у нас, три момента, которые удивляют' },
+    { t: 'Цены «тогда и сейчас» на Kaspi', fire: 'карусель', g: 'linear-gradient(160deg,#0E6B55,#19B98B)', p: 'Карусель с честным сравнением. Доверие растёт, когда показываешь цифры.', tip: 'karusel', q: 'Карусель «тогда и сейчас»: что изменилось в ценах и качестве за год' },
+    { t: 'День из жизни за 20 секунд', fire: 'рилс', g: 'linear-gradient(160deg,#5B3A8C,#15192A)', p: 'Без лица, руки и процесс. Мастера, пекарни, швейные, автосервисы.', tip: 'rils', q: 'Рилс «день из жизни» без лица: руки, процесс, результат, 20 секунд' },
+    { t: 'Ответ на хейт с юмором', fire: 'рилс', g: 'linear-gradient(160deg,#B8231A,#FF4D1F)', p: 'Комментарий на экран — и спокойный ответ с фактами.', tip: 'rils', q: 'Рилс-ответ на типичный негативный комментарий в моей нише, с фактами и юмором' },
+    { t: 'Афиша-календарь на ноябрь', fire: 'сезон', g: 'linear-gradient(160deg,#C98B1F,#F2B705)', p: 'Один пост со всеми событиями месяца — такие сохраняют.', tip: 'afisha', q: 'Афиша-календарь событий на ноябрь для моего бизнеса' },
   ];
   function trendy() {
-    main.innerHTML = topbar('Тренды', '<span class="pill">образец · живой сбор трендов — месяц 2</span>') + `
-      <section style="margin-bottom:26px;max-width:760px"><h2>Что сейчас залетает в Казахстане</h2><p class="muted" style="margin-top:10px">Тренд-скаут смотрит TikTok, Instagram и Telegram по вашей нише. Нажмите «Сделать по тренду» — рилсмейкер адаптирует формат под вашу тему.</p></section>
-      <div class="grid3">${TRENDS.map((t, i) => `<article class="trend rv" style="animation-delay:${i * 70}ms"><div class="cover" style="background:${t.g}"><span class="fire">${t.fire}</span>${esc(t.t)}</div><div class="body"><p>${esc(t.p)}</p><button class="btn sm accent" data-i="${i}">Сделать по тренду</button></div></article>`).join('')}</div>`;
+    main.innerHTML = topbar('Тренды') + `
+      <section style="margin-bottom:26px;max-width:760px"><h2>Форматы, которые заходят</h2><p class="muted" style="margin-top:10px">Подборка для бизнеса и блогов в Казахстане. Нажмите — JASA сделает такой же про вас.</p></section>
+      <div class="grid3">${TRENDS.map((t, i) => `<article class="trend rv" style="animation-delay:${i * 70}ms"><div class="cover" style="background:${t.g}"><span class="fire">${t.fire}</span>${esc(t.t)}</div><div class="body"><p>${esc(t.p)}</p><button class="btn sm accent" data-i="${i}">Сделать так же</button></div></article>`).join('')}</div>`;
     main.addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (!b) return; const t = TRENDS[+b.dataset.i]; sessionStorage.setItem('jasa:prefill', JSON.stringify({ tip: t.tip, text: t.q })); location.hash = '#/sozdat'; });
   }
 
@@ -483,20 +545,46 @@
   // =====================================================================
   // КАНАЛЫ (макет)
   // =====================================================================
-  function kanaly() {
-    main.innerHTML = topbar('Каналы', '<button class="btn sm">Подключить канал</button>') + `
-      <section style="margin-bottom:26px;max-width:760px"><h2>Каналы, расписание, рассылки</h2><p class="muted" style="margin-top:10px">Telegram подключается ботом-администратором за минуту. Instagram и TikTok — следующим шагом. Ничего не уходит без «Утвердить».</p></section>
-      <div class="two"><div>
-        <div class="chan rv"><div class="ico tg">TG</div><div><b>Мой канал · пример</b><small>1 240 подписчиков · макет, подключение — неделя 2</small></div><span class="pill st">пример</span></div>
-        <div class="chan rv"><div class="ico ig">IG</div><div><b>@moy_biznes</b><small>Бизнес-аккаунт · публикация через Meta</small></div><button class="btn sm ghost st">Подключить</button></div>
-        <div class="chan rv"><div class="ico tt">TT</div><div><b>TikTok</b><small>Публикация роликов и обложек</small></div><button class="btn sm ghost st">Скоро</button></div>
-        <div class="card rv" style="margin-top:16px"><span class="caps">Клуб по подписке</span><h3 style="margin:6px 0 8px">Закрытый канал · 1 500 ₸/мес</h3><p class="muted small">Оплата через Telegram Stars или Kaspi, доступ выдаёт бот, напоминания о продлении — сами. 38 участников.</p><div style="margin-top:12px"><button class="btn sm quiet">Настроить</button></div></div>
-      </div><div>
-        <span class="caps">Очередь на неделю</span>
-        <div class="queue" style="margin-top:10px">
-          ${[['Вт 10:00', 'Пост: сезонное меню', 'Telegram · утверждено', 'on'], ['Ср 18:30', 'Рилс: 3 ошибки новичков', 'Instagram · ждёт утверждения', ''], ['Чт 10:00', 'Рассылка: напоминание о встрече', '1 240 получателей', 'on'], ['Пт 12:00', 'Афиша: мастер-класс 9 ноября', 'Telegram + Instagram', ''], ['Сб 11:00', 'Опрос: какую тему разобрать', 'Telegram', 'on']].map(([t, b, s, on], i) => `<div class="qi rv" style="animation-delay:${i * 60}ms"><span class="t">${t}</span><div><b>${b}</b><small>${s}</small></div><button class="pill ${on}">${on ? 'в очереди' : 'утвердить'}</button></div>`).join('')}
-        </div>
-      </div></div>`;
+  // Мои каналы — профиль страниц, где человек публикует. Хранится в карте бренда (папка «Каналы и страницы»),
+  // поэтому копирайтер и план публикаций видят площадки сами. Автопостинг — отдельным шагом, без макетов и чужих цифр.
+  const PLOSHCHADKI = ['Telegram', 'Instagram', 'TikTok', 'VK', 'YouTube', 'Threads', 'WhatsApp', 'Сайт'];
+  const CHASTOTA = ['каждый день', '3–4 раза в неделю', 'раз в неделю', 'по событиям'];
+  async function kanaly() {
+    main.innerHTML = topbar('Мои каналы') + '<div id="kn"><div class="working"><span class="spin"></span><span>Открываю…</span></div></div>';
+    let d;
+    try { d = await api('/api/brend'); } catch (e) { $('#kn').innerHTML = `<div class="warn">${esc(e.message)}</div>`; return; }
+    const box = $('#kn'); if (!box) return;
+    const head = '<section style="max-width:680px;margin-bottom:22px"><h2>Где вы публикуете?</h2><p class="muted" style="margin-top:10px">Добавьте каналы и страницы. JASA подстроит длину, формат и подачу под каждую площадку.</p></section>';
+    if (d.guest) { box.innerHTML = head + '<a class="btn accent" href="#/kabinet">Войти через Telegram</a><p class="dim small" style="margin-top:10px">Каналы сохраняются за вами — поэтому нужен вход.</p>'; return; }
+    const b = d.brands.find((x) => x.id === d.active) || d.brands[0];
+    if (!b) { box.innerHTML = head + '<div class="card" style="max-width:680px"><b>Сначала назовите бренд</b><p class="small muted" style="margin:6px 0 12px">Каналы принадлежат бренду: у SMM-специалиста их может быть несколько.</p><a class="btn accent sm" href="#/brend">Назвать бренд</a></div>'; return; }
+    const lines = () => String(((b.sections.kanaly || {}).fields || {}).spisok || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    const save = async (list) => {
+      const r = await api('/api/brend/sohranit', { bid: b.id, kod: 'kanaly', polya: { spisok: list.join('\n') } });
+      Object.assign(b, r.brand); draw();
+    };
+    function draw() {
+      const L = lines();
+      box.innerHTML = head + `<div class="kgrid"><div>
+        <span class="caps">${esc(b.name)} · ${L.length ? L.length + ' ' + (L.length === 1 ? 'канал' : L.length < 5 ? 'канала' : 'каналов') : 'пока пусто'}</span>
+        <div class="klist">${L.map((l, i) => { const [pl, adr, ...rest] = l.split(' · '); return `<div class="chan"><div class="ico">${esc((pl || '?').slice(0, 2).toUpperCase())}</div><div><b>${esc(adr || pl)}</b><small>${esc([pl].concat(rest).join(' · '))}</small></div><button class="btn sm ghost" data-del="${i}" title="Убрать">×</button></div>`; }).join('') || '<p class="dim small" style="margin:10px 0">Добавьте первый канал справа.</p>'}</div>
+        <p class="dim small" style="margin-top:14px">Автопубликация — следующим шагом: Telegram через бота-администратора, Instagram после проверки Meta. Пока JASA пишет под формат каждой площадки.</p>
+      </div><form class="card" id="kf" autocomplete="off"><span class="caps">Добавить канал</span>
+        <div class="field" style="margin-top:12px"><label for="kp">Площадка</label><select id="kp">${PLOSHCHADKI.map((x) => `<option>${x}</option>`).join('')}</select></div>
+        <div class="field"><label for="ka">Адрес</label><input id="ka" placeholder="@moj_kanal или ссылка" required></div>
+        <div class="field"><label for="ko">О чём и для кого</label><input id="ko" placeholder="новинки меню, для студентов"></div>
+        <div class="field"><label for="kc">Как часто публикуете</label><select id="kc">${CHASTOTA.map((x) => `<option>${x}</option>`).join('')}</select></div>
+        <button class="btn accent" type="submit">Добавить</button></form></div>`;
+      $$('[data-del]', box).forEach((x) => x.addEventListener('click', async () => { const L2 = lines(); L2.splice(+x.dataset.del, 1); try { await save(L2); } catch (e) { toast(e.message); } }));
+      $('#kf').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const adr = $('#ka').value.trim().replace(/\s*·\s*/g, ' '); if (!adr) return;
+        const o = $('#ko').value.trim().replace(/\s*·\s*/g, ', ');
+        const line = [$('#kp').value, adr, o, $('#kc').value].filter(Boolean).join(' · ');
+        try { await save(lines().concat(line).slice(0, 20)); toast('Канал добавлен'); } catch (er) { toast(er.message); }
+      });
+    }
+    draw();
   }
 
   // =====================================================================
@@ -705,9 +793,9 @@
     const k = $('#kab'); if (!k) return;
     if (!m) { k.innerHTML = '<div class="warn">Сервер недоступен. Попробуйте через минуту.</div>'; return; }
     if (m.guest && !TG) {
-      k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите через Telegram — и кабинет станет вашим.</h2><p class="muted" style="margin-top:10px">Без регистрации и паролей: нажмите кнопку или наведите камеру телефона на код, бот подтвердит вход. Ваши посты, бренд, кредиты и история будут одни и те же в Telegram и на компьютере.</p></section>
+      k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите — и всё сохранится</h2><p class="muted" style="margin-top:10px">Без регистрации и паролей: нажмите кнопку или наведите камеру телефона на код, бот подтвердит вход. Ваши посты, бренд, кредиты и история будут одни и те же в Telegram и на компьютере.</p></section>
         <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div></div>
-        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">${esc(m.kredity)} кредитов в день по вашему адресу. После входа — ${esc(m.trial)} пробных кредитов, голос бренда, история, пополнение.</p></div></div>`;
+        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сегодня у вас ${esc(Math.floor(m.kredity))} кр, завтра снова 50. После входа — ${esc(m.trial)} пробных: хватит примерно на 6 постов с картинками.</p></div></div>`;
       $('#login').addEventListener('click', startLogin);
       return;
     }
@@ -741,7 +829,7 @@
   }
   function tarify() {
     const T = [
-      ['Lite', '0 ₸', 'попробовать', ['10 кредитов в день ≈ 3 поста', 'картинки с водяным знаком', '1 канал', 'тренды — только смотреть'], 'Начать', ''],
+      ['Lite', '0 ₸', 'попробовать', ['50 кредитов в день ≈ 1 пост с картинками', 'картинки с водяным знаком', '1 канал', 'тренды — только смотреть'], 'Начать', ''],
       ['Creator', '6 990 ₸', 'блогер, малый бизнес', ['600 кредитов ≈ 50 картинок', 'ДНК бренда', '3 канала, автопостинг', 'без водяных знаков', 'рилсы по кадрам — за кредиты'], 'Выбрать', 'hot'],
       ['Pro', '24 990 ₸', 'SMM, дизайнер, агентство', ['2 500 кредитов', 'до 10 брендов-клиентов', 'команда 3 человека', 'согласование и отчёты', 'приоритетная очередь'], 'Выбрать', ''],
       ['Studio', '59 990 ₸', 'сценаристы, продюсеры', ['6 000 кредитов', 'разбор сценария агентами', 'герои, локации, кадры, видео', '10 участников, 5 проектов', 'шлюз в студийный конвейер'], 'Выбрать', ''],
@@ -782,7 +870,7 @@
     $('#pform').addEventListener('submit', (e) => { e.preventDefault(); const q = $('#pq').value.trim(); if (!q) return; $('#pq').value = ''; ask(q); });
   })();
 
-  window.JASA = { api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink };
+  window.JASA = { openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink };
   window.addEventListener('jasa:ready', route);
   if (!window.JASA_DEFER) route();
 })();

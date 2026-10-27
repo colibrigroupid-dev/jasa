@@ -14,6 +14,7 @@
 
   function remember(b) {
     S.brandId = b ? b.id : null; S.brandName = b ? b.name : null;
+    if (b && J.openSec) J.openSec('brend');
     store.set('brandId', S.brandId); store.set('brandName', S.brandName);
   }
 
@@ -25,7 +26,7 @@
 
   async function screen() {
     const main = $('#main');
-    main.innerHTML = topbar('Карта бренда') + '<div id="bk"><div class="working"><span class="spin"></span><span>Открываю карту…</span></div></div>';
+    main.innerHTML = topbar('Мой бренд') + '<div id="bk"><div class="working"><span class="spin"></span><span>Открываю карту…</span></div></div>';
     try { await load(); } catch (e) { $('#bk').innerHTML = `<div class="warn">${esc(e.message)}</div>`; return; }
     draw();
   }
@@ -33,14 +34,7 @@
   function draw() {
     const box = $('#bk'); if (!box) return;
     const b = B();
-    if (!b) {
-      box.innerHTML = `<section style="max-width:780px"><h2>Карта бренда — всё о вас в одном месте, и каждая модель берёт отсюда сама.</h2>
-        <p class="muted" style="margin-top:12px">Лого, миссия, голос автора, палитра, продукты, лица, референсы стиля, запреты и правила — по папкам. Копирайтер пишет вашим слогом, художники держат ваши цвета и стиль, лого ставится оригиналом. Помощник соберёт карту из ваших постов и сайта и спросит, чего не хватает.</p>
-        <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap"><button class="btn accent" id="bnew">Создать карту бренда</button>${arr(D.shablony).includes('welluma') ? '<button class="btn quiet" id="btpl">Собрать карту Welluma</button>' : ''}</div></section>`;
-      $('#bnew').onclick = D.guest ? () => { location.hash = '#/kabinet'; } : newBrand; const t = $('#btpl'); if (t) t.onclick = () => template('welluma');
-      if (D.guest) { $('#bnew').textContent = 'Войти через Telegram, чтобы создать карту'; }
-      return;
-    }
+    if (!b) { quickStart(box); return; }
     const all = D.schema.map((s) => s.kod).concat((b.custom || []).map((c) => c.kod));
     if (!all.includes(cur)) cur = all[0];
     box.innerHTML = `
@@ -48,7 +42,7 @@
         <div class="ring sm" style="--v:${b.percent}"><b>${b.percent}<small>%</small></b></div>
         <div style="min-width:0"><div class="bsel"><select id="bsel">${D.brands.map((x) => `<option value="${esc(x.id)}" ${x.id === b.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
           <button class="chip" id="bnew">+ Бренд</button>${arr(D.shablony).includes('welluma') && !D.brands.some((x) => x.name === 'Welluma') ? '<button class="chip" id="btpl">Карта Welluma</button>' : ''}</div>
-          <p class="small muted" style="margin-top:6px">Карта заполнена на ${b.percent} %. Всё, что здесь лежит, модели берут сами — в боте и на сайте. ${S.useBrend ? '' : '<b>Сейчас выключено на «Создать».</b>'}</p></div>
+          <p class="small muted" style="margin-top:6px">${b.percent < 30 ? 'Основа есть — посты уже пишутся от вашего имени. Дальше по желанию: каждая папка делает их точнее.' : 'Заполнено на ' + b.percent + ' %. Всё отсюда JASA берёт сама — в боте и на сайте.'} ${S.useBrend ? '' : '<b>Сейчас выключено на «Создать».</b>'}</p></div>
         <label class="btoggle"><input type="checkbox" id="buse" ${S.useBrend ? 'checked' : ''}> использовать в генерации</label>
       </div>
       <div class="bgrid">
@@ -163,6 +157,35 @@
       lastQ = arr(r.voprosy); if (r.sleduyushchij && !lastQ.some((x) => x.vopros === r.sleduyushchij)) lastQ.unshift({ kod: q.kod, vopros: r.sleduyushchij });
       await load(); cur = q.kod; draw(); toast('Внесено в «' + ((D.schema.find((s) => s.kod === q.kod) || {}).name || q.kod) + '»');
     } catch (e) { toast(e.message); inp.disabled = false; }
+  }
+
+  // Первый раз — две строки и лого по желанию. Остальные папки человек заполняет потом сам, если захочет.
+  function quickStart(box) {
+    const head = '<section style="max-width:620px"><h2>Пишем вашим голосом</h2><p class="muted" style="margin-top:10px">Три ответа сейчас — остальное потом и по желанию.</p></section>';
+    if (D.guest) { box.innerHTML = head + '<a class="btn accent" href="#/kabinet" style="margin-top:16px">Войти через Telegram</a><p class="dim small" style="margin-top:10px">Бренд сохраняется за вами — поэтому нужен вход.</p>'; return; }
+    box.innerHTML = head + `<form class="card qsform" id="qsf" autocomplete="off" style="max-width:620px;margin-top:18px">
+      <div class="field"><label for="qn">Как называетесь</label><input id="qn" placeholder="Кофейня «Тыква», блог @aigerim_style" required maxlength="60"></div>
+      <div class="field"><label for="qf">Чем занимаетесь и для кого</label><div class="inrow"><input id="qf" placeholder="Варим кофе для студентов у КазНУ, недорого и быстро" maxlength="200"><button type="button" class="icobtn" id="qmic" title="Сказать голосом"><svg><use href="#i-mic"/></svg></button></div></div>
+      <div class="field"><label>Как говорите с клиентами</label><div class="chips" id="qt">${[['На «ты», просто', 'простой, дружеский', 'на «ты»'], ['На «вы», вежливо', 'вежливый, спокойный', 'на «вы»'], ['С юмором', 'лёгкий, с юмором', 'на «ты»']].map(([l, t, o], i) => `<button type="button" class="chip ${i === 0 ? 'on' : ''}" data-ton="${t}" data-ob="${o}">${l}</button>`).join('')}</div></div>
+      <div class="field"><label for="ql">Лого <span class="dim">— по желанию, PNG без фона</span></label><input id="ql" type="file" accept="image/png,image/jpeg,image/webp"></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" type="submit">Сохранить</button>${arr(D.shablony).includes('welluma') ? '<button class="btn quiet" type="button" id="btpl">Карта Welluma</button>' : ''}</div></form>`;
+    $('#qt').addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (!c) return; $$('#qt .chip').forEach((x) => x.classList.toggle('on', x === c)); });
+    voice($('#qmic'), (t) => { const f = $('#qf'); f.value = (f.value ? f.value + ' ' : '') + t; });
+    const t = $('#btpl'); if (t) t.onclick = () => template('welluma');
+    $('#qsf').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = $('#qsf [type=submit]'); btn.disabled = true; btn.textContent = 'Сохраняю…';
+      try {
+        const r = await api('/api/brend/sozdat', { name: $('#qn').value.trim() });
+        const bid = r.brand.id; const fraza = $('#qf').value.trim();
+        if (fraza) await api('/api/brend/sohranit', { bid, kod: 'missiya', polya: { odnoj_frazoj: fraza } });
+        const ton = $('#qt .chip.on'); if (ton) await api('/api/brend/sohranit', { bid, kod: 'golos', polya: { ton: ton.dataset.ton, obrashchenie: ton.dataset.ob } });
+        const file = $('#ql').files[0];
+        if (file) { try { await api('/api/brend/fajl', { bid, kod: 'logo', fajl: await prepare(file, 'logo') }); } catch (er) { toast('Лого: ' + er.message); } }
+        await load(); cur = 'missiya'; draw();
+        toast('Готово. Следующий пост — уже в вашем стиле');
+      } catch (er) { toast(er.message); btn.disabled = false; btn.textContent = 'Сохранить'; }
+    });
   }
 
   async function newBrand() {
