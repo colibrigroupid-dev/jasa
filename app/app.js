@@ -378,11 +378,8 @@
     } catch (e) { toast('Лого: ' + e.message); btn.disabled = false; btn.textContent = 'С лого'; }
   }
   const AI_MARK = '\n\nСоздано с помощью ИИ · JASA';
-  function lightbox(src, cap) {
-    let lb = $('#lb'); if (!lb) { lb = document.createElement('div'); lb.id = 'lb'; lb.innerHTML = '<img alt=""><div class="lbcap"></div><button class="lbx" aria-label="Закрыть">×</button>'; document.body.appendChild(lb); lb.addEventListener('click', () => lb.classList.remove('on')); document.addEventListener('keydown', (e) => e.key === 'Escape' && lb.classList.remove('on')); }
-    $('img', lb).src = src; $('.lbcap', lb).textContent = cap || 'Полный размер · создано с помощью ИИ'; lb.classList.add('on');
-  }
-  document.addEventListener('click', (e) => { const im = e.target.closest('.sheet img, .imgs img'); if (im && !e.target.closest('button')) lightbox(im.currentSrc || im.src, im.closest('.img') && im.closest('.img').querySelector('.cap') && im.closest('.img').querySelector('.cap').textContent); });
+  // Просмотр фото и видео — общий модуль lupa.js (эффект воды); нажатия по картинкам он ловит сам.
+  function lightbox(src, cap) { if (window.JasaLupa) window.JasaLupa.open({ src, cap: cap || 'Полный размер · создано с помощью ИИ' }); else window.open(src, '_blank'); }
   function copyText(t, btn) { navigator.clipboard && navigator.clipboard.writeText(t + AI_MARK).then(() => { const o = btn.textContent; btn.textContent = 'Скопировано'; setTimeout(() => (btn.textContent = o), 1200); }); }
   function toast(msg) {
     let t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:var(--ink);color:var(--ink-fg);padding:12px 18px;border-radius:14px;z-index:50;max-width:90vw;font-size:15px;box-shadow:var(--shadow)'; document.body.appendChild(t); }

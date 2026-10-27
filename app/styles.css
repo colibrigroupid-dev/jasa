@@ -261,7 +261,6 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:var(--fs-small)
 @media (max-width:760px){#bk section .btn{white-space:normal;text-align:center}#bk,.bgrid>*{min-width:0;max-width:100%}.bnav{max-width:calc(100vw - 32px)}}
 
 /* лайтбокс и превью Telegram */
-#lb{position:fixed;inset:0;background:rgba(10,12,20,.92);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:20px;cursor:zoom-out}#lb.on{display:flex}#lb img{max-width:96vw;max-height:84vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)}#lb .lbcap{color:#fff;font-size:13px;opacity:.8}#lb .lbx{position:absolute;top:14px;right:18px;color:#fff;font-size:34px;line-height:1;background:none}
 .sheet img,.imgs img{cursor:zoom-in}
 .tgwrap{margin-top:12px;padding:14px;border-radius:14px;background:#DCE8F2;color:#1C2133}:root[data-theme="dark"] .tgwrap{background:#17212b}
 .tgmsg{background:#fff;border-radius:14px 14px 14px 4px;padding:10px 12px;max-width:420px;box-shadow:0 1px 1px rgba(0,0,0,.08);margin-bottom:8px}:root[data-theme="dark"] .tgmsg{background:#182533;color:#f2f2f2}
