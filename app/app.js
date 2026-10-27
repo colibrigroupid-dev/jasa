@@ -175,7 +175,7 @@
       const h = e.target.closest('.hooks button'); if (h) { $$('.hooks button', el).forEach((b) => b.classList.toggle('on', b === h)); return; }
       const d = e.target.closest('.draw'); if (d) { drawImage(d, item); return; }
       const vg = e.target.closest('.vgo'); if (vg) { startVideo(vg, item, el); return; }
-      const ch = e.target.closest('.vidpanel .chip'); if (ch) { const k = ch.dataset.res ? 'data-res' : 'data-ratio'; $$('.chip[' + k + ']', ch.parentElement).forEach((c) => c.classList.toggle('on', c === ch)); const vb = $('.vgo', ch.closest('.vidpanel')); if (vb) vb.textContent = 'Снять · 5 с · ' + ({ '480p': 15, '720p': 35, '1080p': 80 }[($('.chip.on[data-res]', ch.closest('.vidpanel')) || {}).dataset.res || '720p']) + ' кр'; return; }
+      const ch = e.target.closest('.vidpanel .chip'); if (ch) { const k = ch.dataset.res ? 'data-res' : 'data-ratio'; $$('.chip[' + k + ']', ch.parentElement).forEach((c) => c.classList.toggle('on', c === ch)); const vb = $('.vgo', ch.closest('.vidpanel')); if (vb) vb.textContent = 'Снять · 5 с · ' + ({ '480p': 57, '720p': 128, '1080p': 312 }[($('.chip.on[data-res]', ch.closest('.vidpanel')) || {}).dataset.res || '720p']) + ' кр'; return; }
       const c = e.target.closest('[data-copy]'); if (c) { copyText(c.dataset.copy === 'self' ? c.closest('.sheet').innerText : $(c.dataset.copy, el).innerText, c); }
     });
     return el;
@@ -247,7 +247,7 @@
     const pr = (item.promty && item.promty.video) || (item.result && item.result.scenes ? { prompt: [item.result.hook, ...arr(item.result.scenes).map((s) => (s.t || '') + ': ' + (s.kadr || '')), 'Sound: synchronous natural noises, no music. Photorealistic, warm light, Kazakhstani people.'].filter(Boolean).join(' ') } : null);
     return `<div class="vidpanel rv" style="margin-top:18px;padding:14px 16px;border-radius:var(--r-sm);background:var(--surface-2)">
       <span class="caps">Снять ролик</span>
-      <div class="chips" style="margin:8px 0">${['480p', '720p', '1080p'].map((q, i) => `<button class="chip ${i === 1 ? 'on' : ''}" data-res="${q}">${q} · ${{ '480p': 15, '720p': 35, '1080p': 80 }[q]} кр</button>`).join('')}</div>
+      <div class="chips" style="margin:8px 0">${['480p', '720p', '1080p'].map((q, i) => `<button class="chip ${i === 1 ? 'on' : ''}" data-res="${q}">${q} · ${{ '480p': 57, '720p': 128, '1080p': 312 }[q]} кр</button>`).join('')}</div>
       <div class="chips" style="margin:0 0 8px">${['9:16', '16:9', '1:1'].map((q, i) => `<button class="chip ${i === 0 ? 'on' : ''}" data-ratio="${q}">${q}</button>`).join('')}</div>
       <label class="small dim">Референсы (фото героя, продукта, место) — до 4 файлов <input type="file" class="vrefs" accept="image/*,video/mp4" multiple style="display:block;margin:6px 0"></label>
       <textarea class="vprompt" rows="3" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;background:var(--field);color:var(--ink)" placeholder="Промптер уже собрал описание ролика — можно поправить словами">${esc(pr && pr.prompt || '')}</textarea>
