@@ -26,7 +26,13 @@
     spentJobs: store.get('spentJobs', {}),
     pollToken: 0,
     session: store.get('session', null),
+    brandId: store.get('brandId', null),
+    brandName: store.get('brandName', null),
     me: null,
+    ceny: { image: 12, zadanie: { post: 45, afisha: 45, karusel: 45, rils: 6, plan: 6, dna: 6 }, depo_prochitat: 2 },
+    recepty: [],
+    stil: store.get('stil', []),
+    lastError: '',
   };
   function spend(k, ostatok) { S.credits = typeof ostatok === 'number' ? ostatok : Math.max(0, Math.round((S.credits - (k || 0)) * 10) / 10); store.set('credits', S.credits); drawCredits(); }
   function drawCredits() { $('#cred').textContent = S.credits; $('#credbar').style.width = Math.min(100, S.credits / 3) + '%'; }
@@ -50,6 +56,12 @@
     return j;
   }
   api('/api/status').then((s) => { S.status = s; }).catch(() => {});
+  api('/api/ceny').then((c) => { S.ceny = c; const p = $('#price'); if (p) p.textContent = priceLabel(S.tip); }).catch(() => {});
+  api('/api/recepty').then((r) => { S.recepty = arr(r.recepty); const box = $('#recepty'); if (box) box.innerHTML = receptyHtml(); }).catch(() => {});
+  // цена до запуска = тем же расчётом, что резерв на сервере (Plumar: «цена под кнопкой совпадает со счётом»)
+  const priceOf = (tip) => (S.ceny.zadanie && S.ceny.zadanie[tip]) || 3;
+  const priceLabel = (tip, extra) => 'до ' + (priceOf(tip) + (extra || 0)) + ' кр';
+  const LINK_RE = /https?:\/\/\S*(instagram\.com|tiktok\.com|youtu|vk\.com)\S*/;
   function loadMe() { return api('/api/me').then((m) => { S.me = m; S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
   loadMe();
 
@@ -98,39 +110,48 @@
         <p>Скажите голосом или текстом, пришлите ссылку на чужой рилс как пример подачи — и за вас работает команда: копирайтер, промптер, три художника, рилсмейкер. К каждому посту три картинки на выбор.</p>
         <div class="examples" id="examples">${EXAMPLES.map(([t, e]) => `<button data-tip="${t}" data-text="${esc(e)}">${esc(e)}</button>`).join('')}</div>
       </section>
+      <section class="recwrap"><div class="rechead"><span class="caps">Рецепты · готовая задача за 3 поля</span><span class="dim small">цена видна до запуска · списываем только за готовое</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
       <div class="feed" id="feed"></div>
       <div class="composer" id="composer">
         <div class="box">
+          ${stilPill()}
           <textarea id="ask" rows="1" placeholder="Скажите голосом (микрофон справа) или напишите: пост про открытие второго салона в Астане, тёплый тон"></textarea>
           <div class="row">
             <div class="chips" id="tips">${Object.entries(TIPS).map(([k, v]) => `<button class="chip ${k === S.tip ? 'on' : ''}" data-tip="${k}">${v}</button>`).join('')}</div>
             <div class="send">
               <button class="chip ${S.yazyk === 'kz' ? 'on' : ''}" id="lang" title="Язык результата">${S.yazyk === 'kz' ? 'Қаз' : 'Рус'}</button>
               <button class="icobtn" id="mic" title="Сказать голосом"><svg><use href="#i-mic"/></svg></button>
+              <span class="price" id="price" title="Больше этой суммы не спишем. Текст — по факту, картинки — только готовые">${priceLabel(S.tip)}</span>
               <button class="icobtn go" id="go" title="Сделать"><svg><use href="#i-send"/></svg></button>
             </div>
           </div>
         </div>
       </div>`;
     const ta = $('#ask');
-    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(200, ta.scrollHeight) + 'px'; };
+    // тип задания, выбранная кнопка и цена меняются только здесь — цена не отстаёт от типа
+    // как у Plumar One: цена переводится в результат — «хватит на N таких»
+    const drawPrice = () => { const link = LINK_RE.test(ta.value) ? (S.ceny.transcribe || 1) : 0; const n = Math.floor((+S.credits || 0) / (priceOf(S.tip) + link)); $('#price').textContent = priceLabel(S.tip, link) + (n > 0 ? ' · хватит на ' + n : ' · не хватает'); $('#price').classList.toggle('low', n < 1); $('#price').title = link ? 'Включает разбор ссылки-примера · больше этой суммы не спишем' : 'Больше этой суммы не спишем. Текст — по факту, картинки — только готовые'; };
+    const setTip = (tip) => { S.tip = TIPS[tip] ? tip : 'post'; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c.dataset.tip === S.tip)); drawPrice(); };
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(200, ta.scrollHeight) + 'px'; drawPrice(); };
     ta.addEventListener('input', grow);
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
-    $('#tips').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; S.tip = b.dataset.tip; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c === b)); ta.focus(); });
+    $('#tips').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (!b) return; setTip(b.dataset.tip); ta.focus(); });
+    $('#recepty').addEventListener('click', (e) => { const b = e.target.closest('[data-rec]'); if (!b) return; const r = S.recepty.find((x) => x.id === b.dataset.rec); if (r) receptForm(r, (tip, text) => { setTip(tip); ta.value = text; grow(); send(); }); });
+    const sp = $('#stilpill'); if (sp) sp.addEventListener('click', () => { S.stil = []; store.set('stil', S.stil); sp.remove(); toast('Стиль из депо снят'); });
     $('#lang').addEventListener('click', (e) => { S.yazyk = S.yazyk === 'kz' ? 'ru' : 'kz'; e.currentTarget.textContent = S.yazyk === 'kz' ? 'Қаз' : 'Рус'; e.currentTarget.classList.toggle('on', S.yazyk === 'kz'); });
-    $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; S.tip = b.dataset.tip; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c.dataset.tip === S.tip)); ta.value = b.dataset.text; grow(); send(); });
+    $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); send(); });
     $('#go').addEventListener('click', send);
     voice($('#mic'), (t) => { ta.value = (ta.value ? ta.value + ' ' : '') + t; grow(); });
     const pre = sessionStorage.getItem('jasa:prefill');
-    if (pre) { const p = JSON.parse(pre); sessionStorage.removeItem('jasa:prefill'); S.tip = p.tip; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c.dataset.tip === S.tip)); ta.value = p.text; grow(); }
+    if (pre) { const p = JSON.parse(pre); sessionStorage.removeItem('jasa:prefill'); setTip(p.tip); ta.value = p.text; grow(); }
     S.feed.slice().reverse().slice(0, 8).forEach((item) => $('#feed').appendChild(sheet(item)));
     $('#brandpill') && $('#brandpill').addEventListener('click', () => { S.useBrend = !S.useBrend; store.set('useBrend', S.useBrend); route(); });
 
     async function send() {
       let text = ta.value.trim();
       if (!text) { ta.focus(); return; }
-      let primer = null; const link = (text.match(/https?:\/\/\S+/) || [])[0];
-      if (link && /instagram\.com|tiktok\.com|youtu|vk\.com/.test(link)) {
+      let primer = null; const link = (text.match(LINK_RE) || [])[0];
+      if (link) {
         toast('Разбираю ролик-пример…');
         try { const r = await api('/api/transcribe', { url: link }); primer = r.text; spend(1, r.ostatok); text = text.replace(link, '').trim() || 'пост в подаче этого примера'; } catch (e) { toast('Пример не разобран: ' + e.message); }
       }
@@ -140,20 +161,49 @@
       ta.value = ''; grow();
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       try {
-        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brend: S.useBrend && S.brend ? S.brend : null, ploshchadka: item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram', primer });
-        Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty });
+        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram', primer, depo: S.stil.length ? S.stil : undefined });
+        Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null });
         spend(res.kredity, res.ostatok);
       } catch (e) {
-        Object.assign(item, { state: 'error', error: e.message });
+        Object.assign(item, { state: 'error', error: e.message }); S.lastError = e.message;
       }
       S.feed.push(item); S.feed = S.feed.slice(-20); store.set('feed', S.feed);
       el.replaceWith(sheet(item));
     }
   }
 
+  function receptyHtml() {
+    if (!S.recepty.length) return '<span class="dim small">Рецепты загружаются…</span>';
+    return S.recepty.map((r) => `<button class="rec" data-rec="${esc(r.id)}"><span class="kind">${esc(TIPS[r.tip] || r.tip)}</span><b>${esc(r.nazvanie)}</b><small>${esc(r.dlya)}</small><span class="rp">${esc(priceLabel(r.tip))}</span></button>`).join('');
+  }
+  function receptForm(r, onGo) {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = `<form class="mbox" autocomplete="off"><button type="button" class="lbx mx" aria-label="Закрыть">×</button><span class="caps">${esc(TIPS[r.tip] || r.tip)} · рецепт</span><h3 style="margin:6px 0 4px">${esc(r.nazvanie)}</h3><p class="small muted" style="margin-bottom:14px">${esc(r.opisanie)}</p>
+      ${r.polya.map((p, i) => `<div class="field"><label for="rf${i}">${esc(p.label)}</label><input id="rf${i}" data-k="${esc(p.k)}" placeholder="${esc(p.ph)}"></div>`).join('')}
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px"><button class="btn accent" type="submit">Сделать · ${esc(priceLabel(r.tip))}</button><span class="dim small">пустое поле агент не выдумает — пометит «[уточнить]»</span></div></form>`;
+    document.body.appendChild(m);
+    const close = () => m.remove();
+    m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('.mx')) close(); });
+    document.addEventListener('keydown', function esc1(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc1); } });
+    $('input', m).focus();
+    const btn = $('[type=submit]', m);
+    m.addEventListener('input', () => { const link = $$('input[data-k]', m).some((i) => LINK_RE.test(i.value)) ? (S.ceny.transcribe || 1) : 0; btn.textContent = 'Сделать · ' + priceLabel(r.tip, link); });
+    $('form', m).addEventListener('submit', (e) => {
+      e.preventDefault();
+      const v = {}; $$('input[data-k]', m).forEach((i) => { v[i.dataset.k] = i.value.trim(); });
+      if (!Object.values(v).some(Boolean)) { toast('Заполните хотя бы одно поле'); return; }
+      const text = r.shablon.replace(/\{([a-z_]+)\}/g, (_, k) => v[k] || '[уточнить]');
+      close(); onGo(r.tip, text);
+    });
+  }
+  function stilPill() {
+    if (!S.stil.length) return '';
+    return `<button class="pill on stilpill" id="stilpill" type="button" title="Снять стиль"><span class="dot"></span>Стиль из депо · ${S.stil.length} ${S.stil.length === 1 ? 'кадр' : 'кадра'} ×</button>`;
+  }
+
   function brandPill() {
-    if (!S.brend) return `<a class="pill" href="#/brend">Голос бренда не задан →</a>`;
-    return `<button class="pill ${S.useBrend ? 'on' : ''}" id="brandpill"><span class="dot"></span>${esc(S.brend.name || 'Мой бренд')}</button>`;
+    if (!S.brandId && !S.brend) return `<a class="pill" href="#/brend">Карта бренда не собрана →</a>`;
+    return `<button class="pill ${S.useBrend ? 'on' : ''}" id="brandpill" title="Генерация берёт всё из карты бренда"><span class="dot"></span>${esc(S.brandName || (S.brend && S.brend.name) || 'Мой бренд')}${S.useBrend ? '' : ' · выкл'}</button>`;
   }
 
   // лист результата
@@ -178,6 +228,7 @@
     el.addEventListener('click', (e) => {
       const h = e.target.closest('.hooks button'); if (h) { $$('.hooks button', el).forEach((b) => b.classList.toggle('on', b === h)); return; }
       const d = e.target.closest('.draw'); if (d) { drawImage(d, item); return; }
+      const wl = e.target.closest('.withlogo'); if (wl) { withLogo(wl); return; }
       const vg = e.target.closest('.vgo'); if (vg) { startVideo(vg, item, el); return; }
       const ch = e.target.closest('.vidpanel .chip'); if (ch) { const k = ch.dataset.res ? 'data-res' : 'data-ratio'; $$('.chip[' + k + ']', ch.parentElement).forEach((c) => c.classList.toggle('on', c === ch)); const vb = $('.vgo', ch.closest('.vidpanel')); if (vb) vb.textContent = 'Снять · 5 с · ' + ({ '480p': 59, '720p': 131, '1080p': 321 }[($('.chip.on[data-res]', ch.closest('.vidpanel')) || {}).dataset.res || '720p']) + ' кр'; return; }
       const c = e.target.closest('[data-copy]'); if (c) { copyText(c.dataset.copy === 'self' ? c.closest('.sheet').innerText : $(c.dataset.copy, el).innerText, c); }
@@ -202,7 +253,8 @@
 
   function threeImgs(item) {
     const its = arr(item.imgItems);
-    if (its.length) return `<div class="caps rv" style="margin-top:16px">Три варианта картинки · выберите свой</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy"><div class="cap">вариант ${esc(it.variant)}</div></div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
+    const logo = item.brand && item.brand.logo;
+    if (its.length) return `<div class="caps rv" style="margin-top:16px">Три варианта картинки · выберите свой${logo ? ' · лого ставится оригиналом' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(API_BASE + it.url)}" data-logo="${esc(API_BASE + logo.url)}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
     if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Художник рисует три варианта картинки, две-три минуты…</span></div>`;
     if (item.imgError) return `<div class="warn rv">Картинки: ${esc(item.imgError)}</div>`;
     return '';
@@ -300,6 +352,31 @@
       const i = card.dataset.i; if (item && item.result) { if (i !== '' && arr(item.result.images)[i]) item.result.images[i].url = r.image; else if (item.tip === 'rils' && item.result.cover) item.result.cover.url = r.image; else if (item.tip === 'afisha') { const k = $$('.var', btn.closest('.sheet')).indexOf(card); if (arr(item.result.variants)[k]) item.result.variants[k].url = r.image; } store.set('feed', S.feed); }
     } catch (e) { btn.disabled = false; btn.textContent = 'Нарисовать · 12 кр'; toast(e.message); }
   }
+  // лого бренда — оригинальный файл поверх готовой картинки (модель лого не рисует)
+  const loadImg = (src) => new Promise((res, rej) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => rej(new Error('картинка не загрузилась')); im.src = src; });
+  function trimAlpha(im) {
+    const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data; let t = c.height, l = c.width, r = 0, b = 0;
+    for (let y = 0; y < c.height; y += 2) for (let xx = 0; xx < c.width; xx += 2) { if (d[(y * c.width + xx) * 4 + 3] > 12) { if (y < t) t = y; if (y > b) b = y; if (xx < l) l = xx; if (xx > r) r = xx; } }
+    if (r <= l || b <= t) return c;
+    const o = document.createElement('canvas'); o.width = r - l + 1; o.height = b - t + 1; o.getContext('2d').drawImage(c, l, t, o.width, o.height, 0, 0, o.width, o.height); return o;
+  }
+  async function compose(src, logoSrc, ugol) {
+    const [im, lg] = await Promise.all([loadImg(src), loadImg(logoSrc)]);
+    const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+    const L = trimAlpha(lg); const w = Math.round(c.width * (L.width / L.height > 2 ? 0.30 : 0.16)); const h = Math.round(w * L.height / L.width); const pad = Math.round(c.width * 0.04);
+    const u = String(ugol || '').toLowerCase(); const left = /лев/.test(u); const top = /верх/.test(u);
+    x.drawImage(L, left ? pad : c.width - w - pad, top ? pad : c.height - h - pad, w, h);
+    return c.toDataURL('image/jpeg', 0.92);
+  }
+  async function withLogo(btn) {
+    btn.disabled = true; btn.textContent = 'Ставлю…';
+    try {
+      const url = await compose(btn.dataset.src, btn.dataset.logo, btn.dataset.ugol);
+      const card = btn.closest('.img'); const im = card.querySelector('img'); im.src = url;
+      btn.textContent = 'Скачать'; btn.disabled = false; btn.classList.remove('withlogo'); btn.onclick = (e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = url; a.download = 'jasa-s-logo.jpg'; a.click(); };
+    } catch (e) { toast('Лого: ' + e.message); btn.disabled = false; btn.textContent = 'С лого'; }
+  }
   const AI_MARK = '\n\nСоздано с помощью ИИ · JASA';
   function lightbox(src, cap) {
     let lb = $('#lb'); if (!lb) { lb = document.createElement('div'); lb.id = 'lb'; lb.innerHTML = '<img alt=""><div class="lbcap"></div><button class="lbx" aria-label="Закрыть">×</button>'; document.body.appendChild(lb); lb.addEventListener('click', () => lb.classList.remove('on')); document.addEventListener('keydown', (e) => e.key === 'Escape' && lb.classList.remove('on')); }
@@ -309,6 +386,7 @@
   function copyText(t, btn) { navigator.clipboard && navigator.clipboard.writeText(t + AI_MARK).then(() => { const o = btn.textContent; btn.textContent = 'Скопировано'; setTimeout(() => (btn.textContent = o), 1200); }); }
   function toast(msg) {
     let t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:var(--ink);color:var(--ink-fg);padding:12px 18px;border-radius:14px;z-index:50;max-width:90vw;font-size:15px;box-shadow:var(--shadow)'; document.body.appendChild(t); }
+    if (/не |ошиб|законч|нужно|нет |исчерпан|войдите/i.test(String(msg))) S.lastError = String(msg);
     t.textContent = msg; t.style.opacity = 1; clearTimeout(t._h); t._h = setTimeout(() => (t.style.opacity = 0), 4000);
   }
 
@@ -376,7 +454,7 @@
           <div class="field"><label>Ссылка на ваш Instagram или Telegram-канал</label><input id="handle" placeholder="https://instagram.com/… или t.me/…" value="${esc((S.brend && S.brend.handle) || '')}"></div>
           <div class="warn" style="margin:-4px 0 14px"><b>Анализ аккаунта:</b> по ссылке платформа пройдёт по всем вашим постам, темам, охватам и комментариям и соберёт ДНК автоматически. Для полного анализа и автопостинга вы дадите доступ к аккаунту через Meta — кнопка появится в первой волне. Пока вставьте 3–5 постов ниже.</div>
           <div class="field"><label>Ваши посты или описание</label><textarea id="posts" placeholder="Вставьте 3–5 постов целиком или напишите: кто вы, что продаёте, кому, как любите говорить с людьми">${esc((S.brend && S.brend.source) || '')}</textarea></div>
-          <div style="display:flex;gap:8px;align-items:center"><button class="btn accent" id="mkdna">Собрать ДНК · ~3 кр</button><button class="icobtn" id="mic2" title="Рассказать голосом"><svg><use href="#i-mic"/></svg></button><span class="dim small">Instagram/Telegram подключим на следующем шаге</span></div>
+          <div style="display:flex;gap:8px;align-items:center"><button class="btn accent" id="mkdna">Собрать ДНК · до 6 кр</button><button class="icobtn" id="mic2" title="Рассказать голосом"><svg><use href="#i-mic"/></svg></button><span class="dim small">Instagram/Telegram подключим на следующем шаге</span></div>
         </div>
         <div class="card dna" id="dnaout">${S.brend ? dnaHtml(S.brend) : '<p class="muted">Здесь появится ДНК: голос, темы, палитра, чего не писать.</p>'}</div>
       </div>`;
@@ -391,7 +469,7 @@
         store.set('brend', S.brend); spend(r.kredity, r.ostatok);
         $('#dnaout').innerHTML = dnaHtml(S.brend);
       } catch (e) { $('#dnaout').innerHTML = `<div class="warn"><b>Не получилось:</b> ${esc(e.message)}</div>`; }
-      b.disabled = false; b.textContent = 'Собрать ДНК · ~3 кр';
+      b.disabled = false; b.textContent = 'Собрать ДНК · до 6 кр';
     });
   }
   function dnaHtml(d) {
@@ -522,11 +600,102 @@
   // БИБЛИОТЕКА, ТАРИФЫ
   // =====================================================================
   function biblioteka() {
-    main.innerHTML = topbar('Библиотека', '<a class="pill" href="#/kabinet">Кабинет →</a> <a class="pill" href="#/tarify">Тарифы →</a>') + `<section style="max-width:760px"><h2>Всё, что вы сделали, — в одном месте</h2><p class="muted" style="margin-top:10px">Тексты, картинки, ролики, бренд-кит и версии. Пока — последние результаты этого кабинета.</p></section>
+    main.innerHTML = topbar('Библиотека', '<a class="pill" href="#/kabinet">Кабинет →</a> <a class="pill" href="#/tarify">Тарифы →</a>') + `
+      <section class="depo" id="depo">
+        <div class="dhead"><div><span class="caps">Депо · ваши референсы</span><h2 style="margin:6px 0 8px">Кадры, которые вам нравятся, — в одном клике от поста</h2><p class="muted small" style="max-width:640px">Перетащите картинки сюда, вставьте из буфера (Ctrl+V) или выберите файлом. JASA прочитает кадр глазами оператора — крупность, свет, оптику, настроение — и достанет палитру. «Взять стиль» передаст художникам только свет, цвет и фактуру, без чужого сюжета.</p></div></div>
+        <div class="drop" id="drop"><input type="file" id="dfile" accept="image/*" multiple class="hide"><b>Перетащите картинки или нажмите</b><span class="dim small">JPEG, PNG, WebP · палитра бесплатно · <label class="chk"><input type="checkbox" id="dread" checked> прочитать кадр · до ${esc(S.ceny.depo_prochitat || 2)} кр</label></span></div>
+        <div class="dtools"><input id="dq" placeholder="Поиск своими словами: ночь, крупный план, тёплый свет, еда…"><span class="dim small" id="dcnt"></span><button class="btn sm accent ${S.stil.length ? '' : 'hide'}" id="dgo">Сделать пост в этом стиле →</button></div>
+        <div class="dgrid" id="dgrid"></div>
+      </section>
+      <section style="max-width:760px;margin-top:34px"><h2>Всё, что вы сделали, — в одном месте</h2><p class="muted" style="margin-top:10px">Тексты, картинки, ролики, бренд-кит и версии. Пока — последние результаты этого кабинета.</p></section>
       <div class="feed" style="margin-top:22px" id="lib"></div>`;
+    depoInit();
     S.feed.slice().reverse().forEach((i) => $('#lib').appendChild(sheet(i)));
     if (!S.feed.length) $('#lib').innerHTML = '<p class="muted">Пусто. Создайте первый пост.</p>';
   }
+  // ---------- Депо: загрузка, палитра в браузере, чтение кадра, поиск, «взять стиль» ----------
+  let DEPO = [];
+  const authGen = () => (TG ? 'tg' : 'ses:' + (S.session || ''));   // смена аккаунта = другое поколение
+  function depoInit() {
+    const drop = $('#drop'); const fi = $('#dfile');
+    if (!S.me || S.me.guest) {
+      if (!TG && !S.session) { drop.innerHTML = '<b>Депо работает после входа через Telegram</b><span class="dim small">кадры хранятся за вами и видны и в Telegram, и на компьютере</span><a class="btn sm accent" href="#/kabinet" style="margin-top:8px">Войти</a>'; return; }
+    }
+    drop.addEventListener('click', (e) => { if (!e.target.closest('label')) fi.click(); });
+    fi.addEventListener('change', () => { depoUpload(Array.from(fi.files)); fi.value = ''; });
+    ['dragover', 'dragenter'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('on'); }));
+    ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('on'); }));
+    drop.addEventListener('drop', (e) => depoUpload(Array.from(e.dataTransfer.files || [])));
+    if (!depoInit.paste) { depoInit.paste = true; document.addEventListener('paste', (e) => { if (!$('#depo') || !$('#drop input[type=file]')) return; const f = Array.from((e.clipboardData && e.clipboardData.files) || []); if (f.length) depoUpload(f); }); }
+    $('#dq').addEventListener('input', depoDraw);
+    $('#dgo').addEventListener('click', () => { sessionStorage.setItem('jasa:prefill', JSON.stringify({ tip: 'post', text: '' })); location.hash = '#/sozdat'; });
+    $('#dgrid').addEventListener('click', async (e) => {
+      const b = e.target.closest('button[data-act]'); if (!b) { const im = e.target.closest('.dcard img'); if (im) lightbox(im.src, im.closest('.dcard').dataset.cap); return; }
+      const id = b.closest('.dcard').dataset.id;
+      if (b.dataset.act === 'stil') {
+        S.stil = S.stil.includes(id) ? S.stil.filter((x) => x !== id) : S.stil.concat(id).slice(-3);
+        store.set('stil', S.stil); depoDraw(); $('#dgo').classList.toggle('hide', !S.stil.length);
+        toast(S.stil.length ? 'Стиль: ' + S.stil.length + ' из 3 кадров — уйдёт художникам в следующий пост' : 'Стиль снят');
+      } else if (b.dataset.act === 'del') {
+        b.disabled = true;
+        try { await api('/api/depo/udalit', { id }); DEPO = DEPO.filter((x) => x.id !== id); S.stil = S.stil.filter((x) => x !== id); store.set('stil', S.stil); depoDraw(); } catch (er) { toast(er.message); b.disabled = false; }
+      } else if (b.dataset.act === 'hex') { navigator.clipboard && navigator.clipboard.writeText(b.dataset.hex); toast('Цвет ' + b.dataset.hex + ' скопирован'); }
+    });
+    const gen = authGen(); DEPO = [];
+    api('/api/depo').then((r) => { if (gen !== authGen() || !$('#dgrid')) return; DEPO = arr(r.items); const est = new Set(DEPO.map((x) => x.id)); S.stil = S.stil.filter((id) => est.has(id)); store.set('stil', S.stil); $('#dgo').classList.toggle('hide', !S.stil.length); depoDraw(); }).catch((e) => { if ($('#dgrid')) $('#dgrid').innerHTML = `<p class="warn small">${esc(e.message)}</p>`; });
+  }
+  function depoDraw() {
+    const g = $('#dgrid'); if (!g) return;
+    const q = ($('#dq').value || '').toLowerCase().trim();
+    const words = q.split(/\s+/).filter(Boolean);
+    const hit = (x) => !words.length || words.every((w) => [x.podpis, x.krupnost, x.svet, x.optika, x.nastroenie, x.zhanr, x.mesto, x.vremya].concat(arr(x.tegi)).join(' ').toLowerCase().includes(w));
+    const list = DEPO.filter(hit);
+    $('#dcnt').textContent = DEPO.length ? (q ? list.length + ' из ' + DEPO.length : DEPO.length + ' кадров') : '';
+    if (!DEPO.length) { g.innerHTML = '<p class="muted small">Пока пусто. Начните с 3–5 кадров, которые хотите повторить по настроению.</p>'; return; }
+    g.innerHTML = list.map((x) => `<article class="dcard ${S.stil.includes(x.id) ? 'sel' : ''}" data-id="${esc(x.id)}" data-cap="${esc(x.podpis || '')}"><img src="${esc(API_BASE + x.url)}" alt="${esc(x.podpis || 'референс')}" loading="lazy">
+      <div class="dpal">${arr(x.palitra).map((c) => `<button data-act="hex" data-hex="${esc(c)}" title="${esc(c)} — скопировать" style="background:${col(c, '#ccc')}"></button>`).join('')}</div>
+      <div class="dbody">${x.podpis ? `<p class="small">${esc(x.podpis)}</p>` : ''}${x.krupnost ? `<p class="dim small">${[x.krupnost, x.svet, x.optika, x.nastroenie].filter(Boolean).map(esc).join(' · ')}</p>` : '<p class="dim small">только палитра</p>'}
+      <div class="dact"><button class="btn sm ${S.stil.includes(x.id) ? 'accent' : 'quiet'}" data-act="stil">${S.stil.includes(x.id) ? 'Стиль взят ✓' : 'Взять стиль'}</button><button class="btn sm ghost" data-act="del" title="Удалить из депо">Удалить</button></div></div></article>`).join('') || '<p class="muted small">Ничего не нашлось — попробуйте другое слово.</p>';
+  }
+  async function depoUpload(files) {
+    const imgs = files.filter((f) => /^image\//.test(f.type)).slice(0, 10);
+    if (!imgs.length) { toast('Нужны картинки'); return; }
+    const prochitat = $('#dread') ? $('#dread').checked : true;
+    const gen = authGen();
+    for (const f of imgs) {
+      if (gen !== authGen() || !$('#dgrid')) { toast('Загрузка остановлена: сменился аккаунт или экран'); return; }
+      const ph = document.createElement('article'); ph.className = 'dcard wait'; ph.innerHTML = `<div class="working"><span class="spin"></span><span class="small">${prochitat ? 'Читаю кадр…' : 'Сохраняю…'}</span></div>`;
+      $('#dgrid').prepend(ph);
+      try {
+        const { b64, palitra } = await shrink(f);
+        if (gen !== authGen()) { ph.remove(); toast('Загрузка остановлена: сменился аккаунт'); return; }
+        const r = await api('/api/depo', { image: { b64, mime: 'image/jpeg' }, palitra, prochitat, istochnik: f.name });
+        if (gen === authGen()) { DEPO.unshift(r); if (typeof r.ostatok === 'number') spend(0, r.ostatok); }
+      } catch (e) { toast('Депо: ' + e.message); }
+      ph.remove(); if ($('#dgrid')) depoDraw();
+    }
+  }
+  // ужать до 1600 px JPEG и достать 5 цветов (квантование по кубам 4×4×4 — бесплатно, в браузере)
+  function shrink(file) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file); const im = new Image();
+      im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('картинка не открылась')); };
+      im.onload = () => {
+        const k = Math.min(1, 1600 / Math.max(im.width, im.height)); const c = document.createElement('canvas');
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); const x = c.getContext('2d'); x.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        const small = document.createElement('canvas'); small.width = 64; small.height = Math.max(1, Math.round(64 * c.height / c.width)); const sx = small.getContext('2d'); sx.drawImage(c, 0, 0, small.width, small.height);
+        const d = sx.getImageData(0, 0, small.width, small.height).data; const bins = {};
+        for (let i = 0; i < d.length; i += 4) { const key = (d[i] >> 6) + ',' + (d[i + 1] >> 6) + ',' + (d[i + 2] >> 6); const b = bins[key] || (bins[key] = [0, 0, 0, 0]); b[0] += d[i]; b[1] += d[i + 1]; b[2] += d[i + 2]; b[3]++; }
+        const hex = (v) => Math.round(v).toString(16).padStart(2, '0');
+        const palitra = Object.values(bins).sort((a, b) => b[3] - a[3]).slice(0, 5).map((b) => '#' + hex(b[0] / b[3]) + hex(b[1] / b[3]) + hex(b[2] / b[3]));
+        let q = 0.86, data = c.toDataURL('image/jpeg', q);
+        while (data.length > 3_000_000 && q > 0.5) { q -= 0.12; data = c.toDataURL('image/jpeg', q); }
+        res({ b64: data.split(',')[1], palitra });
+      };
+      im.src = url;
+    });
+  }
+
   // =====================================================================
   // ЛИЧНЫЙ КАБИНЕТ (вход с компьютера через Telegram)
   // =====================================================================
@@ -555,7 +724,7 @@
         <p class="small dim" style="margin-top:10px">Цены пакетов предварительные.</p></div>
       </div>
       <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:var(--accent)">−${esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто — создайте первый пост.</p>'}</div>`;
-    const lo = $('#logout'); if (lo) lo.addEventListener('click', async () => { try { await api('/api/logout', {}); } catch (e) { /* и так выйдем */ } S.session = null; store.set('session', null); S.me = null; toast('Вы вышли'); loadMe(); kabinet(); });
+    const lo = $('#logout'); if (lo) lo.addEventListener('click', async () => { try { await api('/api/logout', {}); } catch (e) { /* и так выйдем */ } S.session = null; store.set('session', null); S.me = null; S.stil = []; store.set('stil', []); toast('Вы вышли'); loadMe(); kabinet(); });
     k.addEventListener('click', async (e) => { const b = e.target.closest('[data-paket]'); if (!b) return; b.disabled = true; try { await api('/api/popolnit', { paket: b.dataset.paket }); toast('Заявка принята — ответим в Telegram'); } catch (er) { toast(er.message); b.disabled = false; } });
   }
   async function startLogin() {
@@ -579,10 +748,43 @@
       ['Pro', '24 990 ₸', 'SMM, дизайнер, агентство', ['2 500 кредитов', 'до 10 брендов-клиентов', 'команда 3 человека', 'согласование и отчёты', 'приоритетная очередь'], 'Выбрать', ''],
       ['Studio', '59 990 ₸', 'сценаристы, продюсеры', ['6 000 кредитов', 'разбор сценария агентами', 'герои, локации, кадры, видео', '10 участников, 5 проектов', 'шлюз в студийный конвейер'], 'Выбрать', ''],
     ];
-    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Платите за то, что делаете</h2><p class="muted" style="margin-top:10px">Кредит — одна единица работы: текст поста ≈ 3, картинка 2K — 12, пять секунд видео 720p — 131, разбор сценария ≈ 100–700. Kaspi, карта, годовая оплата −15 %. Цены — предварительные.</p></section>
+    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Платите за то, что делаете</h2><p class="muted" style="margin-top:10px">Кредит — одна единица работы: текст поста — до 6, пост с тремя картинками — до 45, картинка 2K — 12, пять секунд видео 720p — 131, разбор сценария ≈ 100–700. Kaspi, карта, годовая оплата −15 %. Цены — предварительные.</p></section>
       <div class="tiers">${T.map(([n, p, w, li, b, c]) => `<div class="tier ${c} rv"><span class="caps">${w}</span><h3>${n}</h3><div class="price">${p}<small> /мес</small></div><ul>${li.map((l) => `<li>${l}</li>`).join('')}</ul><button class="btn ${c ? 'accent' : 'quiet'}">${b}</button></div>`).join('')}</div>`;
     $$('.rv', main).forEach((n, i) => (n.style.animationDelay = i * 80 + 'ms'));
   }
 
-  route();
+  // =====================================================================
+  // ПОМОЩНИК (по образцу Plumar Support): частое — правилами и бесплатно, остальное — моделью
+  // =====================================================================
+  (function pomoshnik() {
+    const fab = document.createElement('button'); fab.className = 'fab'; fab.id = 'fab'; fab.title = 'Помощник'; fab.setAttribute('aria-label', 'Помощник');
+    fab.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M5.6 5.6l3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/></svg>';
+    const pan = document.createElement('aside'); pan.className = 'pom'; pan.id = 'pom'; pan.setAttribute('aria-label', 'Помощник JASA');
+    pan.innerHTML = `<div class="ph"><b>Помощник</b><span class="dim small">отвечает сразу · ничего не меняет без вас</span><button class="lbx px" aria-label="Закрыть">×</button></div>
+      <div class="pmsgs" id="pmsgs"><div class="pm a">Спросите про кредиты, цены, ошибку, вход с компьютера — отвечу сразу. Если не знаю, позову человека.</div></div>
+      <div class="pchips" id="pchips">${['Сколько у меня кредитов?', 'Почему не получилось?', 'Сколько стоит видео?', 'Как войти с компьютера?', 'Как пополнить?'].map((q) => `<button class="chip">${q}</button>`).join('')}</div>
+      <form class="pin" id="pform"><input id="pq" placeholder="Ваш вопрос…" autocomplete="off"><button class="icobtn go" title="Спросить"><svg><use href="#i-send"/></svg></button></form>`;
+    document.body.appendChild(fab); document.body.appendChild(pan);
+    const open = (v) => { pan.classList.toggle('on', v); fab.classList.toggle('on', v); if (v) setTimeout(() => $('#pq').focus(), 50); };
+    fab.addEventListener('click', () => open(!pan.classList.contains('on')));
+    $('.px', pan).addEventListener('click', () => open(false));
+    const msgs = $('#pmsgs');
+    const add = (cls, html) => { const d = document.createElement('div'); d.className = 'pm ' + cls; d.innerHTML = html; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; };
+    async function ask(q) {
+      add('u', esc(q)); const w = add('a', '<span class="spin"></span>');
+      const oshibka = /почему|не получ|ошибк|не работ|не выш/i.test(q) ? S.lastError : '';
+      try {
+        const r = await api('/api/pomoshch', { q, oshibka, ekran: (location.hash || '#/sozdat').slice(2) });
+        w.innerHTML = esc(r.text).replace(/\n/g, '<br>') + (arr(r.knopki).length ? '<div class="pk">' + arr(r.knopki).map(([t, h]) => /^#\//.test(h) ? `<a class="btn sm quiet" href="${esc(h)}" data-close>${esc(t)}</a>` : `<a class="btn sm quiet" href="${esc(h)}" target="_blank" rel="noopener">${esc(t)}</a>`).join('') + '</div>' : '') + (r.ist === 'model' ? '<div class="dim small" style="margin-top:6px">ответ модели · бесплатно для вас</div>' : '');
+      } catch (e) { w.textContent = 'Помощник недоступен: ' + e.message; }
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+    msgs.addEventListener('click', (e) => { if (e.target.closest('[data-close]') && window.innerWidth < 760) open(false); });
+    $('#pchips').addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (b) ask(b.textContent); });
+    $('#pform').addEventListener('submit', (e) => { e.preventDefault(); const q = $('#pq').value.trim(); if (!q) return; $('#pq').value = ''; ask(q); });
+  })();
+
+  window.JASA = { api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink };
+  window.addEventListener('jasa:ready', route);
+  if (!window.JASA_DEFER) route();
 })();
