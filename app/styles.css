@@ -45,6 +45,7 @@ p{margin:0;max-width:68ch;text-wrap:pretty}
 .nav a:hover{background:var(--surface);color:var(--ink)} .nav a.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .nav a .tag{margin-left:auto;font:500 11px/1 var(--mono);padding:4px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
 .rail .bottom{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.qr{display:inline-block;padding:12px;background:#FFFDF8;border-radius:14px;border:1px solid var(--line-soft)}.qr img,.qr canvas{display:block}
 .credits{padding:12px 14px;border-radius:14px;background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:8px}
 .credits b{font-family:var(--mono);font-weight:500;font-size:1.05rem;color:var(--ink)}
 .credits .bar{height:4px;border-radius:2px;background:var(--line-soft);margin-top:8px;overflow:hidden}.credits .bar i{display:block;height:100%;background:var(--ok);width:70%}

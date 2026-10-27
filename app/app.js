@@ -25,6 +25,8 @@
     accepted: store.get('accepted', {}),
     spentJobs: store.get('spentJobs', {}),
     pollToken: 0,
+    session: store.get('session', null),
+    me: null,
   };
   function spend(k, ostatok) { S.credits = typeof ostatok === 'number' ? ostatok : Math.max(0, Math.round((S.credits - (k || 0)) * 10) / 10); store.set('credits', S.credits); drawCredits(); }
   function drawCredits() { $('#cred').textContent = S.credits; $('#credbar').style.width = Math.min(100, S.credits / 3) + '%'; }
@@ -41,13 +43,15 @@
   async function api(path, body) {
     const headers = { 'Content-Type': 'application/json' };
     if (TG) headers['X-Tg-Init'] = TG.initData;
+    else if (S.session) headers['X-Session'] = S.session;
     const r = await fetch(API_BASE + path, body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers });
     const j = await r.json().catch(() => ({ error: 'сервер ответил не JSON' }));
     if (!r.ok) throw new Error(j.error || ('ошибка ' + r.status));
     return j;
   }
   api('/api/status').then((s) => { S.status = s; }).catch(() => {});
-  api('/api/me').then((m) => { S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); const n = $('#acctname'); if (n && m.name) n.textContent = m.name; const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'гость · ' + m.kredity + ' кр в день' : 'первая волна · пробные ' + m.trial; }).catch(() => {});
+  function loadMe() { return api('/api/me').then((m) => { S.me = m; S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
+  loadMe();
 
   // ---------- тема ----------
   const theme = TG && TG.colorScheme === 'dark' ? 'dark' : store.get('theme', 'light');
@@ -59,7 +63,7 @@
   });
 
   // ---------- маршруты ----------
-  const routes = { sozdat, trendy, brend, kanaly, scenariy, biblioteka, tarify };
+  const routes = { sozdat, trendy, brend, kanaly, scenariy, biblioteka, tarify, kabinet };
   function route() {
     const h = (location.hash || '#/sozdat').replace('#/', '').split('?')[0];
     const fn = routes[h] || sozdat;
@@ -518,10 +522,55 @@
   // БИБЛИОТЕКА, ТАРИФЫ
   // =====================================================================
   function biblioteka() {
-    main.innerHTML = topbar('Библиотека', '<a class="pill" href="#/tarify">Тарифы →</a>') + `<section style="max-width:760px"><h2>Всё, что вы сделали, — в одном месте</h2><p class="muted" style="margin-top:10px">Тексты, картинки, ролики, бренд-кит и версии. Пока — последние результаты этого кабинета.</p></section>
+    main.innerHTML = topbar('Библиотека', '<a class="pill" href="#/kabinet">Кабинет →</a> <a class="pill" href="#/tarify">Тарифы →</a>') + `<section style="max-width:760px"><h2>Всё, что вы сделали, — в одном месте</h2><p class="muted" style="margin-top:10px">Тексты, картинки, ролики, бренд-кит и версии. Пока — последние результаты этого кабинета.</p></section>
       <div class="feed" style="margin-top:22px" id="lib"></div>`;
     S.feed.slice().reverse().forEach((i) => $('#lib').appendChild(sheet(i)));
     if (!S.feed.length) $('#lib').innerHTML = '<p class="muted">Пусто. Создайте первый пост.</p>';
+  }
+  // =====================================================================
+  // ЛИЧНЫЙ КАБИНЕТ (вход с компьютера через Telegram)
+  // =====================================================================
+  function kabinet() {
+    main.innerHTML = topbar('Кабинет') + '<div id="kab"></div>';
+    loadMe().then(drawKab);
+  }
+  function drawKab(m) {
+    const k = $('#kab'); if (!k) return;
+    if (!m) { k.innerHTML = '<div class="warn">Сервер недоступен. Попробуйте через минуту.</div>'; return; }
+    if (m.guest && !TG) {
+      k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите через Telegram — и кабинет станет вашим.</h2><p class="muted" style="margin-top:10px">Без регистрации и паролей: нажмите кнопку или наведите камеру телефона на код, бот подтвердит вход. Ваши посты, бренд, кредиты и история будут одни и те же в Telegram и на компьютере.</p></section>
+        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div></div>
+        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">${esc(m.kredity)} кредитов в день по вашему адресу. После входа — ${esc(m.trial)} пробных кредитов, голос бренда, история, пополнение.</p></div></div>`;
+      $('#login').addEventListener('click', startLogin);
+      return;
+    }
+    const ist = arr(m.istoriya);
+    k.innerHTML = `<div class="two">
+      <div class="card"><span class="caps">Профиль</span><h3 style="margin:6px 0 4px">${esc(m.name || 'Вы')}</h3><p class="small muted">${m.username ? '@' + esc(m.username) : 'Telegram'}${m.since ? ' · с ' + esc(m.since) : ''}${TG ? ' · в Telegram' : ' · на компьютере'}</p>
+        <div style="margin-top:18px;display:flex;align-items:baseline;gap:10px"><b style="font:700 2.4rem var(--disp);letter-spacing:-.03em;color:var(--ink)">${esc(m.kredity)}</b><span class="muted">кредитов</span></div>
+        <p class="small dim">потрачено ${esc(m.spent || 0)} · пробных было ${esc(m.trial)}</p>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="#/sozdat">Создать</a><a class="btn sm quiet" href="#/brend">Голос бренда</a>${TG ? '' : '<button class="btn sm ghost" id="logout">Выйти</button>'}</div></div>
+      <div class="card"><span class="caps">Пополнить</span><p class="small muted" style="margin:8px 0 12px">Пакеты кредитов, оплата Kaspi или картой по заявке — в первой волне подключаем вручную, отвечаем в Telegram.</p>
+        <div class="chips">${[['500', '5 990 ₸'], ['2 000', '19 990 ₸'], ['10 000', '89 990 ₸']].map(([n, c]) => `<button class="chip" data-paket="${n}">${n} кр · ${c}</button>`).join('')}</div>
+        <p class="small dim" style="margin-top:10px">Цены пакетов предварительные.</p></div>
+      </div>
+      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:var(--accent)">−${esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто — создайте первый пост.</p>'}</div>`;
+    const lo = $('#logout'); if (lo) lo.addEventListener('click', async () => { try { await api('/api/logout', {}); } catch (e) { /* и так выйдем */ } S.session = null; store.set('session', null); S.me = null; toast('Вы вышли'); loadMe(); kabinet(); });
+    k.addEventListener('click', async (e) => { const b = e.target.closest('[data-paket]'); if (!b) return; b.disabled = true; try { await api('/api/popolnit', { paket: b.dataset.paket }); toast('Заявка принята — ответим в Telegram'); } catch (er) { toast(er.message); b.disabled = false; } });
+  }
+  async function startLogin() {
+    const box = $('#loginbox'); const btn = $('#login'); btn.disabled = true;
+    let st; try { st = await api('/api/login/start', {}); } catch (e) { toast(e.message); btn.disabled = false; return; }
+    box.innerHTML = `<div class="qr" id="qr"></div><p class="small muted" style="margin-top:10px">Наведите камеру телефона на код или <a href="${esc(st.url)}" target="_blank" rel="noopener">откройте бота</a> и нажмите Start. Код действует 15 минут.</p><p class="small dim" id="loginst">Жду подтверждения…</p>`;
+    try { new QRCode($('#qr'), { text: st.url, width: 180, height: 180, colorDark: '#15192A', colorLight: '#FFFDF8' }); } catch (e) { $('#qr').innerHTML = `<a class="btn quiet" href="${esc(st.url)}" target="_blank" rel="noopener">Открыть бота</a>`; }
+    const token = S.pollToken;
+    for (let i = 0; i < 450; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      if (token !== S.pollToken) return;
+      let r; try { r = await api('/api/login/status?code=' + st.code); } catch (e) { continue; }
+      if (r.state === 'ok') { S.session = r.token; store.set('session', r.token); toast('Вход выполнен' + (r.name ? ', ' + r.name : '')); await loadMe(); kabinet(); return; }
+      if (r.state === 'expired') { $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; btn.disabled = false; return; }
+    }
   }
   function tarify() {
     const T = [
