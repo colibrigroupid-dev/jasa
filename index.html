@@ -67,6 +67,12 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 @keyframes shine{to{transform:translateX(100%)}}
 .demo .img small{position:absolute;left:10px;bottom:10px;font-size:12px;color:var(--ink);background:rgba(255,253,248,.85);padding:4px 8px;border-radius:8px}
 .demo .meta{display:block;text-align:right;font:500 12px var(--mono);color:var(--dim);margin:0 4px 8px}
+/* картинки */
+.demo .img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.who .ph{aspect-ratio:4/3;border-radius:12px;overflow:hidden;margin:-6px -6px 14px;background:var(--bg-2)}.who .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.card .cover{aspect-ratio:9/16;max-height:300px;border-radius:12px;overflow:hidden;margin-top:14px;background:var(--bg-2)}.card .cover img{width:100%;height:100%;object-fit:cover;display:block}
+.poster{position:relative;overflow:hidden}.poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}.poster::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(21,25,42,.15),rgba(21,25,42,.85));z-index:0}.poster>*{position:relative;z-index:1}
+.kino .still{aspect-ratio:21/9;border-radius:var(--r);overflow:hidden;margin-top:36px;position:relative;background:#0e1120}.kino .still img{width:100%;height:100%;object-fit:cover;display:block;opacity:.92}.kino .still span{position:absolute;left:18px;bottom:16px;font:500 12px var(--mono);color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase}
 /* лента для кого */
 .who{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:36px}
 .who div{padding:22px 22px 24px;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow)}
@@ -141,7 +147,7 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
       <div class="ln txt" style="margin-top:8px">Скидка 20 % на всё сезонное меню действует до пятницы. Заходите после работы или в обед, пока листья ещё жёлтые.</div>
       <div class="ln txt" style="margin-top:8px;font-size:.85rem;color:var(--dim)">Реклама · создано с помощью ИИ · Страж: убрал обещание «самый вкусный», пометки добавлены по правилам РК.</div>
       <div class="ln tags"><b>#алматы</b><b>#кофеалматы</b><b>#тыквенныйлатте</b><b>#осеньвалматы</b></div>
-      <div class="ln imgs"><div class="img"><small>тыквенный латте, 4:5</small></div><div class="img"><small>осень в Алматы, 1:1</small></div></div>
+      <div class="ln imgs"><div class="img"><img src="img/demo-latte.jpg" alt="Тыквенный латте на подоконнике кофейни" loading="lazy" width="800" height="1000"><small>тыквенный латте, 4:5</small></div><div class="img"><img src="img/demo-almaty.jpg" alt="Осенняя аллея в Алматы" loading="lazy" width="800" height="800"><small>осень в Алматы, 1:1</small></div></div>
     </div>
   </div>
 </div></section>
@@ -150,10 +156,10 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
   <span class="caps">Для кого</span>
   <h2 style="margin-top:12px;max-width:16ch">Для тех, кто ведёт страницу сам и не успевает.</h2>
   <div class="who">
-    <div><h3 style="font-size:1.15rem;margin-bottom:8px">Блогер и автор</h3><p>Рилсы по кадрам: тренд → ваша тема → сценарий по секундам, кадры и обложка за вечер. Для Instagram и TikTok.</p></div>
-    <div><h3 style="font-size:1.15rem;margin-bottom:8px">Малый бизнес</h3><p>Кофейня, салон, Kaspi-магазин: посты, афиши акций, карточки товара за пару минут, в вашем тоне.</p></div>
-    <div><h3 style="font-size:1.15rem;margin-bottom:8px">SMM и агентство</h3><p>Голос бренда на каждого клиента, контент-план на месяц, согласование одной кнопкой.</p></div>
-    <div><h3 style="font-size:1.15rem;margin-bottom:8px">Админ Telegram-канала</h3><p>Автопостинг по расписанию, рассылки, платный клуб и разбор «почему не зашло».</p></div>
+    <div><div class="ph"><img src="img/kto-bloger.jpg" alt="Блогер снимает себя на телефон" loading="lazy" width="800" height="600"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Блогер и автор</h3><p>Рилсы по кадрам: тренд → ваша тема → сценарий по секундам, кадры и обложка за вечер. Для Instagram и TikTok.</p></div>
+    <div><div class="ph"><img src="img/kto-biznes.jpg" alt="Владелица салона у стойки" loading="lazy" width="800" height="600"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Малый бизнес</h3><p>Кофейня, салон, Kaspi-магазин: посты, афиши акций, карточки товара за пару минут, в вашем тоне.</p></div>
+    <div><div class="ph"><img src="img/kto-smm.jpg" alt="SMM-специалист с ноутбуком в кафе" loading="lazy" width="800" height="600"></div><h3 style="font-size:1.15rem;margin-bottom:8px">SMM и агентство</h3><p>Голос бренда на каждого клиента, контент-план на месяц, согласование одной кнопкой.</p></div>
+    <div><div class="ph"><img src="img/kto-admin.jpg" alt="Админ канала за двумя экранами" loading="lazy" width="800" height="600"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Админ Telegram-канала</h3><p>Автопостинг по расписанию, рассылки, платный клуб и разбор «почему не зашло».</p></div>
   </div>
 </div></section>
 
@@ -172,9 +178,9 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
   <h2 style="margin-top:12px;max-width:20ch">Не просто картинка: текст, картинки, хэштеги и время публикации.</h2>
   <div class="three">
     <div class="card rv"><span class="kind">Рилс</span><h3>Хук, сценарий по секундам, кадры</h3><p>Хук в первые 2 секунды. Рилсмейкер раскладывает ролик по секундам и готовит кадры и обложку.</p>
-      <div class="tl"><div><b>0–2 с</b>Крупно: рука ставит стакан на подоконник, за окном жёлтые листья</div><div><b>2–8 с</b>Три ошибки новичков, субтитр по слову</div><div><b>8–15 с</b>Правильный вариант, спокойный голос</div><div><b>15–20 с</b>Призыв: «сохрани и приходи»</div></div></div>
+      <div class="cover"><img src="img/rils-cover.jpg" alt="Кадр рилса: стакан кофе на подоконнике" loading="lazy" width="720" height="1280"></div><div class="tl"><div><b>0–2 с</b>Крупно: рука ставит стакан на подоконник, за окном жёлтые листья</div><div><b>2–8 с</b>Три ошибки новичков, субтитр по слову</div><div><b>8–15 с</b>Правильный вариант, спокойный голос</div><div><b>15–20 с</b>Призыв: «сохрани и приходи»</div></div></div>
     <div class="card rv"><span class="kind">Афиша</span><h3>Три варианта композиции и все форматы</h3><p>Заголовок, вторая строка, детали события и три подхода к оформлению: 1:1, 4:5, 9:16 и 16:9 одним запросом.</p>
-      <div class="poster"><div class="h">Гончарный мастер-класс</div><div><div class="s">суббота · 15:00 · Астана (пример)</div><div class="s" style="opacity:.6">12 000 ₸ · запись в Telegram</div></div></div></div>
+      <div class="poster"><img src="img/afisha-fon.jpg" alt="" loading="lazy" width="800" height="1000"><div class="h">Гончарный мастер-класс</div><div><div class="s">суббота · 15:00 · Астана (пример)</div><div class="s" style="opacity:.6">12 000 ₸ · запись в Telegram</div></div></div></div>
     <div class="card rv"><span class="kind">План на неделю</span><h3>Темы, форматы и даты под вашу цель</h3><p>Планировщик чередует форматы, учитывает праздники Казахстана и события вашего бизнеса. Кнопка «сделать все» запускает конвейер.</p>
       <div class="plan"><div><b>Пн</b>пост · новая коллекция, хук про первый снег</div><div><b>Ср</b>рилс · «распаковка» заказа с Kaspi</div><div><b>Пт</b>карусель · 5 вопросов о размерах</div><div><b>Сб</b>сторис · опрос «что показать дальше»</div></div></div>
   </div>
@@ -183,7 +189,8 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 <section class="kino" id="kino"><div class="wrap">
   <span class="caps" style="color:rgba(255,255,255,.55)">Кино · уровень Studio</span>
   <h2 style="margin-top:12px;max-width:20ch">Загрузите сценарий. Пятнадцать агентов разберут его, пока вы пьёте кофе.</h2>
-  <p class="lead" style="margin-top:16px">Логик найдёт дыры, Сердце выпишет то, что нельзя трогать, Рыночник даст оценку по восьми рынкам от Казахстана до «Оскара» (ориентир, не прогноз; ниже шесть из них). Ничего не меняется без вашего «да». Дальше — герои, локации, кадры и видео.</p>
+  <div class="still"><img src="img/kino-led.jpg" alt="Кадр: замёрзшая река, подросток на льду" loading="lazy" width="1600" height="686"><span>кадр · «Тонкий лёд»</span></div>
+  <p class="lead" style="margin-top:28px">Логик найдёт дыры, Сердце выпишет то, что нельзя трогать, Рыночник даст оценку по восьми рынкам от Казахстана до «Оскара» (ориентир, не прогноз; ниже шесть из них). Ничего не меняется без вашего «да». Дальше — герои, локации, кадры и видео.</p>
   <div class="grid">
     <div>
       <div class="score rv"><div class="ring"><b>7.5<small>/10</small></b></div><div><span class="caps" style="color:rgba(255,255,255,.55)">Настоящий разбор · короткий метр «Тонкий лёд», студия «3%»</span><p style="color:rgba(255,255,255,.85);margin-top:8px">Трёхминутная серия-инструкция о провале под лёд. Голос диктора на «ты» без стыжения — главный актив. Две серьёзные дыры найдены и предложены правки.</p></div></div>
