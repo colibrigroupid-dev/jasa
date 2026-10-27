@@ -9,11 +9,16 @@
 <meta property="og:title" content="JASA — скажи, что нужно">
 <meta property="og:description" content="Пост, рилс, афиша и сценарий — одним запросом. Казахстан, RU/KZ, тенге.">
 <meta property="og:url" content="https://jasa.asia/">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://jasa.asia/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://jasa.asia/">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;600;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2315192A'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23FF4D1F'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#F5F1E8;--bg-2:#EDE7DA;--surface:#FFFDF8;--surface-2:#F8F4EC;--line:#DED7C9;--line-soft:#EAE4D7;--ink:#15192A;--text:#1C2133;--muted:#5E6474;--dim:#8A8F9C;--accent:#FF4D1F;--accent-soft:#FFE8DF;--ok:#19B98B;
+:root{--bg:#F5F1E8;--bg-2:#EDE7DA;--surface:#FFFDF8;--surface-2:#F8F4EC;--line:#DED7C9;--line-soft:#EAE4D7;--ink:#15192A;--text:#1C2133;--muted:#5E6474;--dim:#6B7080;--accent:#E8420F;--accent-soft:#FFE8DF;--ok:#19B98B;
 --body:Onest,system-ui,sans-serif;--disp:Geologica,Onest,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
 --step-0:clamp(1rem,.95rem + .25vw,1.19rem);--step-1:clamp(1.25rem,1.1rem + .7vw,1.75rem);--step-2:clamp(1.6rem,1.3rem + 1.5vw,2.6rem);--step-3:clamp(2.1rem,1.5rem + 3vw,4rem);--step-4:clamp(2.8rem,1.6rem + 5vw,5.2rem);
 --ease:cubic-bezier(.16,1,.3,1);--shadow:0 1px 2px rgba(21,25,42,.06),0 12px 32px -16px rgba(21,25,42,.18);--r:18px}
@@ -39,7 +44,7 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .hero{padding:clamp(56px,8vw,110px) 0 40px}
 .hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,5vw,72px);align-items:center}
 .hero h1 em{font-style:normal;color:var(--accent)}
-.hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;align-items:center}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;align-items:center}.hero .cta .btn{white-space:normal;text-align:center}
 .hero .trust{margin-top:14px;font-size:.95rem;color:var(--dim)}
 /* живой лист */
 .demo{background:var(--surface);border-radius:26px;box-shadow:var(--shadow);padding:18px;position:relative}
@@ -51,8 +56,8 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .demo .crew{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px}.demo .crew span{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--surface-2);color:var(--dim);transition:all .4s}
 .demo .crew span.on{background:var(--accent-soft);color:var(--accent)}
 .demo .sheet{border-top:1px solid var(--line-soft);padding-top:14px;min-height:260px}
-.demo .ln{opacity:0;transform:translateY(8px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
-.demo .ln.in{opacity:1;transform:none}
+.js .demo .ln{opacity:0;transform:translateY(8px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.js .demo .ln.in{opacity:1;transform:none}
 .demo .hook{font:600 1.05rem var(--body);color:var(--ink);background:var(--ink);color:#fff;padding:10px 14px;border-radius:12px;margin-bottom:10px}
 .demo .txt{font-size:.95rem;line-height:1.55;color:var(--text)}
 .demo .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.demo .tags b{font:500 12px var(--mono);color:var(--muted);background:var(--surface-2);padding:4px 8px;border-radius:6px}
@@ -61,11 +66,11 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .demo .img::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.6) 50%,transparent 70%);transform:translateX(-100%);animation:shine 2.4s 1.2s var(--ease) forwards}
 @keyframes shine{to{transform:translateX(100%)}}
 .demo .img small{position:absolute;left:10px;bottom:10px;font-size:12px;color:var(--ink);background:rgba(255,253,248,.85);padding:4px 8px;border-radius:8px}
-.demo .meta{position:absolute;top:18px;right:22px;font:500 12px var(--mono);color:var(--dim)}
+.demo .meta{display:block;text-align:right;font:500 12px var(--mono);color:var(--dim);margin:0 4px 8px}
 /* лента для кого */
 .who{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:36px}
 .who div{padding:22px 22px 24px;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow)}
-.who b{display:block;font-family:var(--disp);font-size:1.15rem;color:var(--ink);margin-bottom:8px}.who p{font-size:.95rem;color:var(--muted)}
+.who h3{font-size:1.15rem;margin-bottom:8px}.who p{font-size:.95rem;color:var(--muted)}
 /* как работает */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
 .step{padding:26px;border-radius:var(--r);background:var(--ink);color:#fff}
@@ -109,31 +114,32 @@ details summary::after{content:"+";color:var(--accent);font-weight:400}details[o
 footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem;color:var(--dim)}footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .sticky{display:none}
 .js .rv{opacity:0;transform:translateY(20px);transition:opacity .7s var(--ease),transform .7s var(--ease)}.js .rv.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}.demo .img::after,.demo .ask .cur{animation:none}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .rv{opacity:1;transform:none;transition:none}.js .demo .ln{opacity:1;transform:none;transition:none}.demo .img::after,.demo .ask .cur{animation:none}}
 @media (max-width:900px){.hero .grid,.kino .grid,.final .box{grid-template-columns:1fr}.steps,.three{grid-template-columns:1fr}header nav{display:none}
 .sticky{display:flex;position:fixed;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:30}.sticky .btn{flex:1}section{padding:64px 0}.lay{grid-template-columns:110px 1fr 28px}body{padding-bottom:90px}}
 </style>
 </head>
 <body>
-<header><div class="wrap"><a class="logo" href="#"><i></i>JASA</a><nav><a href="#kak">Как работает</a><a href="#chto">Что получаете</a><a href="#kino">Кино</a><a href="#ceny">Цены</a><a href="https://t.me/jasa_asia">Telegram</a></nav><a class="btn quiet" href="https://t.me/jasa_asia" style="padding:10px 18px">Написать в Telegram</a></div></header>
+<header><div class="wrap"><a class="logo" href="#"><i></i>JASA</a><nav aria-label="Разделы"><a href="#kak">Как работает</a><a href="#chto">Что получаете</a><a href="#kino">Кино</a><a href="#ceny">Цены</a><a href="https://t.me/jasa_asia">Telegram</a></nav><a class="btn quiet" href="https://t.me/jasa_asia" style="padding:10px 18px">Написать в Telegram</a></div></header>
 
+<main>
 <section class="hero"><div class="wrap grid">
   <div>
     <span class="caps">Казахстан · по-русски и по-казахски · в тенге</span>
     <h1 style="margin-top:14px">Скажите, <em>что нужно</em>. ИИ сделает пост, рилс или афишу в голосе вашего бренда.</h1>
-    <p class="lead" style="margin-top:18px">JASA — команда ИИ-агентов: копирайтер, художник, рилсмейкер и тренд-скаут. Запрос голосом или текстом, по-русски или по-казахски. Готовое — в Instagram, TikTok и Telegram. А когда захотите большего — разбор сценария и кино.</p>
-    <div class="cta"><a class="btn accent" href="https://t.me/jasa_asia?text=Хочу%20пример%20для%20моего%20бизнеса%3A%20">Написать в Telegram — покажем на вашем примере</a><a class="btn quiet" href="#chto">Посмотреть примеры</a></div>
-    <p class="trust">Пришлите название бизнеса — вернём три готовых поста. Ответим в тот же день. Первая волна — с ноября 2026.</p>
+    <p class="lead" style="margin-top:18px">JASA — команда ИИ-агентов: копирайтер, художник, рилсмейкер и тренд-скаут. Запрос голосом или текстом, по-русски или по-казахски. Готовое — для Instagram и TikTok, а в Telegram-канал публикуем сами. А когда захотите большего — разбор сценария и кино.</p>
+    <div class="cta"><a class="btn accent" href="https://t.me/jasa_asia?text=Хочу%20пример%20для%20моего%20бизнеса%3A%20">Написать в Telegram</a><a class="btn quiet" href="#chto">Посмотреть примеры</a></div>
+    <p class="trust">Пришлите название бизнеса — покажем три поста на вашем примере. Отвечаем в рабочие часы. Первая волна — с ноября 2026.</p>
   </div>
   <div class="demo" id="demo">
     <span class="meta">пост + 2 картинки · 27 кредитов ≈ 310 ₸</span>
-    <div class="ask"><span id="typed"></span><span class="cur"></span><span class="go"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
+    <div class="ask"><span id="typed">Пост для кофейни в Алматы: сезонное меню с тыквенным латте, скидка 20 % до пятницы</span><span class="cur"></span><span class="go"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
     <div class="crew"><span>Понимающий</span><span>Копирайтер</span><span>Художник</span><span>Страж</span></div>
     <div class="sheet">
       <div class="ln hook">В Алматы пахнет корицей. У нас — тыквенный латте</div>
       <div class="ln txt">Осень в Алматы пахнет корицей, и мы решили это использовать. В меню появился тыквенный латте: пюре из запечённой тыквы, эспрессо, молоко, щепотка корицы и мускатного ореха. Сверху сливочная пенка, её взбиваем прямо перед подачей.</div>
       <div class="ln txt" style="margin-top:8px">Скидка 20 % на всё сезонное меню действует до пятницы. Заходите после работы или в обед, пока листья ещё жёлтые.</div>
-      <div class="ln txt" style="margin-top:8px;font-size:.85rem;color:var(--dim)">Страж: это акция — добавил пометку «Реклама» по правилам РК и убрал обещание «самый вкусный».</div>
+      <div class="ln txt" style="margin-top:8px;font-size:.85rem;color:var(--dim)">Реклама · создано с помощью ИИ · Страж: убрал обещание «самый вкусный», пометки добавлены по правилам РК.</div>
       <div class="ln tags"><b>#алматы</b><b>#кофеалматы</b><b>#тыквенныйлатте</b><b>#осеньвалматы</b></div>
       <div class="ln imgs"><div class="img"><small>тыквенный латте, 4:5</small></div><div class="img"><small>осень в Алматы, 1:1</small></div></div>
     </div>
@@ -144,10 +150,10 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
   <span class="caps">Для кого</span>
   <h2 style="margin-top:12px;max-width:16ch">Для тех, кто ведёт страницу сам и не успевает.</h2>
   <div class="who">
-    <div><b>Блогер и автор</b><p>Три рилса в неделю за один вечер: тренд → ваша тема → раскадровка → ролик по кадрам для Instagram и TikTok.</p></div>
-    <div><b>Малый бизнес</b><p>Кофейня, салон, Kaspi-магазин: посты, афиши акций, карточки товара за пару минут, в вашем тоне.</p></div>
-    <div><b>SMM и агентство</b><p>Голос бренда на каждого клиента, контент-план на месяц, согласование одной кнопкой.</p></div>
-    <div><b>Админ Telegram-канала</b><p>Автопостинг по расписанию, рассылки, платный клуб и разбор «почему не зашло».</p></div>
+    <div><h3 style="font-size:1.15rem;margin-bottom:8px">Блогер и автор</h3><p>Рилсы по кадрам: тренд → ваша тема → сценарий по секундам, кадры и обложка за вечер. Для Instagram и TikTok.</p></div>
+    <div><h3 style="font-size:1.15rem;margin-bottom:8px">Малый бизнес</h3><p>Кофейня, салон, Kaspi-магазин: посты, афиши акций, карточки товара за пару минут, в вашем тоне.</p></div>
+    <div><h3 style="font-size:1.15rem;margin-bottom:8px">SMM и агентство</h3><p>Голос бренда на каждого клиента, контент-план на месяц, согласование одной кнопкой.</p></div>
+    <div><h3 style="font-size:1.15rem;margin-bottom:8px">Админ Telegram-канала</h3><p>Автопостинг по расписанию, рассылки, платный клуб и разбор «почему не зашло».</p></div>
   </div>
 </div></section>
 
@@ -176,11 +182,11 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 
 <section class="kino" id="kino"><div class="wrap">
   <span class="caps" style="color:rgba(255,255,255,.55)">Кино · уровень Studio</span>
-  <h2 style="margin-top:12px;max-width:20ch">Загрузите сценарий. Тринадцать агентов разберут его за десять минут.</h2>
-  <p class="lead" style="margin-top:16px">Логик найдёт дыры, Сердце выпишет то, что нельзя трогать, Рыночник даст предикт по восьми рынкам от Казахстана до «Оскара» (ниже шесть из них). Ничего не меняется без вашего «да». Дальше — герои, локации, кадры и видео.</p>
+  <h2 style="margin-top:12px;max-width:20ch">Загрузите сценарий. Пятнадцать агентов разберут его, пока вы пьёте кофе.</h2>
+  <p class="lead" style="margin-top:16px">Логик найдёт дыры, Сердце выпишет то, что нельзя трогать, Рыночник даст оценку по восьми рынкам от Казахстана до «Оскара» (ориентир, не прогноз; ниже шесть из них). Ничего не меняется без вашего «да». Дальше — герои, локации, кадры и видео.</p>
   <div class="grid">
     <div>
-      <div class="score rv"><div class="ring"><b>7.5<small>/10</small></b></div><div><span class="caps" style="color:rgba(255,255,255,.55)">Настоящий разбор · короткий метр «Тонкий лёд»</span><p style="color:rgba(255,255,255,.85);margin-top:8px">Трёхминутная серия-инструкция о провале под лёд. Голос диктора на «ты» без стыжения — главный актив. Две серьёзные дыры найдены и предложены правки.</p></div></div>
+      <div class="score rv"><div class="ring"><b>7.5<small>/10</small></b></div><div><span class="caps" style="color:rgba(255,255,255,.55)">Настоящий разбор · короткий метр «Тонкий лёд», студия «3%»</span><p style="color:rgba(255,255,255,.85);margin-top:8px">Трёхминутная серия-инструкция о провале под лёд. Голос диктора на «ты» без стыжения — главный актив. Две серьёзные дыры найдены и предложены правки.</p></div></div>
       <div style="margin-top:22px">
         <div class="lay"><span>Казахстан</span><div class="bar"><i class="top" style="--w:80%"></i></div><span class="n">8</span></div>
         <div class="lay"><span>YouTube</span><div class="bar"><i class="top" style="--w:80%"></i></div><span class="n">8</span></div>
@@ -201,9 +207,9 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 <section id="ceny"><div class="wrap">
   <span class="caps">Цены · предварительные</span>
   <h2 style="margin-top:12px;max-width:18ch">Платите за то, что делаете.</h2>
-  <p class="lead" style="margin-top:14px">Кредит — одна единица работы: текст поста ≈ 3, картинка — 12, пять секунд видео — 128. Creator — это примерно 40 постов с картинкой или 4 ролика по 5 секунд в месяц. Карта — автопродление, Kaspi — счёт раз в месяц. Годовая оплата −15 %.</p>
+  <p class="lead" style="margin-top:14px">Кредит — одна единица работы: текст поста ≈ 3, картинка — 12, пять секунд видео — 128. Creator — это около 20 постов с двумя картинками в месяц; ролики собираются по кадрам за кредиты. Оплата картой или через Kaspi пакетами. Годовая оплата −15 %.</p>
   <div class="tiers">
-    <div class="tier rv"><span class="caps">Попробовать</span><h3>Lite</h3><div class="price">0 ₸<small> /мес</small></div><ul><li>3 текста в день</li><li>картинки — на Creator</li><li>1 канал</li><li>тренды — смотреть</li></ul></div>
+    <div class="tier rv"><span class="caps">Попробовать</span><h3>Lite</h3><div class="price">0 ₸<small> /мес</small></div><ul><li>3 текста в день</li><li>картинки с водяным знаком</li><li>1 канал</li><li>тренды — смотреть</li></ul></div>
     <div class="tier hot rv"><span class="caps">Блогер, малый бизнес</span><h3>Creator</h3><div class="price">6 990 ₸<small> /мес</small></div><ul><li>600 кредитов</li><li>голос бренда</li><li>3 канала, автопостинг</li><li>без водяных знаков</li></ul></div>
     <div class="tier rv"><span class="caps">SMM, агентство</span><h3>Pro</h3><div class="price">24 990 ₸<small> /мес</small></div><ul><li>2 500 кредитов</li><li>до 10 брендов-клиентов</li><li>команда 3 человека</li><li>согласование и отчёты</li></ul></div>
     <div class="tier rv"><span class="caps">Сценаристы, студии</span><h3>Studio</h3><div class="price">59 990 ₸<small> /мес</small></div><ul><li>6 000 кредитов</li><li>разбор сценария агентами</li><li>герои, локации, кадры, видео</li><li>10 участников, 5 проектов</li></ul></div>
@@ -213,32 +219,33 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 <section style="background:var(--bg-2)"><div class="wrap" style="max-width:820px">
   <span class="caps">Вопросы</span>
   <h2 style="margin:12px 0 28px">Что спрашивают первыми.</h2>
-  <details><summary>Чем это лучше ChatGPT или Canva?</summary><p>Тенге и Kaspi, казахский язык, голос вашего бренда, пометка «Реклама» и маркировка ИИ из коробки. И не картинка, а готовый пост целиком: хук, текст, картинки, хэштеги, время публикации, публикация в Telegram-канал.</p></details>
+  <details><summary>Чем это лучше ChatGPT или Canva?</summary><p>Тенге и Kaspi, казахский язык, голос вашего бренда, пометка «Реклама» и маркировка ИИ в каждой публикации. И не картинка, а готовый пост целиком: хук, текст, картинки, хэштеги, время публикации, публикация в Telegram-канал.</p></details>
   <details><summary>По-казахски правда работает?</summary><p>Интерфейс и тексты на русском и казахском. Казахские тексты помечаем «вычитать носителем» и честно говорим, что модели на казахском пока слабее.</p></details>
-  <details><summary>Кому принадлежит то, что сделано?</summary><p>Результат вы используете свободно, в том числе в коммерции; права на ваши исходные материалы остаются у вас. Контент, созданный с помощью ИИ, мы маркируем, как требует закон Республики Казахстан об искусственном интеллекте, и не используем ваши тексты для обучения.</p></details>
+  <details><summary>Кому принадлежит то, что сделано?</summary><p>Результат вы используете в своих публикациях и рекламе; права на ваши исходные материалы остаются у вас. Контент, созданный с помощью ИИ, мы маркируем, как требует закон Республики Казахстан об искусственном интеллекте. Точные условия прав — в оферте перед первой волной.</p></details>
   <details><summary>Как платить?</summary><p>Карта любого банка с автопродлением или Kaspi счётом раз в месяц; для клубов в Telegram — Stars. Подписку можно не продлевать в любой момент, кредиты докупаются пакетами.</p></details>
-  <details><summary>Когда можно начать?</summary><p>Первая волна — с ноября 2026. Напишите в Telegram, и мы включим вас в неё: месяц Creator бесплатно, карта не нужна, дальше — только если захотите.</p></details>
+  <details><summary>Когда можно начать?</summary><p>Первая волна — с ноября 2026, первым 30 заявкам. Напишите в Telegram, и мы включим вас в неё: месяц Creator без оплаты, карта не нужна, дальше — только если захотите.</p></details>
 </div></section>
 
 <section class="final"><div class="wrap"><div class="box">
-  <div><h2>Скажите, что нужно. Остальное сделает команда.</h2><p class="lead" style="margin-top:12px">Первая волна — с ноября 2026. Месяц Creator бесплатно первой волне, без карты. Будем рады отзыву.</p></div>
+  <div><h2>Скажите, что нужно. Остальное сделает команда.</h2><p class="lead" style="margin-top:12px">Первая волна — с ноября 2026, первым 30 заявкам: месяц Creator без оплаты и без карты. Будем рады отзыву.</p></div>
   <div style="display:grid;gap:10px"><a class="btn accent" href="https://t.me/jasa_asia?text=Хочу%20пример%20для%20моего%20бизнеса%3A%20">Написать в Telegram</a><a class="btn quiet" href="https://t.me/jasahq">Новости JASA</a></div>
 </div></div></section>
 
-<footer><div class="wrap"><span>© 2026 JASA · Алматы, Казахстан · jasa.asia</span><span>«Жаса» по-казахски — «создай». Контент с ИИ маркируется по закону РК № 230-VIII.</span></div></footer>
+</main>
+<footer><div class="wrap"><span>© 2026 JASA · Алматы, Казахстан · jasa.asia · <a href="https://t.me/jasa_asia">@jasa_asia</a></span><span>«Жаса» по-казахски — «создай». Контент с ИИ маркируется по закону РК № 230-VIII. Оферта и политика данных — перед первой волной.</span></div></footer>
 <div class="sticky"><a class="btn accent" href="https://t.me/jasa_asia?text=Хочу%20пример%20для%20моего%20бизнеса%3A%20">Написать в Telegram</a></div>
 
 <script>
 (function(){
   document.documentElement.classList.add('js');
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -5% 0px',threshold:0});
-  setTimeout(()=>document.querySelectorAll('.rv').forEach(el=>el.classList.add('in')),4000);
-  document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+  const io=('IntersectionObserver' in window)?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -5% 0px',threshold:0}):null;
+  if(!('IntersectionObserver' in window))document.querySelectorAll('.rv').forEach(el=>el.classList.add('in'));
+  if(io)document.querySelectorAll('.rv').forEach(el=>io.observe(el));
   const q='Пост для кофейни в Алматы: сезонное меню с тыквенным латте, скидка 20 % до пятницы';
   const t=document.getElementById('typed'),crew=[...document.querySelectorAll('.demo .crew span')],lines=[...document.querySelectorAll('.demo .ln')];
   if(reduce){t.textContent=q;crew.forEach(c=>c.classList.add('on'));lines.forEach(l=>l.classList.add('in'));return}
-  let i=0;const type=()=>{if(i<=q.length){t.textContent=q.slice(0,i++);setTimeout(type,16)}else{crew.forEach((c,k)=>setTimeout(()=>c.classList.add('on'),200+k*300));lines.forEach((l,k)=>setTimeout(()=>l.classList.add('in'),1200+k*350))}};
+  t.textContent='';let i=0;const type=()=>{if(i<=q.length){t.textContent=q.slice(0,i++);setTimeout(type,16)}else{crew.forEach((c,k)=>setTimeout(()=>c.classList.add('on'),200+k*300));lines.forEach((l,k)=>setTimeout(()=>l.classList.add('in'),1200+k*350))}};
   setTimeout(type,300);
 })();
 </script>

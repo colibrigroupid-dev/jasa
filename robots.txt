@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jasa.asia/sitemap.xml
