@@ -73,6 +73,15 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .card .cover{aspect-ratio:9/16;max-height:300px;border-radius:12px;overflow:hidden;margin-top:14px;background:var(--bg-2)}.card .cover img{width:100%;height:100%;object-fit:cover;display:block}
 .poster{position:relative;overflow:hidden}.poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}.poster::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(21,25,42,.15),rgba(21,25,42,.85));z-index:0}.poster>*{position:relative;z-index:1}
 .kino .still{aspect-ratio:21/9;border-radius:var(--r);overflow:hidden;margin-top:36px;position:relative;background:#0e1120}.kino .still img{width:100%;height:100%;object-fit:cover;display:block;opacity:.92}.kino .still span{position:absolute;left:18px;bottom:16px;font:500 12px var(--mono);color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase}
+/* как приходит в Telegram */
+.tgdemo{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,64px);align-items:center;margin-top:40px}
+.tgwrap{padding:18px;border-radius:22px;background:#DCE8F2;max-width:440px}
+.tgmsg{background:#fff;border-radius:14px 14px 14px 4px;padding:10px 12px;box-shadow:0 1px 1px rgba(0,0,0,.08);margin-bottom:8px;color:#1C2133}
+.tgname{font-weight:600;color:#2AABEE;font-size:13px;margin-bottom:4px}.tgtext{white-space:pre-wrap;font-size:14px;line-height:1.4}
+.tgalbum{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px}.tgalbum img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:6px;display:block}.tgalbum .tgtext{grid-column:1/-1;padding:6px 8px 4px}
+.tgme{background:#E3F6D0;border-radius:14px 14px 4px 14px;margin-left:auto;max-width:85%}
+.tgvoice{display:flex;align-items:center;gap:8px}.tgvoice i{display:block;width:120px;height:18px;background:repeating-linear-gradient(90deg,#4A8C3F 0 2px,transparent 2px 5px);border-radius:4px;opacity:.7}
+@media (max-width:900px){.tgdemo{grid-template-columns:1fr}}
 /* лента для кого */
 .who{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:36px}
 .who div{padding:22px 22px 24px;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow)}
@@ -133,7 +142,7 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
   <div>
     <span class="caps">Казахстан · по-русски и по-казахски · в тенге</span>
     <h1 style="margin-top:14px">Скажите, <em>что нужно</em>. ИИ сделает пост, рилс или афишу в голосе вашего бренда.</h1>
-    <p class="lead" style="margin-top:18px">JASA — команда ИИ-агентов: копирайтер, художник, рилсмейкер и тренд-скаут. Запрос голосом или текстом, по-русски или по-казахски. Готовое — для Instagram и TikTok, а в Telegram-канал публикуем сами. А когда захотите большего — разбор сценария и кино.</p>
+    <p class="lead" style="margin-top:18px">JASA — команда ИИ-агентов: промптер, копирайтер, три художника, рилсмейкер и тренд-скаут. Говорите голосом или пишите текстом, по-русски или по-казахски, пришлите чужой рилс как пример подачи. К каждому посту — три картинки на выбор. Готовое — для Instagram и TikTok, а в Telegram-канал публикуем сами. А когда захотите большего — разбор сценария и кино.</p>
     <div class="cta"><a class="btn accent" href="https://t.me/jasa_asia_bot?start=site">Войти в JASA</a><a class="btn quiet" href="#chto">Посмотреть примеры</a></div>
     <p class="trust">Напишите боту, что у вас за бизнес, — он покажет три поста на вашем примере за минуту. Первая волна — с ноября 2026.</p>
   </div>
@@ -170,6 +179,23 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
     <div class="step rv"><span class="n">01</span><h3>Скажите, что нужно</h3><p>Текстом или голосом, как коллеге: «пост про новое меню, тёплый тон, скидка до пятницы». Можно по-казахски.</p></div>
     <div class="step rv"><span class="n">02</span><h3>Команда собирает лист</h3><p>Копирайтер пишет в голосе вашего бренда, художник готовит картинки, страж напоминает про пометку «Реклама» и подсказывает спорные места. Вы видите, кто чем занят.</p></div>
     <div class="step rv"><span class="n">03</span><h3>Вы принимаете и публикуете</h3><p>Правка словами, вариант за вариантом. В Telegram-канал публикуем по расписанию сами, для Instagram и TikTok отдаём готовый пакет: текст, картинки, обложка. Ничего не уходит без вашего «да».</p></div>
+  </div>
+</div></section>
+
+<section id="telegram" style="background:var(--bg-2)"><div class="wrap">
+  <span class="caps">Как это приходит</span>
+  <div class="tgdemo">
+    <div><h2 style="max-width:16ch">Сказали голосом — получили пост и три картинки.</h2><p class="lead" style="margin-top:16px">Наговорите задание в бота, как коллеге. Через пару минут в чат приходит готовый пост и альбом из трёх картинок на выбор. Любую можно открыть в полный размер и посмотреть качество. Правки тоже голосом.</p><div class="cta" style="margin-top:22px"><a class="btn accent" href="https://t.me/jasa_asia_bot?start=site">Войти в JASA</a></div></div>
+    <div class="tgwrap rv">
+      <div class="tgmsg tgme"><div class="tgvoice">🎤 <i></i><span class="small">0:09</span></div><div class="tgtext small dim">«Пост для кофейни в Алматы, тыквенный латте, скидка двадцать процентов до пятницы»</div></div>
+      <div class="tgmsg"><div class="tgname">JASA</div><div class="tgtext">В Алматы пахнет корицей. У нас — тыквенный латте
+
+Осень в Алматы пахнет корицей, и мы решили это использовать. В меню появился тыквенный латте: пюре из запечённой тыквы, эспрессо, щепотка корицы…
+
+Реклама. Скидка 20 % до пятницы.
+<span class="dim">— создано с помощью ИИ · JASA</span></div></div>
+      <div class="tgmsg tgalbum"><img src="img/demo-latte.jpg" alt="" loading="lazy"><img src="img/rils-cover.jpg" alt="" loading="lazy"><img src="img/demo-almaty.jpg" alt="" loading="lazy"><div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>
+    </div>
   </div>
 </div></section>
 

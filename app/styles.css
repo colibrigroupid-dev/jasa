@@ -108,7 +108,7 @@ p{margin:0;max-width:68ch;text-wrap:pretty}
 .hooks button:hover{background:var(--accent-soft)} .hooks button.on{background:var(--ink);color:var(--ink-fg)}
 .posttext{white-space:pre-wrap;font-size:var(--fs-text);line-height:1.6;max-width:64ch}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.tags span{font-family:var(--mono);font-size:12px;color:var(--muted);padding:4px 8px;border-radius:6px;background:var(--surface-2)}
-.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:18px}
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:18px}.imgs.three{grid-template-columns:repeat(3,1fr);margin-top:8px}.imgs.three .img{aspect-ratio:4/5}
 .img{border-radius:var(--r-sm);overflow:hidden;background:var(--surface-2);position:relative;aspect-ratio:4/5;display:flex;flex-direction:column;justify-content:flex-end}
 .img.sq{aspect-ratio:1} .img.v{aspect-ratio:9/16} .img.w{aspect-ratio:16/9}
 .img .ph{position:absolute;inset:0;background:linear-gradient(160deg,var(--bg-2),var(--line-soft) 60%,var(--accent-soft));}
@@ -230,6 +230,14 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:var(--fs-small)
 .tier .price{font-family:var(--disp);font-size:2rem;font-weight:700;letter-spacing:-.03em;color:var(--ink)}.tier .price small{font-size:.9rem;font-weight:500;color:var(--dim)}
 .tier ul{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px;font-size:var(--fs-small)}.tier li::before{content:"— ";color:var(--accent)}
 .tier .btn{margin-top:auto}
+
+/* лайтбокс и превью Telegram */
+#lb{position:fixed;inset:0;background:rgba(10,12,20,.92);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:20px;cursor:zoom-out}#lb.on{display:flex}#lb img{max-width:96vw;max-height:84vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)}#lb .lbcap{color:#fff;font-size:13px;opacity:.8}#lb .lbx{position:absolute;top:14px;right:18px;color:#fff;font-size:34px;line-height:1;background:none}
+.sheet img,.imgs img{cursor:zoom-in}
+.tgwrap{margin-top:12px;padding:14px;border-radius:14px;background:#DCE8F2;color:#1C2133}:root[data-theme="dark"] .tgwrap{background:#17212b}
+.tgmsg{background:#fff;border-radius:14px 14px 14px 4px;padding:10px 12px;max-width:420px;box-shadow:0 1px 1px rgba(0,0,0,.08);margin-bottom:8px}:root[data-theme="dark"] .tgmsg{background:#182533;color:#f2f2f2}
+.tgname{font-weight:600;color:#2AABEE;font-size:13px;margin-bottom:4px}.tgtext{white-space:pre-wrap;font-size:14px;line-height:1.4}
+.tgalbum{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px}.tgalbum img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:6px}.tgalbum .tgtext{grid-column:1/-1;padding:6px 8px 4px}
 
 /* ---------- Telegram Mini App ---------- */
 .tg .rail{display:none}.tg .shell{grid-template-columns:1fr}.tg .main{padding:14px 16px 220px}.tg .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line-soft);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:10}.tg .tabbar a{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--dim);text-decoration:none;padding:4px 0}.tg .tabbar a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.tg .tabbar a.on{color:var(--accent)}.tg .composer{bottom:78px;left:12px;right:12px}.tg .hero{margin-top:1vh}.tg .hero h1{font-size:clamp(1.9rem,1.2rem + 4vw,3rem)}.tg .rils,.tg .two,.tg .score{grid-template-columns:1fr}.tg .phone{display:none}

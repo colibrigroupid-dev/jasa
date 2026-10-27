@@ -91,13 +91,13 @@
     main.innerHTML = topbar('Создать', brandPill()) + `
       <section class="hero">
         <h1>Скажи, <em>что нужно</em> — пост, рилс, афиша появятся на этом листе.</h1>
-        <p>Один запрос — и за вас работает команда: копирайтер, художник, рилсмейкер. В голосе вашего бренда, по-русски или по-казахски.</p>
+        <p>Скажите голосом или текстом, пришлите ссылку на чужой рилс как пример подачи — и за вас работает команда: копирайтер, промптер, три художника, рилсмейкер. К каждому посту три картинки на выбор.</p>
         <div class="examples" id="examples">${EXAMPLES.map(([t, e]) => `<button data-tip="${t}" data-text="${esc(e)}">${esc(e)}</button>`).join('')}</div>
       </section>
       <div class="feed" id="feed"></div>
       <div class="composer" id="composer">
         <div class="box">
-          <textarea id="ask" rows="1" placeholder="Например: пост про открытие второго салона в Астане, тёплый тон, с призывом записаться"></textarea>
+          <textarea id="ask" rows="1" placeholder="Скажите голосом (микрофон справа) или напишите: пост про открытие второго салона в Астане, тёплый тон"></textarea>
           <div class="row">
             <div class="chips" id="tips">${Object.entries(TIPS).map(([k, v]) => `<button class="chip ${k === S.tip ? 'on' : ''}" data-tip="${k}">${v}</button>`).join('')}</div>
             <div class="send">
@@ -123,16 +123,21 @@
     $('#brandpill') && $('#brandpill').addEventListener('click', () => { S.useBrend = !S.useBrend; store.set('useBrend', S.useBrend); route(); });
 
     async function send() {
-      const text = ta.value.trim();
+      let text = ta.value.trim();
       if (!text) { ta.focus(); return; }
-      const item = { id: Date.now(), tip: S.tip, tema: text, yazyk: S.yazyk, state: 'working' };
+      let primer = null; const link = (text.match(/https?:\/\/\S+/) || [])[0];
+      if (link && /instagram\.com|tiktok\.com|youtu|vk\.com/.test(link)) {
+        toast('Разбираю ролик-пример…');
+        try { const r = await api('/api/transcribe', { url: link }); primer = r.text; spend(1, r.ostatok); text = text.replace(link, '').trim() || 'пост в подаче этого примера'; } catch (e) { toast('Пример не разобран: ' + e.message); }
+      }
+      const item = { id: Date.now(), tip: S.tip, tema: text, yazyk: S.yazyk, state: 'working', primer };
       const el = sheet(item);
       $('#feed').prepend(el);
       ta.value = ''; grow();
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       try {
-        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brend: S.useBrend && S.brend ? S.brend : null, ploshchadka: item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram' });
-        Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity });
+        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brend: S.useBrend && S.brend ? S.brend : null, ploshchadka: item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram', primer });
+        Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty });
         spend(res.kredity, res.ostatok);
       } catch (e) {
         Object.assign(item, { state: 'error', error: e.message });
@@ -164,46 +169,117 @@
     const R = { post: renderPost, rils: renderRils, afisha: renderAfisha, karusel: renderKarusel, plan: renderPlan }[item.tip] || renderRaw;
     el.innerHTML = head + R(r, item);
     $$('.rv', el).forEach((n, i) => { n.style.animationDelay = Math.min(i * 90, 1200) + 'ms'; });
+    if (item.imgJob && !item.imgItems) pollImages(item, el);
+    if (item.videoJob) pollVideo(item, el);
     el.addEventListener('click', (e) => {
       const h = e.target.closest('.hooks button'); if (h) { $$('.hooks button', el).forEach((b) => b.classList.toggle('on', b === h)); return; }
       const d = e.target.closest('.draw'); if (d) { drawImage(d, item); return; }
+      const vg = e.target.closest('.vgo'); if (vg) { startVideo(vg, item, el); return; }
+      const ch = e.target.closest('.vidpanel .chip'); if (ch) { const k = ch.dataset.res ? 'data-res' : 'data-ratio'; $$('.chip[' + k + ']', ch.parentElement).forEach((c) => c.classList.toggle('on', c === ch)); const vb = $('.vgo', ch.closest('.vidpanel')); if (vb) vb.textContent = 'Снять · 5 с · ' + ({ '480p': 15, '720p': 35, '1080p': 80 }[($('.chip.on[data-res]', ch.closest('.vidpanel')) || {}).dataset.res || '720p']) + ' кр'; return; }
       const c = e.target.closest('[data-copy]'); if (c) { copyText(c.dataset.copy === 'self' ? c.closest('.sheet').innerText : $(c.dataset.copy, el).innerText, c); }
     });
     return el;
+  }
+  async function pollImages(item, el) {
+    const token = S.pollToken;
+    for (let i = 0; i < 80; i++) {
+      await new Promise((r) => setTimeout(r, 4000));
+      if (token !== S.pollToken) return;
+      let j; try { j = await api('/api/img/' + item.imgJob); } catch (e) { continue; }
+      if (j.done) {
+        item.imgItems = arr(j.items); item.imgError = j.error; item.imgJob = null; if (typeof j.ostatok === 'number') spend(0, j.ostatok);
+        store.set('feed', S.feed); const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); return;
+      }
+    }
   }
   const warnBlock = (w) => (w && w.length ? `<div class="warn rv"><b>Проверьте:</b> ${w.map(esc).join(' · ')}</div>` : '');
   const actionsBlock = (extra) => `<div class="actions rv"><button class="btn sm" data-copy="self">Скопировать</button><button class="btn sm quiet">Запланировать в канал</button><button class="btn sm quiet">Ещё вариант</button>${extra || ''}<span class="dim small" style="margin-left:auto;align-self:center">при экспорте — метка «создано с помощью ИИ» (закон РК № 230-VIII)</span></div>`;
   const imgCard = (im, cls, i) => `<div class="img ${cls || ''} rv" data-i="${i == null ? '' : i}" data-prompt="${esc(im.prompt)}" data-aspect="${esc(im.aspect || '4:5')}"><div class="ph"></div>${im.url ? `<img src="${esc(im.url)}" alt="">` : '<button class="btn sm accent draw">Нарисовать · 12 кр</button>'}<div class="cap">${esc(im.caption || im.text || '')}</div></div>`;
 
-  function renderPost(r) {
+  function threeImgs(item) {
+    const its = arr(item.imgItems);
+    if (its.length) return `<div class="caps rv" style="margin-top:16px">Три варианта картинки · выберите свой</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy"><div class="cap">вариант ${esc(it.variant)}</div></div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
+    if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Художник рисует три варианта картинки, две-три минуты…</span></div>`;
+    if (item.imgError) return `<div class="warn rv">Картинки: ${esc(item.imgError)}</div>`;
+    return '';
+  }
+  function tgPreview(r, item) {
+    const hooks = arr(r.hooks); const text = ((hooks[0] ? hooks[0] + '\n\n' : '') + (r.text || '')).trim();
+    const its = arr(item.imgItems).filter((x) => x.url);
+    return `<details class="more rv" open><summary>Как это придёт в Telegram</summary><div class="tgwrap"><div class="tgmsg"><div class="tgname">JASA</div><div class="tgtext">${esc(text).slice(0, 900)}${text.length > 900 ? '…' : ''}\n\n<span class="dim">— создано с помощью ИИ · JASA</span></div></div>${its.length ? `<div class="tgmsg tgalbum">${its.map((x) => `<img src="${esc(API_BASE + x.url)}" alt="">`).join('')}<div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>` : ''}<div class="dim small" style="margin-top:8px">В боте можно отвечать голосом: наговорите правку, и пост переделается.</div></div></details>`;
+  }
+  function renderPost(r, item) {
     return `<div class="hooks rv">${(r.hooks || []).map((h, i) => `<button class="${i === 0 ? 'on' : ''}">${esc(h)}</button>`).join('')}</div>
       <div class="posttext rv" id="pt">${esc(r.text || r._raw || '')}</div>
       <div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>
-      <div class="imgs">${arr(r.images).map((im, i) => imgCard(im, im.aspect === '1:1' ? 'sq' : '', i)).join('')}</div>
+      ${threeImgs(item)}
+      ${tgPreview(r, item)}
       <dl class="kv rv"><dt>Когда</dt><dd>${esc(r.best_time || '—')}</dd></dl>
       ${r.kz_version ? `<details class="more rv"><summary>Қазақша нұсқа</summary><div class="kzbox">${esc(r.kz_version)}</div></details>` : ''}
       ${warnBlock(r.warnings)}${actionsBlock()}`;
   }
-  function renderRils(r) {
+  function renderRils(r, item) {
     return `<div class="rils"><div>
       <div class="rv"><span class="caps">Хук · первые 2 секунды</span><p style="font-weight:600;color:var(--ink);margin-top:4px">${esc(r.hook || '')}</p></div>
       <div class="tl" style="margin-top:16px">${(r.scenes || []).map((s) => `<div class="sc rv"><div class="t">${esc(s.t)}</div><div><div class="k">${esc(s.kadr)}</div><div class="sub">${esc(s.text)}</div><div class="v">${esc(s.voice || '')}${s.sfx ? ` <span class="dim">· ${esc(s.sfx)}</span>` : ''}</div></div></div>`).join('')}</div>
       <dl class="kv rv"><dt>Длина</dt><dd>${esc(r.duration || '')} с</dd><dt>Музыка</dt><dd>${esc(r.music || '')}</dd><dt>Призыв</dt><dd>${esc(r.cta || '')}</dd><dt>Почему</dt><dd>${esc(r.why_works || '')}</dd></dl>
       ${r.cover ? `<div class="imgs">${imgCard({ prompt: r.cover.prompt, aspect: '9:16', caption: 'Обложка: ' + (r.cover.text || ''), url: r.cover.url }, 'v')}</div>` : ''}
-      ${warnBlock(r.warnings)}${actionsBlock('<button class="btn sm quiet">Снять кадры · по 12 кр</button>')}
+      ${warnBlock(r.warnings)}
+      ${videoPanel(item)}
+      ${actionsBlock()}
     </div><div class="phone rv"><div class="scr"><div class="h">${esc((r.cover && r.cover.text) || r.title || '')}</div><div class="s">${esc(r.duration || '')} с · 9:16</div></div></div></div>`;
   }
-  function renderAfisha(r) {
+  function renderAfisha(r, item) {
     const V = (r.variants || []).map((v, i) => { const p = arr(v.palette).map((c) => col(c, '#15192A')); if (!p.length) p.push('#15192A', '#FF4D1F'); return `<div class="var rv"><div class="pv" style="background:linear-gradient(160deg,${p[0]},${p[1] || p[0]})">${v.url ? `<img src="${esc(v.url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">` : ''}<div class="hl">${esc(r.headline)}</div><div><div class="sb">${esc(r.sub)}</div><div class="sb" style="margin-top:6px;opacity:.7">${esc(r.details || '')}</div></div></div><div class="nm"><b>${esc(v.name)}</b>${esc(v.composition)}<div class="sw">${p.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div style="margin-top:10px">${v.url ? '' : `<button class="btn sm accent draw" data-prompt="${esc(v.prompt)}" data-aspect="4:5">Нарисовать фон · 12 кр</button>`}</div></div></div>`; }).join('');
-    return `<div class="variants">${V}</div><dl class="kv rv"><dt>Форматы</dt><dd>${(r.formats || []).map(esc).join(' · ')}</dd>${r.kz_headline ? `<dt>Қазақша</dt><dd>${esc(r.kz_headline)}</dd>` : ''}</dl>${warnBlock(r.warnings)}${actionsBlock()}`;
+    return `<div class="variants">${V}</div>${threeImgs(item)}<dl class="kv rv"><dt>Форматы</dt><dd>${(r.formats || []).map(esc).join(' · ')}</dd>${r.kz_headline ? `<dt>Қазақша</dt><dd>${esc(r.kz_headline)}</dd>` : ''}</dl>${warnBlock(r.warnings)}${actionsBlock()}`;
   }
-  function renderKarusel(r) {
+  function renderKarusel(r, item) {
     return `<div class="slides">${(r.slides || []).map((s) => `<div class="slide rv"><span class="n">${esc(s.n)} / ${(r.slides || []).length}</span><div><b>${esc(s.headline)}</b><p>${esc(s.text)}</p></div></div>`).join('')}</div>
-      <div class="posttext rv" style="margin-top:16px">${esc(r.caption || '')}</div><div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>${warnBlock(r.warnings)}${actionsBlock()}`;
+      <div class="posttext rv" style="margin-top:16px">${esc(r.caption || '')}</div><div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>${threeImgs(item)}${warnBlock(r.warnings)}${actionsBlock()}`;
   }
   function renderPlan(r) {
     return `<p class="rv muted">${esc(r.goal || '')}</p><div class="days">${(r.days || []).map((d) => `<div class="day rv"><div class="d">${esc(d.day)}</div><div class="f">${esc(d.format)}</div><div><b>${esc(d.topic)}</b><p>${esc(d.hook)}</p><p class="dim small">${esc(d.why)}</p></div></div>`).join('')}</div>
       <p class="rv small muted" style="margin-top:14px">${esc(r.rhythm || '')}</p>${actionsBlock('<button class="btn sm accent">Сделать все 7</button>')}`;
+  }
+  function videoPanel(item) {
+    if (item.video && item.video.url) return `<div class="vid rv"><video src="${esc(API_BASE + item.video.url)}" controls playsinline loop muted autoplay style="width:100%;max-width:340px;border-radius:14px;display:block;margin-top:16px"></video><div class="dim small" style="margin-top:6px">${esc(item.video.resolution)} · ${esc(item.video.duration)} с · ${esc(item.video.kredity)} кр · создано с помощью ИИ</div></div>`;
+    if (item.videoJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Снимаю ролик (${esc(item.video && item.video.resolution)}), до 5 минут…</span></div>`;
+    const pr = item.promty && item.promty.video;
+    return `<div class="vidpanel rv" style="margin-top:18px;padding:14px 16px;border-radius:var(--r-sm);background:var(--surface-2)">
+      <span class="caps">Снять ролик</span>
+      <div class="chips" style="margin:8px 0">${['480p', '720p', '1080p'].map((q, i) => `<button class="chip ${i === 1 ? 'on' : ''}" data-res="${q}">${q} · ${{ '480p': 15, '720p': 35, '1080p': 80 }[q]} кр</button>`).join('')}</div>
+      <div class="chips" style="margin:0 0 8px">${['9:16', '16:9', '1:1'].map((q, i) => `<button class="chip ${i === 0 ? 'on' : ''}" data-ratio="${q}">${q}</button>`).join('')}</div>
+      <label class="small dim">Референсы (фото героя, продукта, место) — до 4 файлов <input type="file" class="vrefs" accept="image/*,video/mp4" multiple style="display:block;margin:6px 0"></label>
+      <textarea class="vprompt" rows="3" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;background:var(--field);color:var(--ink)" placeholder="Промптер уже собрал описание ролика — можно поправить словами">${esc(pr && pr.prompt || '')}</textarea>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn sm accent vgo">Снять · 5 с</button><span class="dim small">звук — шумы без музыки · 5 секунд</span></div>
+    </div>`;
+  }
+  async function startVideo(btn, item, el) {
+    const panel = btn.closest('.vidpanel');
+    const res = ($('.chip.on[data-res]', panel) || {}).dataset.res || '720p';
+    const ratio = ($('.chip.on[data-ratio]', panel) || {}).dataset.ratio || '9:16';
+    const prompt = $('.vprompt', panel).value.trim(); if (prompt.length < 10) { toast('Опишите ролик'); return; }
+    const files = Array.from(($('.vrefs', panel) || {}).files || []).slice(0, 4);
+    btn.disabled = true; btn.textContent = 'Отправляю…';
+    try {
+      const refs = []; for (const f of files) { if (f.size > 9e6) throw new Error('Файл больше 9 МБ: ' + f.name); refs.push({ b64: await toB64(f), mime: f.type }); }
+      const r = await api('/api/video', { prompt, resolution: res, ratio, duration: 5, refs });
+      item.videoJob = r.id; item.video = { resolution: res, duration: 5, kredity: r.kredity }; store.set('feed', S.feed);
+      const fresh = sheet(item); el.replaceWith(fresh); pollVideo(item, fresh);
+    } catch (e) { toast(e.message); btn.disabled = false; btn.textContent = 'Снять · 5 с'; }
+  }
+  async function pollVideo(item, el) {
+    const token = S.pollToken;
+    for (let i = 0; i < 240; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      if (token !== S.pollToken) return;
+      let j; try { j = await api('/api/video/' + item.videoJob); } catch (e) { continue; }
+      if (j.done) {
+        item.videoJob = null; if (j.url) item.video.url = j.url; else { item.video = null; toast('Видео: ' + (j.error || 'не вышло')); }
+        if (typeof j.ostatok === 'number') spend(0, j.ostatok); store.set('feed', S.feed);
+        const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); return;
+      }
+    }
   }
   function renderRaw(r) { return `<pre class="posttext rv">${esc(JSON.stringify(r, null, 2))}</pre>`; }
 
@@ -221,26 +297,51 @@
     } catch (e) { btn.disabled = false; btn.textContent = 'Нарисовать · 12 кр'; toast(e.message); }
   }
   const AI_MARK = '\n\nСоздано с помощью ИИ · JASA';
+  function lightbox(src, cap) {
+    let lb = $('#lb'); if (!lb) { lb = document.createElement('div'); lb.id = 'lb'; lb.innerHTML = '<img alt=""><div class="lbcap"></div><button class="lbx" aria-label="Закрыть">×</button>'; document.body.appendChild(lb); lb.addEventListener('click', () => lb.classList.remove('on')); document.addEventListener('keydown', (e) => e.key === 'Escape' && lb.classList.remove('on')); }
+    $('img', lb).src = src; $('.lbcap', lb).textContent = cap || 'Полный размер · создано с помощью ИИ'; lb.classList.add('on');
+  }
+  document.addEventListener('click', (e) => { const im = e.target.closest('.sheet img, .imgs img'); if (im && !e.target.closest('button')) lightbox(im.currentSrc || im.src, im.closest('.img') && im.closest('.img').querySelector('.cap') && im.closest('.img').querySelector('.cap').textContent); });
   function copyText(t, btn) { navigator.clipboard && navigator.clipboard.writeText(t + AI_MARK).then(() => { const o = btn.textContent; btn.textContent = 'Скопировано'; setTimeout(() => (btn.textContent = o), 1200); }); }
   function toast(msg) {
     let t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:var(--ink);color:var(--ink-fg);padding:12px 18px;border-radius:14px;z-index:50;max-width:90vw;font-size:15px;box-shadow:var(--shadow)'; document.body.appendChild(t); }
     t.textContent = msg; t.style.opacity = 1; clearTimeout(t._h); t._h = setTimeout(() => (t.style.opacity = 0), 4000);
   }
 
-  // голос
+  // голос: запись → сервер (распознавание речи); если записи нет — распознавание браузера
   function voice(btn, onText) {
+    let mr = null, chunks = [];
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { btn.addEventListener('click', () => toast('Голос работает в Chrome и Safari')); return; }
-    let rec = null;
-    btn.addEventListener('click', () => {
-      if (rec) { rec.stop(); return; }
-      rec = new SR(); rec.lang = S.yazyk === 'kz' ? 'kk-KZ' : 'ru-RU'; rec.interimResults = false;
-      rec.onresult = (e) => onText(Array.from(e.results).map((r) => r[0].transcript).join(' '));
-      rec.onend = () => { rec = null; btn.classList.remove('rec'); };
-      rec.onerror = () => { rec = null; btn.classList.remove('rec'); };
-      btn.classList.add('rec'); rec.start();
+    btn.addEventListener('click', async () => {
+      if (mr) { mr.stop(); return; }
+      if (!(navigator.mediaDevices && window.MediaRecorder)) {
+        if (!SR) { toast('Голос работает в Chrome, Safari и Telegram'); return; }
+        const rec = new SR(); rec.lang = S.yazyk === 'kz' ? 'kk-KZ' : 'ru-RU';
+        rec.onresult = (e) => onText(Array.from(e.results).map((r) => r[0].transcript).join(' '));
+        rec.onend = () => btn.classList.remove('rec'); btn.classList.add('rec'); rec.start(); return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+        mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); chunks = [];
+        mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+        mr.onstop = async () => {
+          stream.getTracks().forEach((t) => t.stop()); btn.classList.remove('rec');
+          const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' }); mr = null;
+          if (blob.size < 2000) { toast('Слишком коротко'); return; }
+          toast('Распознаю…');
+          try {
+            const b64 = await toB64(blob);
+            const r = await api('/api/transcribe', { audio: { b64, mime: blob.type.split(';')[0] }, lang: S.yazyk === 'kz' ? 'kk' : 'ru' });
+            spend(1, r.ostatok); onText(r.text || '');
+          } catch (e) { toast(e.message); }
+        };
+        btn.classList.add('rec'); mr.start();
+        setTimeout(() => mr && mr.state === 'recording' && mr.stop(), 90000);
+      } catch (e) { toast('Нет доступа к микрофону'); }
     });
   }
+  const toB64 = (blob) => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
 
   // =====================================================================
   // ТРЕНДЫ (пока курация, не живой сбор)
@@ -268,7 +369,8 @@
       <section style="margin-bottom:26px;max-width:760px"><h2>ДНК бренда — голос, которым пишут все агенты</h2><p class="muted" style="margin-top:10px">Вставьте 3–5 своих постов или опишите, кто вы и для кого. Платформа соберёт голос, темы, палитру — и каждый пост будет звучать как ваш.</p></section>
       <div class="two">
         <div class="card">
-          <div class="field"><label>Аккаунт (для подключения позже)</label><input id="handle" placeholder="@instagram или t.me/канал" value="${esc((S.brend && S.brend.handle) || '')}"></div>
+          <div class="field"><label>Ссылка на ваш Instagram или Telegram-канал</label><input id="handle" placeholder="https://instagram.com/… или t.me/…" value="${esc((S.brend && S.brend.handle) || '')}"></div>
+          <div class="warn" style="margin:-4px 0 14px"><b>Анализ аккаунта:</b> по ссылке платформа пройдёт по всем вашим постам, темам, охватам и комментариям и соберёт ДНК автоматически. Для полного анализа и автопостинга вы дадите доступ к аккаунту через Meta — кнопка появится в первой волне. Пока вставьте 3–5 постов ниже.</div>
           <div class="field"><label>Ваши посты или описание</label><textarea id="posts" placeholder="Вставьте 3–5 постов целиком или напишите: кто вы, что продаёте, кому, как любите говорить с людьми">${esc((S.brend && S.brend.source) || '')}</textarea></div>
           <div style="display:flex;gap:8px;align-items:center"><button class="btn accent" id="mkdna">Собрать ДНК · ~3 кр</button><button class="icobtn" id="mic2" title="Рассказать голосом"><svg><use href="#i-mic"/></svg></button><span class="dim small">Instagram/Telegram подключим на следующем шаге</span></div>
         </div>
