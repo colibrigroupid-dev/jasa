@@ -41,9 +41,11 @@
       return;
     }
     box.innerHTML = intro() + (arr(L.proekty).length ? `<div class="mk-list">${L.proekty.map((x) => `<a class="card mk-pr" href="#/multiki?p=${esc(x.id)}"><b>${esc(x.nazvanie)}</b><span class="small muted">${x.gotov ? 'Готов' : 'Шаг: ' + esc(name(x.shag))} · потрачено ${kr(x.potracheno)}</span><span class="dim small">${esc(x.ts)}</span></a>`).join('')}</div>` : '') +
+      (arr(L.shablony).length ? `<section class="card mk-shab"><span class="caps">Готовый сценарий · ${esc(L.shablony[0].gruppa)}</span><p class="small muted" style="margin:6px 0 12px">Сценарий, раскадровка и лист героев уже есть — утвердить бесплатно и сразу к озвучке.</p><div class="mk-row">${L.shablony.map((x) => `<button class="btn sm" data-shab="${esc(x.kod)}">${esc(x.nazvanie)} · ${x.sek} с</button>`).join('')}</div></section>` : '') +
       `<form class="card mk-brif" id="mkb" autocomplete="off"><span class="caps">Новый мультик</span><h3 style="margin:6px 0 16px">О чём урок</h3>${brifFields(null)}
       <div class="mk-row"><button class="btn accent" type="submit">Начать · бесплатно</button><span class="small muted" id="mksm"></span></div></form>`;
     bindBrif($('#mkb'), null);
+    $$('[data-shab]', box).forEach((b) => { b.onclick = async () => { b.disabled = true; try { P = (await api('/api/multiki/shablon', { kod: b.dataset.shab })).proekt; location.hash = '#/multiki?p=' + P.id; } catch (e) { toast(e.message); b.disabled = false; } }; });
   }
 
   function intro() {
@@ -98,7 +100,7 @@
   const name = (kod) => (SHAGI().find((s) => s.kod === kod) || {}).name || kod;
   function stepPrice(kod) {
     const s = P.smeta;
-    return { brif: 'бесплатно', scenarij: 'до ' + kr(s.scenarij), raskadrovka: 'до ' + kr(s.raskadrovka), geroi: kr(s.geroi), kadry: kr(s.kadry),
+    return { brif: 'бесплатно', scenarij: s.scenarij ? 'до ' + kr(s.scenarij) : 'готов, бесплатно', raskadrovka: s.raskadrovka ? 'до ' + kr(s.raskadrovka) : 'готова, бесплатно', geroi: kr(s.geroi), kadry: kr(s.kadry),
       golos: '≈ ' + kr(s.golos), video: kr(s.video['480p']) + ' / ' + kr(s.video['720p']), sborka: 'бесплатно' }[kod];
   }
 
@@ -171,7 +173,7 @@
     }
     const tempo = arr(P.tempo);
     pan.innerHTML = head('Сценарий ' + (P.ok.scenarij ? '' : '— прочитайте и поправьте'), 'Реплики правятся прямо в таблице, сохраняется само. Правка снимет утверждение следующих шагов.') + okBadge('scenarij') +
-      `<div class="mk-kv"><span>Вопрос урока</span><b>${esc(sc.vopros)}</b><span>Локация</span><span>${esc(sc.lokaciya)}</span>${sc.ocenka ? `<span>Методист</span><span>${sc.ocenka}/10</span>` : ''}</div>
+      `<div class="mk-kv"><span>Вопрос урока</span><b>${esc(sc.vopros)}</b><span>Локация</span><span>${esc(sc.lokaciya)}</span>${sc.ocenka ? `<span>Методист</span><span>${sc.ocenka}/10</span>` : ''}${sc.istochnik ? `<span>Источник</span><span>${esc(sc.istochnik)}</span>` : ''}</div>
       ${arr(sc.zamechaniya).length ? `<details class="mk-zam" open><summary>Замечания методиста · ${sc.zamechaniya.length} — уже внесены в текст</summary>${sc.zamechaniya.map((z) => `<div><b>${z.plan ? 'План ' + esc(z.plan) + ' · ' : ''}${esc(z.vid)}</b>${z.bylo ? ` <s>${esc(z.bylo)}</s> → ${esc(z.stalo)}` : ''}<p class="small muted">${esc(z.pochemu)}</p>${+z.plan && arr(sc.plany_avtor).length === sc.plany.length ? `<button class="chip" data-vern="${+z.plan}">Вернуть как было</button>` : ''}</div>`).join('')}</details>` : ''}
       ${sc.provereno === false ? `<p class="warn"><b>Текст изменён после проверки.</b> <button class="chip" id="mkpro">Проверить ещё раз · до ${kr(L.ceny.proverit)}</button></p>` : ''}
       ${tempo.length ? `<p class="warn"><b>Темп:</b> ${tempo.map((t) => `план ${t.plan} — ${t.slov} ${t.ed} на ${t.sek} с (нужно ≈ ${t.nado} с)`).join('; ')}. ${P.brif.yazyk === 'kz' ? 'Детям — не больше 3,5 слога в секунду' : 'Детям — не больше 2 слов в секунду'}, одна реплика — до 11 с: сократите или добавьте секунды.</p>` : ''}
@@ -421,7 +423,7 @@
     s.textContent = `
 .mk-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:22px}
 .mk-pr{display:flex;flex-direction:column;gap:4px;text-decoration:none;padding:16px 18px}
-.mk-brif{max-width:760px}.mk-brif select,.mk-panel select{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;font:inherit;background:var(--field);color:var(--ink)}
+.mk-brif{max-width:760px}.mk-shab{max-width:760px;margin-bottom:16px}.mk-brif select,.mk-panel select{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;font:inherit;background:var(--field);color:var(--ink)}
 .mk-3{display:grid;grid-template-columns:2fr 1fr 1.4fr;gap:12px}.mk-2{display:grid;grid-template-columns:1fr 80px;gap:8px;margin-top:6px}
 .mk-g{display:grid;grid-template-columns:1fr 1.4fr 1.4fr;gap:8px;margin-bottom:8px}
 .mk-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
