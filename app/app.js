@@ -576,7 +576,7 @@
         if (!SR) { toast('Голос работает в Chrome, Safari и Telegram'); return; }
         const rec = new SR(); rec.lang = S.yazyk === 'kz' ? 'kk-KZ' : 'ru-RU';
         rec.onresult = (e) => onText(Array.from(e.results).map((r) => r[0].transcript).join(' '));
-        rec.onend = () => btn.classList.remove('rec'); btn.classList.add('rec'); rec.start(); return;
+        rec.onend = () => btn.classList.remove('zapis'); btn.classList.add('zapis'); rec.start(); return;
       }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -584,7 +584,7 @@
         mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); chunks = [];
         mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
         mr.onstop = async () => {
-          stream.getTracks().forEach((t) => t.stop()); btn.classList.remove('rec');
+          stream.getTracks().forEach((t) => t.stop()); btn.classList.remove('zapis');
           const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' }); mr = null;
           if (blob.size < 2000) { toast('Слишком коротко'); return; }
           toast('Распознаю…');
@@ -594,7 +594,7 @@
             spend(1, r.ostatok); onText(r.text || '');
           } catch (e) { toast(e.message); }
         };
-        btn.classList.add('rec'); mr.start();
+        btn.classList.add('zapis'); mr.start();
         setTimeout(() => mr && mr.state === 'recording' && mr.stop(), 90000);
       } catch (e) { toast('Нет доступа к микрофону'); }
     });
@@ -1020,7 +1020,7 @@
     if (!m) { k.innerHTML = '<div class="warn">Сервер недоступен. Попробуйте через минуту.</div>'; return; }
     if (m.guest && !TG) {
       k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите — и всё сохранится</h2><p class="muted" style="margin-top:10px">Без регистрации и паролей: нажмите кнопку или наведите камеру телефона на код, бот подтвердит вход. Ваши посты, бренд, кредиты и история будут одни и те же в Telegram и на компьютере.</p></section>
-        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div></div>
+        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><p class="dim small" style="margin-top:10px">Входя, вы принимаете <a href="/oferta/" target="_blank" rel="noopener">условия использования</a> и <a href="/privacy/" target="_blank" rel="noopener">политику обработки персональных данных</a>.</p><div id="loginbox" style="margin-top:16px"></div></div>
         <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сегодня у вас ${esc(Math.floor(m.kredity))} кр, завтра снова 50. После входа — ${esc(m.trial)} пробных: хватит примерно на 6 постов с картинками.</p></div></div>`;
       $('#login').addEventListener('click', startLogin);
       return;
