@@ -286,7 +286,9 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 /* Вход: на компьютере — личный кабинет на сайте, на телефоне — приложение JASA в Telegram. */
 (function(){
   var ua=navigator.userAgent, phone=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<820);
-  var href=phone?'https://t.me/jasa_asia_bot?startapp=site':'/app/#/kabinet';
+  // партнёрская ссылка jasa.asia/?ref=код: код запоминаем (кабинет на этом же домене закрепит после входа) и передаём в Telegram
+  var ref=null;try{ref=(new URLSearchParams(location.search).get('ref')||'').replace(/[^a-z0-9]/gi,'').slice(0,12);if(ref)localStorage.setItem('jasa:ref',ref);else ref=localStorage.getItem('jasa:ref');}catch(e){}
+  var href=phone?'https://t.me/jasa_asia_bot?startapp='+(ref?'ref_'+ref:'site'):'/app/#/kabinet';
   document.querySelectorAll('a.vhod').forEach(function(a){a.href=href;if(!phone){a.removeAttribute('target')}});
 })();
 </script>

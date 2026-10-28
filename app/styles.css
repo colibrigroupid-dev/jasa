@@ -427,3 +427,14 @@ ul.good{margin:10px 0 0;padding-left:20px}ul.good li{margin:4px 0}
 @media (max-width:1100px){.flow-cols{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 18px;align-items:start}}
 @media (max-width:640px){.flow-cols{grid-template-columns:1fr}.fcol{flex-direction:row;flex-wrap:wrap}.fcol .fl{width:100%;text-align:left}.fnode{flex:1 1 140px}}
 .team-log summary{cursor:pointer;list-style:none}.team-log summary::-webkit-details-marker{display:none}.team-log .tfeed{max-height:none}
+
+/* ---------- 28.10 · Партнёрам ---------- */
+.ptgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:980px}
+.ptlink{display:flex;gap:8px;margin-top:10px}.ptlink input{flex:1;min-width:0;font:500 13px/1 var(--mono);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2,var(--bg));color:var(--ink)}
+.ptqr{margin:14px 0 6px;width:148px;height:148px;padding:6px;background:#fff;border-radius:10px}.ptqr img,.ptqr canvas{width:136px!important;height:136px!important}
+.ptnum{margin:10px 0 8px}.ptnum b{display:block;font:700 34px/1.1 var(--disp,inherit);color:var(--ink)}.ptnum small{color:var(--dim)}
+.ptrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:var(--fs-small)}.ptrow b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.ptlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}.ptlist li{display:flex;justify-content:space-between;gap:10px;font-size:var(--fs-small)}.ptlist li small{color:var(--dim);white-space:nowrap}
+@media (max-width:760px){.ptgrid{grid-template-columns:1fr}}
+.ptgrid>*{min-width:0}.ptgrid a,.ptgrid p{overflow-wrap:anywhere}
+.ptrules{margin:10px 0 0;padding-left:20px;display:grid;gap:8px;font-size:var(--fs-small);line-height:1.5}
