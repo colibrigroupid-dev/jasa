@@ -9,7 +9,7 @@
   let cur = null;        // открытый шаг
   let mediaSig = '';     // чтобы опрос перерисовывал только при изменениях
   const ETAP = { titr: 'Титр', zavyazka: 'Завязка', vopros: 'Вопрос', obyasnenie: 'Объяснение', zadanie: 'Задание', proverka: 'Проверка', zapomni: 'Запомни' };
-  const EKRAN = { titr: 'Титр', zadanie: 'Задание · пауза 7 с', proverka: 'Проверка', zapomni: 'Запомни' };
+  const EKRAN = { titr: 'Титр', zadanie: 'Задание', proverka: 'Проверка', zapomni: 'Запомни' };
   const ZAD = [['vsluh', 'Ответь вслух · 7 с'], ['zhest', 'Покажи жестом · 5 с'], ['zapis', 'Запиши в тетради · пауза']];
   const KLASS = [['0', 'Предшкола'], ['1', '1 класс'], ['2', '2 класс'], ['3', '3 класс'], ['4', '4 класс'], ['5', '5 класс'], ['6', '6 класс']];
   const kr = (n) => (Math.round(n * 10) / 10).toLocaleString('ru-RU') + ' кр';
@@ -306,7 +306,7 @@
 
   function pSborka(pan) {
     const x = it('sborka', 0);
-    pan.innerHTML = head('Сборка', 'Склеим планы, наложим подписи-термины, экраны-задания с паузой 7 с и «Запомни», в конце — титр «Создано с помощью ИИ». Бесплатно.') + okBadge('sborka') +
+    pan.innerHTML = head('Сборка', 'Склеим планы, наложим подписи-термины, экраны-задания с паузой и «Запомни», в конце — титр «Создано с помощью ИИ». Бесплатно.') + okBadge('sborka') +
       `<div class="mk-prev" id="mkprev"><span class="spin"></span></div>
       <div class="mk-final">${x.status === 'idet' ? '<div class="working"><span class="spin"></span><span>Собираю мультик… около минуты</span></div>' : x.status === 'oshibka' ? `<p class="warn"><b>Сборка не прошла:</b> ${esc(x.error || '')}</p>` : x.url ? `${x.ustarel ? '<p class="warn">Собрано из прежних планов — соберите заново.</p>' : ''}<video controls preload="metadata" src="${esc(API_BASE + x.url)}"></video><div class="mk-row"><a class="btn" href="${esc(API_BASE + x.url)}" download="multik.mp4">Скачать mp4 · ${x.sek} с</a>${P.ok.sborka ? '' : utvBtn('sborka', 'Готово')}</div>` : ''}</div>
       <div class="mk-row" style="margin-top:14px"><button class="btn accent" id="mksb" ${x.status === 'idet' ? 'disabled' : ''}>${x.url ? 'Собрать заново' : 'Собрать мультик'} · бесплатно</button></div>`;
