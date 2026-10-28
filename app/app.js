@@ -182,7 +182,7 @@
       const b = e.target.closest('.chip'); if (!b) return; setTip(b.dataset.tip); ta.focus();
     });
     $('#ideas').addEventListener('click', (e) => { const on = $('#recwrap').classList.toggle('hide') === false; store.set('recOpen', on); e.currentTarget.setAttribute('aria-expanded', on); e.currentTarget.textContent = 'Готовые идеи' + (S.recepty.length ? ' · ' + S.recepty.length : '') + (on ? ' ▴' : ' ▾'); });
-    $('#recepty').addEventListener('click', (e) => { const b = e.target.closest('[data-rec]'); if (!b) return; const r = S.recepty.find((x) => x.id === b.dataset.rec); if (r) receptForm(r, (tip, text) => { setTip(tip); ta.value = text; grow(); send(); }); });
+    $('#recepty').addEventListener('click', (e) => { const b = e.target.closest('[data-rec]'); if (!b) return; const r = S.recepty.find((x) => x.id === b.dataset.rec); if (r) receptForm(r, (tip, text, opts) => { setTip(tip); ta.value = text; grow(); send(Object.assign({ recept: r.id }, opts)); }); });
     const sp = $('#stilpill'); if (sp) sp.addEventListener('click', () => { S.stil = []; store.set('stil', S.stil); sp.remove(); toast('Стиль из депо снят'); });
     $('#lang').addEventListener('click', (e) => { S.yazyk = S.yazyk === 'kz' ? 'ru' : 'kz'; e.currentTarget.textContent = S.yazyk === 'kz' ? 'Қаз' : 'Рус'; e.currentTarget.classList.toggle('on', S.yazyk === 'kz'); });
     $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button[data-text]'); if (!b) return; setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); send(); });
@@ -190,25 +190,31 @@
     voice($('#mic'), (t) => { ta.value = (ta.value ? ta.value + ' ' : '') + t; grow(); });
     drawPrice();
     const pre = sessionStorage.getItem('jasa:prefill');
-    if (pre) { const p = JSON.parse(pre); sessionStorage.removeItem('jasa:prefill'); setTip(p.tip); ta.value = p.text; grow(); }
+    if (pre) { const p = JSON.parse(pre); sessionStorage.removeItem('jasa:prefill'); setTip(p.tip); ta.value = p.text; grow(); if (p.auto) send({ ploshchadka: p.ploshchadka, recept: p.recept, pravka: true }); }
     S.feed.slice().reverse().slice(0, 8).forEach((item) => $('#feed').appendChild(sheet(item)));
     $('#brandpill') && $('#brandpill').addEventListener('click', () => { S.useBrend = !S.useBrend; store.set('useBrend', S.useBrend); route(); });
 
-    async function send() {
+    async function send(opts) {
+      opts = opts && !(opts instanceof Event) ? opts : {};
       let text = ta.value.trim();
       if (!text) { ta.focus(); return; }
+      // как у Plumar One: перед рекламой — три вопроса (для кого, где покажем, цель); можно пропустить
+      if (!opts.reklama && !opts.pravka && /реклам|жарнама/i.test(text) && ['post', 'rils', 'afisha', 'karusel'].includes(S.tip)) {
+        reklamaVoprosy((dop) => { if (dop) { ta.value = text + dop.tekst; grow(); } send(Object.assign({}, opts, { reklama: true, ploshchadka: dop && dop.ploshchadka })); });
+        return;
+      }
       let primer = null; const link = (text.match(LINK_RE) || [])[0];
       if (link) {
         toast('Разбираю ролик-пример…');
         try { const r = await api('/api/transcribe', { url: link }); primer = r.text; spend(1, r.ostatok); text = text.replace(link, '').trim() || 'пост в подаче этого примера'; } catch (e) { toast('Пример не разобран: ' + e.message); }
       }
-      const item = { id: Date.now(), tip: S.tip, tema: text, yazyk: S.yazyk, state: 'working', primer };
+      const item = { id: Date.now(), tip: S.tip, tema: text, yazyk: S.yazyk, state: 'working', primer, recept: opts.recept || '' };
       const el = sheet(item);
       $('#feed').prepend(el);
       ta.value = ''; grow();
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       try {
-        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram', primer, depo: S.stil.length ? S.stil : undefined });
+        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: opts.ploshchadka || (item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram'), primer, depo: S.stil.length ? S.stil : undefined });
         Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null });
         spend(res.kredity, res.ostatok);
         S.made += 1; store.set('made', S.made);
@@ -246,6 +252,7 @@
     const m = document.createElement('div'); m.className = 'modal';
     m.innerHTML = `<form class="mbox" autocomplete="off"><button type="button" class="lbx mx" aria-label="Закрыть">×</button><span class="caps">${esc(TIPS[r.tip] || r.tip)} · рецепт</span><h3 style="margin:6px 0 4px">${esc(r.nazvanie)}</h3><p class="small muted" style="margin-bottom:6px">${esc(r.opisanie)}</p>${r.rezultat ? `<p class="small" style="margin-bottom:14px"><b>Получите:</b> ${esc(r.rezultat)}</p>` : ''}${r.tip === 'afisha' ? '<p class="small dim" style="margin:-6px 0 14px">Проверьте дату, цену и написание на картинке перед печатью.</p>' : ''}
       ${r.polya.map((p, i) => `<div class="field"><label for="rf${i}">${esc(p.label)}</label><input id="rf${i}" data-k="${esc(p.k)}" placeholder="${esc(p.ph)}"></div>`).join('')}
+      ${r.reklama ? reklamaHtml() : ''}
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px"><button class="btn accent" type="submit">Сделать · ${esc(priceLabel(r.tip))}</button><span class="dim small">пустое поле агент не выдумает — пометит «[уточнить]»</span></div></form>`;
     document.body.appendChild(m);
     const close = () => m.remove();
@@ -253,14 +260,66 @@
     document.addEventListener('keydown', function esc1(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc1); } });
     $('input', m).focus();
     const btn = $('[type=submit]', m);
+    m.addEventListener('click', (e) => { const c = e.target.closest('.rq .chip'); if (!c) return; e.preventDefault(); const was = c.classList.contains('on'); $$('.chip', c.parentElement).forEach((x) => x.classList.remove('on')); if (!was) c.classList.add('on'); });
     m.addEventListener('input', () => { const link = $$('input[data-k]', m).some((i) => LINK_RE.test(i.value)) ? (S.ceny.transcribe || 1) : 0; btn.textContent = 'Сделать · ' + priceLabel(r.tip, link); });
     $('form', m).addEventListener('submit', (e) => {
       e.preventDefault();
       const v = {}; $$('input[data-k]', m).forEach((i) => { v[i.dataset.k] = i.value.trim(); });
       if (!Object.values(v).some(Boolean)) { toast('Заполните хотя бы одно поле'); return; }
-      const text = r.shablon.replace(/\{([a-z_]+)\}/g, (_, k) => v[k] || '[уточнить]');
-      close(); onGo(r.tip, text);
+      let text = r.shablon.replace(/\{([a-z_]+)\}/g, (_, k) => v[k] || '[уточнить]');
+      const dop = r.reklama ? reklamaSobrat(m) : null;
+      if (dop) text += dop.tekst;
+      close(); onGo(r.tip, text, { reklama: true, ploshchadka: dop && dop.ploshchadka });
     });
+  }
+  // Три вопроса перед рекламой (Plumar One: «что продаём, для кого, где покажем»). Ответы — в задание, площадка — в формат.
+  const RQ = [
+    ['kogo', 'Для кого', ['женщины 25–45', 'мужчины', 'молодые мамы', 'школьники и родители', 'студенты и молодёжь', 'семьи', 'бизнес и ИП', 'люди 45+', 'туристы и гости города']],
+    ['gde', 'Где покажем', ['лента Instagram', 'сторис Instagram', 'Reels / TikTok', 'Telegram-канал', 'рассылка WhatsApp', 'статус WhatsApp', 'карточка Kaspi Магазина', '2GIS', 'офлайн: печать, баннер, экран']],
+    ['cel', 'Чего ждём от людей', ['купить сейчас', 'написать в WhatsApp', 'записаться или оставить заявку', 'прийти на событие', 'узнать о нас']],
+    ['yazyk', 'Язык', ['по-русски', 'қазақша', 'на двух языках']],
+  ];
+  const PLOSHCHADKA = { 'лента Instagram': 'Instagram, пост 4:5', 'сторис Instagram': 'сторис Instagram, 9:16, до 15 с, текст в безопасной зоне', 'Reels / TikTok': 'Instagram Reels / TikTok, вертикально 9:16', 'Telegram-канал': 'Telegram-канал', 'рассылка WhatsApp': 'рассылка WhatsApp, коротко, один призыв', 'статус WhatsApp': 'статус WhatsApp, вертикально 9:16, коротко', 'карточка Kaspi Магазина': 'карточка Kaspi Магазина: фото 1:1 или 3:4 на чистом фоне, без лишнего текста на фото', '2GIS': 'карточка 2GIS: фото и акция', 'офлайн: печать, баннер, экран': 'офлайн: печать, баннер, экран' };
+  function reklamaHtml() {
+    return `<div class="rqbox"><span class="caps">Пара вопросов — реклама попадёт точнее</span>${RQ.map(([k, l, opts]) => `<div class="rq" data-q="${k}"><label>${l}</label><div class="chips">${opts.map((o) => `<button type="button" class="chip">${esc(o)}</button>`).join('')}</div></div>`).join('')}<p class="dim small">Можно не отвечать — тогда JASA выберет сама.</p></div>`;
+  }
+  function reklamaSobrat(root) {
+    const ot = {}; RQ.forEach(([k]) => { const c = $(`.rq[data-q="${k}"] .chip.on`, root); if (c) ot[k] = c.textContent; });
+    if (!Object.keys(ot).length) return null;
+    const yaz = { 'по-русски': 'Язык текста: русский.', 'қазақша': 'Язык текста: казахский, грамотный, не дословный перевод.', 'на двух языках': 'Текст на двух языках: сначала казахский, потом русский, смысл одинаковый.' }[ot.yazyk] || '';
+    let t = '\n' + [ot.kogo && 'Для кого: ' + ot.kogo + (ot.kogo === 'школьники и родители' ? ' (обращаться к родителям, не к детям)' : ''), ot.gde && 'Где покажем: ' + ot.gde, ot.cel && 'Чего ждём от людей: ' + ot.cel].filter(Boolean).join('. ') + '.' + (ot.cel ? ' Призыв — под эту цель.' : '') + (ot.gde ? ' Длина и формат — под площадку.' : '') + (yaz ? ' ' + yaz : '');
+    // ст. 6 п. 2 Закона РК «О рекламе»: офлайн — обязательно на казахском, русский по желанию; к интернету не применяется
+    if (ot.gde === 'офлайн: печать, баннер, экран') t += ' Офлайн-реклама в РК: обязателен текст на казахском, русский — по желанию, перевод без искажения смысла; казахский текст проверить перед печатью.';
+    if (['лента Instagram', 'сторис Instagram', 'Reels / TikTok'].includes(ot.gde)) t += ' Если это реклама по заказу у блогера — в начале подписи пометка «реклама / жарнама».';
+    return { tekst: t, ploshchadka: PLOSHCHADKA[ot.gde] };
+  }
+  function reklamaVoprosy(cb) {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = `<form class="mbox"><button type="button" class="lbx mx" aria-label="Закрыть">×</button><h3 style="margin:0 0 4px">Это реклама?</h3><p class="small muted" style="margin-bottom:12px">Ответьте в несколько касаний — текст и формат попадут точнее. Цена не меняется.</p>${reklamaHtml()}<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn accent" type="submit">Сделать</button><button class="btn quiet" type="button" data-skip>Пропустить</button></div></form>`;
+    document.body.appendChild(m);
+    const done = (dop) => { m.remove(); cb(dop); };
+    m.addEventListener('click', (e) => {
+      const c = e.target.closest('.rq .chip'); if (c) { e.preventDefault(); const was = c.classList.contains('on'); $$('.chip', c.parentElement).forEach((x) => x.classList.remove('on')); if (!was) c.classList.add('on'); return; }
+      if (e.target.closest('[data-skip]') || e.target === m || e.target.closest('.mx')) done(null);
+    });
+    document.addEventListener('keydown', function esc2(e) { if (e.key === 'Escape') { document.removeEventListener('keydown', esc2); if (m.isConnected) done(null); } });
+    $('form', m).addEventListener('submit', (e) => { e.preventDefault(); done(reklamaSobrat(m)); });
+  }
+  // «Подходит / не то» (Plumar One собирает этим датасет): «не то» сразу ведёт к правке словами
+  const FB_PRICHINY = [['yazyk', 'Не тот язык'], ['dlinno', 'Слишком длинно'], ['korotko', 'Слишком коротко'], ['ton', 'Не тот тон'], ['ne-my', 'Не похоже на нас'], ['kartinka', 'Картинка не та'], ['cena', 'Ошибка в цене или контактах'], ['fakty', 'Ошибка в фактах'], ['drugoe', 'Другое']];
+  function fbBlock(item) {
+    if (item.fb === 'ok') return '<div class="fb rv"><span class="dim small">Спасибо, отметили.</span></div>';
+    if (item.fb === 'no') return '<div class="fb rv"><span class="dim small">Отметили, что не подошло.</span></div>';
+    return `<div class="fb rv"><span class="small muted">Как вам результат?</span><button class="btn sm quiet fb-ok" type="button">👍 Подходит</button><button class="btn sm quiet fb-no" type="button">👎 Не то</button></div>`;
+  }
+  function fbPanel(item) {
+    return `<div class="fbpanel"><span class="small"><b>Что не так?</b> Отметьте — переделаем с учётом.</span><div class="chips">${FB_PRICHINY.map(([k, l]) => `<button type="button" class="chip" data-p="${k}">${l}</button>`).join('')}</div><input class="fbtext" placeholder="Своими словами: короче, теплее, без эмодзи, другая картинка…"><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm accent fb-redo" type="button">Переделать · ${esc(priceLabel(item.tip))}, спишем по факту</button><button class="btn sm ghost fb-mark" type="button">Просто отметить</button></div></div>`;
+  }
+  async function fbSend(item, ocenka, el) {
+    const p = $$('.fbpanel .chip.on', el).map((c) => c.dataset.p); const t = (($('.fbtext', el) || {}).value || '').trim();
+    try { await api('/api/otzyv', { ocenka, tip: item.tip, recept: item.recept || '', sheet: String(item.id), prichiny: p, tekst: t, tema: item.tema }); } catch (e) { /* отзыв не критичен */ }
+    item.fb = ocenka; store.set('feed', S.feed);
+    return { p, t };
   }
   function stilPill() {
     if (!S.stil.length) return '';
@@ -287,7 +346,7 @@
     if (item.state === 'error') { el.innerHTML = head + `<div class="warn"><b>Не получилось:</b> ${esc(item.error)}</div>`; return el; }
     const r = item.result || {};
     const R = { post: renderPost, rils: renderRils, afisha: renderAfisha, karusel: renderKarusel, plan: renderPlan }[item.tip] || renderRaw;
-    el.innerHTML = head + R(r, item);
+    el.innerHTML = head + R(r, item) + fbBlock(item);
     $$('.rv', el).forEach((n, i) => { n.style.animationDelay = Math.min(i * 90, 1200) + 'ms'; });
     if (item.imgJob && !item.imgItems) pollImages(item, el);
     if (item.videoJob) pollVideo(item, el);
@@ -296,6 +355,20 @@
       const d = e.target.closest('.draw'); if (d) { drawImage(d, item); return; }
       const wl = e.target.closest('.withlogo'); if (wl) { withLogo(wl); return; }
       const vg = e.target.closest('.vgo'); if (vg) { startVideo(vg, item, el); return; }
+      if (e.target.closest('.fb-ok')) { fbSend(item, 'ok', el).then(() => { $('.fb', el).outerHTML = fbBlock(item); }); return; }
+      if (e.target.closest('.fb-no')) { const fb = $('.fb', el); if (!$('.fbpanel', el)) fb.insertAdjacentHTML('beforeend', fbPanel(item)); $('.fbtext', el).focus(); return; }
+      const fp = e.target.closest('.fbpanel .chip'); if (fp) { fp.classList.toggle('on'); return; }
+      if (e.target.closest('.fb-mark')) { fbSend(item, 'no', el).then(() => { $('.fb', el).outerHTML = fbBlock(item); }); return; }
+      if (e.target.closest('.fb-redo')) {
+        fbSend(item, 'no', el).then(({ p, t }) => {
+          const prichiny = FB_PRICHINY.filter(([k]) => p.includes(k)).map(([, l]) => l.toLowerCase());
+          const proshloe = String((item.result && (item.result.text || item.result.hook || item.result.headline || item.result.caption || item.result.goal)) || '').slice(0, 600);
+          const tekst = item.tema + '\n\nПравка к прошлому варианту: ' + [prichiny.join(', '), t].filter(Boolean).join('; ') + (proshloe ? '.\nПрошлый вариант (начало): ' + proshloe : '');
+          sessionStorage.setItem('jasa:prefill', JSON.stringify({ tip: item.tip, text: tekst, auto: true, recept: item.recept || '' }));
+          if ((location.hash || '#/sozdat').startsWith('#/sozdat')) route(); else location.hash = '#/sozdat';
+        });
+        return;
+      }
       const ch = e.target.closest('.vidpanel .chip'); if (ch) { const k = ch.dataset.res ? 'data-res' : 'data-ratio'; $$('.chip[' + k + ']', ch.parentElement).forEach((c) => c.classList.toggle('on', c === ch)); const vb = $('.vgo', ch.closest('.vidpanel')); if (vb) vb.textContent = 'Снять · 5 с · ' + ({ '480p': 59, '720p': 131, '1080p': 321 }[($('.chip.on[data-res]', ch.closest('.vidpanel')) || {}).dataset.res || '720p']) + ' кр'; return; }
       const c = e.target.closest('[data-copy]'); if (c) { copyText(c.dataset.copy === 'self' ? c.closest('.sheet').innerText : $(c.dataset.copy, el).innerText, c); }
     });
@@ -381,6 +454,17 @@
     const res = ($('.chip.on[data-res]', panel) || {}).dataset.res || '720p';
     const ratio = ($('.chip.on[data-ratio]', panel) || {}).dataset.ratio || '9:16';
     const prompt = $('.vprompt', panel).value.trim(); if (prompt.length < 10) { toast('Опишите ролик'); return; }
+    // как у Plumar One: до списания честно сказать, что в 5 секундах слишком много событий
+    if (panel.dataset.riskOk !== prompt) {
+      let rk = null; try { rk = await api('/api/video/risk', { prompt, duration: 5, resolution: res }); } catch (e) { rk = null; }
+      if (rk && rk.uroven === 'vysoko') {
+        const box = $('.vrisk', panel) || panel.insertAdjacentElement('beforeend', Object.assign(document.createElement('div'), { className: 'vrisk warn' }));
+        box.innerHTML = `<b>Перед съёмкой:</b> ${esc(rk.soobshchenie)}${rk.chasti > 1 ? ` Можно разбить на ${rk.chasti} ролика по 5 с — всего ${rk.chasti * rk.kredity} кр вместо ${rk.kredity}.` : ''}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${rk.mozhno_glavnoe ? '<button class="btn sm accent vmain" type="button">Оставить главное · бесплатно</button>' : ''}<button class="btn sm quiet vasis" type="button">Снять как есть · ${esc(rk.kredity)} кр</button></div>`;
+        if ($('.vmain', box)) $('.vmain', box).onclick = () => { $('.vprompt', panel).value = rk.glavnoe; panel.dataset.riskOk = rk.glavnoe.trim(); box.remove(); toast('Оставил первое событие — проверьте текст и нажмите «Снять»'); };
+        $('.vasis', box).onclick = () => { panel.dataset.riskOk = prompt; box.remove(); startVideo(btn, item, el); };
+        return;
+      }
+    }
     const files = Array.from(($('.vrefs', panel) || {}).files || []).slice(0, 4);
     btn.disabled = true; btn.textContent = 'Отправляю…';
     try {
