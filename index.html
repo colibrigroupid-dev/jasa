@@ -103,6 +103,13 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .poster .h{font:700 1.5rem/1 var(--disp);letter-spacing:-.03em}.poster .s{font-size:12px;opacity:.85}
 .plan{display:grid;gap:6px;margin-top:14px}.plan div{display:grid;grid-template-columns:36px 1fr;gap:10px;font-size:.9rem;padding:8px 10px;border-radius:10px;background:var(--surface-2)}.plan b{font:500 12px var(--mono);color:var(--accent)}
 /* кино */
+.mlt{display:grid;grid-template-columns:1.25fr 1fr;gap:28px;align-items:start;margin-top:28px}.mlt>div{min-width:0}
+.mlt video{width:100%;height:auto;aspect-ratio:16/9;border-radius:var(--r);background:#000;display:block;box-shadow:var(--shadow)}
+.mlt .kadry{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mlt .kadry img{width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:12px;display:block}
+.mlt .shagi{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0;padding:0;list-style:none}.mlt .shagi li{font-size:.85rem;padding:5px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.mlt .golosa{display:grid;gap:8px;margin-top:16px}.mlt .golosa div{display:flex;align-items:center;gap:10px;font-size:.9rem}.mlt .golosa b{min-width:56px}.mlt audio{height:34px;flex:1;min-width:0;width:100%}
+.mlt .ii{font-size:.8rem;color:var(--dim);margin-top:8px}
+@media (max-width:860px){.mlt{grid-template-columns:1fr}}
 .kino{background:var(--ink);color:#fff}.kino h2,.kino h3{color:#fff}.kino .lead{color:rgba(255,255,255,.7)}
 .kino .grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,72px);align-items:start;margin-top:40px}
 .ring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--accent) 75%,rgba(255,255,255,.12) 0);position:relative;flex:none}
@@ -209,6 +216,32 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
       <div class="poster"><img src="img/afisha-fon.jpg" alt="" loading="lazy" width="800" height="1000"><div class="h">Гончарный мастер-класс</div><div><div class="s">суббота · 15:00 · Астана (пример)</div><div class="s" style="opacity:.6">12 000 ₸ · запись в Telegram</div></div></div></div>
     <div class="card rv"><span class="kind">План на неделю</span><h3>Темы, форматы и даты под вашу цель</h3><p>Планировщик чередует форматы, учитывает праздники Казахстана и события вашего бизнеса. Кнопка «сделать все» запускает конвейер.</p>
       <div class="plan"><div><b>Пн</b>пост · новая коллекция, хук про первый снег</div><div><b>Ср</b>рилс · «распаковка» заказа с Kaspi</div><div><b>Пт</b>карусель · 5 вопросов о размерах</div><div><b>Сб</b>сторис · опрос «что показать дальше»</div></div></div>
+  </div>
+</div></section>
+
+<section id="multiki" style="background:var(--bg-2)"><div class="wrap">
+  <span class="caps">Мультики к уроку</span>
+  <h2 style="margin-top:12px;max-width:20ch">Учитель пишет тему урока — получает обучающий мультик.</h2>
+  <p class="lead" style="margin-top:14px">По шагам: сценарий по КСП с проверкой методиста → герои → голоса → стоп-кадры → ролики → сборка. Цена каждого шага видна до запуска.</p>
+  <div class="mlt">
+    <div class="rv">
+      <video controls playsinline preload="none" poster="img/multiki/multik-sultan-govorit-poster.jpg" data-no-lupa width="854" height="480"><source src="img/multiki/multik-sultan-govorit.mp4" type="video/mp4"></video>
+      <p class="ii">Урок «Какие бывают растения?», 1 класс. Султан: «Нет, разные! А как их различить?» · создано с помощью ИИ</p>
+    </div>
+    <div class="rv">
+      <div class="kadry">
+        <figure style="margin:0" data-cap="Стоп-кадр: Аман у ромашки, подходит Султан · создано с помощью ИИ"><img src="img/multiki/kadr-polyana.jpg" alt="Мультик: снежный барс Аман у ромашки на поляне в горах, к нему идёт волчонок Султан" loading="lazy" width="1600" height="894"></figure>
+        <figure style="margin:0" data-cap="Стоп-кадр: Аман трогает ствол тополя · создано с помощью ИИ"><img src="img/multiki/kadr-aman-topol.jpg" alt="Мультик: снежный барс Аман кладёт лапу на ствол тополя" loading="lazy" width="1600" height="894"></figure>
+      </div>
+      <p class="ii">Стоп-кадры из того же урока · создано с помощью ИИ</p>
+      <div class="golosa">
+        <div><b>Аман</b><audio controls preload="none" src="img/multiki/golos-aman.mp3"></audio></div>
+        <div><b>Султан</b><audio controls preload="none" src="img/multiki/golos-sultan.mp3"></audio></div>
+      </div>
+      <p class="ii">Голоса героев подобраны по их рисунку · создано с помощью ИИ. Герои AMANSULTAN — авторские, показаны с согласия автора.</p>
+      <ul class="shagi"><li>сценарий по КСП</li><li>проверка методиста</li><li>герои</li><li>голоса</li><li>стоп-кадры</li><li>ролики</li><li>сборка</li></ul>
+      <div class="cta" style="margin-top:20px"><a class="btn accent" href="https://t.me/jasa_asia_bot?start=multiki">Записаться — скоро для всех</a></div>
+    </div>
   </div>
 </div></section>
 
