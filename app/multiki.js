@@ -270,18 +270,26 @@
   function pGolos(pan) {
     const gp = gplany(); const net = gp.filter((p) => !ready(it('golos', p.n)) && it('golos', p.n).status !== 'idet');
     const cena = net.reduce((s, p) => s + (p.cena_golos || 0), 0);
-    pan.innerHTML = head('Озвучка', 'Голоса синтезированы ИИ — это не голоса реальных детей. Каждая реплика — отдельный файл: послушайте и переозвучьте, если интонация не та. Длина реплики задаёт длину плана — поэтому голос до картинок.') + okBadge('golos') +
-      (P.brif.yazyk === 'kz' ? '<p class="warn"><b>Қазақша:</b> послушайте все реплики целиком — ударения и звуки ә, ғ, қ, ң, ө, ұ, ү, і модель может произнести неточно.</p>' : '') +
-      `<div class="mk-voices">${P.brif.geroi.map((g) => `<label>${esc(g.imya)}<select data-gv="${esc(g.imya)}">${arr(L.golosa).map((v) => `<option value="${v.kod}" ${g.golos === v.kod ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>`).join('')}</div>
-      ${net.length ? `<div class="mk-row" style="margin:14px 0"><button class="btn accent" id="mkall">Озвучить ${net.length === gp.length ? 'все' : 'остальные'} · ≈ ${kr(cena)}</button></div>` : ''}
+    const kz = P.brif.yazyk === 'kz';
+    pan.innerHTML = head('Озвучка', 'Голос каждого героя ИИ подбирает по его рисунку — это синтез, не голоса реальных детей. Каждая реплика — отдельный файл: послушайте, переозвучьте или загрузите свою запись. Длина реплики задаёт длину плана — поэтому голос до стоп-кадров.') + okBadge('golos') +
+      (kz ? '<p class="warn"><b>Қазақша:</b> синтез казахской речи пока звучит неразборчиво (проверено 28.10). Запишите реплики сами — кнопка «Своя запись» у каждой реплики, бесплатно. Можно на телефон.</p>' : '') +
+      (it('geroi', 'list').url ? '' : `<div class="mk-voices">${P.brif.geroi.map((g) => `<label>${esc(g.imya)}<select data-gv="${esc(g.imya)}">${arr(L.golosa).map((v) => `<option value="${v.kod}" ${g.golos === v.kod ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>`).join('')}</div>`) +
+      `${net.length && !kz ? `<div class="mk-row" style="margin:14px 0"><button class="btn accent" id="mkall">Озвучить ${net.length === gp.length ? 'все' : 'остальные'} · ≈ ${kr(cena)}</button></div>` : ''}
       <div class="mk-lines">${gp.map((p) => { const x = it('golos', p.n); return `<div class="mk-line"><b>${p.n}. ${esc(p.kto || '—')}</b><span>${esc(p.replika)}${p.dolgo ? '<br><span class="small" style="color:var(--bad)">Реплика длиннее 11 с — один план её не вместит. Сократите в раскадровке.</span>' : ''}</span>
         <div>${x.status === 'idet' ? '<span class="spin"></span>' : x.status === 'oshibka' ? `<span class="small" style="color:var(--bad)">${esc(x.error || 'ошибка')}</span>` : x.url ? `<audio controls preload="none" src="${esc(API_BASE + x.url)}"></audio>${x.ustarel ? '<span class="mk-old">устарел</span>' : ''}` : ''}
-        <button class="btn sm ${x.url ? 'quiet' : ''}" data-g="${p.n}" ${x.status === 'idet' ? 'disabled' : ''}>${x.url ? 'Ещё раз' : 'Озвучить'} · ≈ ${kr(p.cena_golos)}</button></div></div>`; }).join('') || '<p class="muted">В мультике нет реплик.</p>'}</div>
+        <button class="btn sm ${x.url || kz ? 'quiet' : ''}" data-g="${p.n}" ${x.status === 'idet' ? 'disabled' : ''}>${x.url ? 'Ещё раз' : 'Озвучить'} · ≈ ${kr(p.cena_golos)}</button>
+        <label class="btn sm ${kz && !x.url ? '' : 'quiet'}"><input type="file" accept="audio/*" hidden data-gs="${p.n}">Своя запись</label>${x.svoj ? '<span class="small dim">ваша запись</span>' : ''}</div></div>`; }).join('') || '<p class="muted">В мультике нет реплик.</p>'}</div>
       <div class="mk-row" style="margin-top:18px">${P.ok.golos ? '' : utvBtn('golos', 'Голоса подходят')}</div>`;
     bindCommon(pan);
     $$('[data-gv]', pan).forEach((s) => { s.onchange = async () => { try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'golos', golosa: { [s.dataset.gv]: s.value } })).proekt; drawProekt(); } catch (e) { toast(e.message); } }; });
     const all = $('#mkall'); if (all) all.onclick = () => run(all, '/api/multiki/golos', { n: 'vse' }, 'Озвучиваю…');
     $$('[data-g]', pan).forEach((b) => { b.onclick = () => run(b, '/api/multiki/golos', { n: +b.dataset.g }, 'Озвучиваю…'); });
+    $$('input[data-gs]', pan).forEach((inp) => { inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      if (f.size > 9e6) { toast('Запись больше 9 МБ'); return; }
+      try { toast('Загружаю запись…'); P = (await api('/api/multiki/golos_svoj', { pid: P.id, n: +inp.dataset.gs, fajl: { b64: await J.toB64(f), mime: f.type } })).proekt; drawProekt(); }
+      catch (e) { toast(e.message); }
+    }; });
   }
 
   function pVideo(pan) {
