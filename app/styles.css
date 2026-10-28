@@ -389,3 +389,41 @@ select{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--
 ul.good{margin:10px 0 0;padding-left:20px}ul.good li{margin:4px 0}
 .fix .tagv{font:500 10px/1 var(--mono);text-transform:uppercase;padding:3px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);vertical-align:middle}.fix.second .tagv{background:var(--surface-2,var(--bg));color:var(--dim)}
 .contra{margin-top:16px;padding:14px 16px;border-radius:var(--r);border:1px dashed var(--line)}.contra p{margin-top:8px}
+
+/* ---------- 28.10 · живая карта команды: слои, передача находок, вопросы соседу ---------- */
+.flow{position:relative;margin-top:6px;padding:8px 0 4px}
+.flow-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0}
+.flow-cols{position:relative;z-index:1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:34px;align-items:center}
+.fcol{display:flex;flex-direction:column;gap:12px}
+.fl{font:500 10.5px/1.2 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--dim);text-align:center;margin-bottom:2px}
+.fnode{position:relative;display:grid;gap:2px;padding:11px 12px 10px 30px;border-radius:14px;background:var(--surface);border:1px solid var(--line-soft);box-shadow:var(--shadow);transition:border-color .3s,background .3s,transform .3s}
+.fnode b{font-size:13.5px;line-height:1.2;color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+.fnode small{font-size:11.5px;line-height:1.3;color:var(--dim)}
+.fnode .fn{font:500 11px/1.3 var(--mono);color:var(--muted);margin-top:3px;min-height:1em}
+.fnode i{position:absolute;left:11px;top:15px;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.fnode[data-s="работает"]{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-1px)}
+.fnode[data-s="работает"] i{background:var(--accent);box-shadow:0 0 0 0 var(--accent);animation:fnpulse 1.4s infinite}
+.fnode[data-s="готово"] i{background:var(--ok)}.fnode[data-s="частично"] i{background:var(--warn)}.fnode[data-s="ошибка"] i{background:var(--bad)}
+.fnode[data-s="ожидает"]{opacity:.62}
+.fnode.blind::after{content:"вслепую";position:absolute;top:-8px;right:10px;font:500 9.5px/1 var(--mono);padding:3px 6px;border-radius:999px;background:var(--ink);color:var(--surface);letter-spacing:.04em}
+@keyframes fnpulse{0%{box-shadow:0 0 0 0 rgba(232,66,15,.55)}70%{box-shadow:0 0 0 9px rgba(232,66,15,0)}100%{box-shadow:0 0 0 0 rgba(232,66,15,0)}}
+.flow-svg .e{fill:none;stroke-width:1.6;transition:stroke .4s,opacity .4s}
+.flow-svg .e.idle{stroke:var(--line);opacity:.55;stroke-dasharray:2 5}
+.flow-svg .e.done{stroke:var(--ok);opacity:.45}
+.flow-svg .e.flowing{stroke:var(--accent);opacity:.95;stroke-width:2;stroke-dasharray:6 9;animation:fedash .9s linear infinite}
+.flow-svg .e.ask{stroke:#5B8CFF;stroke-width:1.8;stroke-dasharray:3 4;opacity:.95}
+.flow-svg .ahd{fill:#5B8CFF}
+@keyframes fedash{to{stroke-dashoffset:-30}}
+@media (prefers-reduced-motion:reduce){.flow-svg .e.flowing{animation:none}.fnode[data-s="работает"] i{animation:none}}
+.tfeed-wrap{margin-top:26px;max-width:860px}
+.tfeed{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px;max-height:420px;overflow:auto}
+.tfeed li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;padding:10px 12px;border-radius:12px;background:var(--surface);animation:tfin .35s ease-out}
+.tfeed li p{margin:3px 0 0;font-size:var(--fs-small);color:var(--text);line-height:1.45}
+.tfeed li b{font-size:13px;color:var(--ink)}
+.tfeed li.all{box-shadow:inset 3px 0 0 var(--accent)}.tfeed li.q{box-shadow:inset 3px 0 0 #5B8CFF}.tfeed li.err{box-shadow:inset 3px 0 0 var(--bad)}
+.tfeed .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:600 13px/1 var(--disp,inherit);color:#fff;background:var(--ink)}
+.tfeed .av[data-sl="1"]{background:#C2410C}.tfeed .av[data-sl="2"]{background:#0E7C66}.tfeed .av[data-sl="3"]{background:#3B5BDB}.tfeed .av[data-sl="4"]{background:#8A5A00}.tfeed .av[data-sl="5"]{background:#7C3AED}.tfeed .av[data-sl="6"]{background:#BE185D}
+@keyframes tfin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (max-width:1100px){.flow-cols{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 18px;align-items:start}}
+@media (max-width:640px){.flow-cols{grid-template-columns:1fr}.fcol{flex-direction:row;flex-wrap:wrap}.fcol .fl{width:100%;text-align:left}.fnode{flex:1 1 140px}}
+.team-log summary{cursor:pointer;list-style:none}.team-log summary::-webkit-details-marker{display:none}.team-log .tfeed{max-height:none}

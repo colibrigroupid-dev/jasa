@@ -634,16 +634,113 @@
       } catch (e) { toast(e.message); $('#run').disabled = false; }
     });
   }
+  // ---------- Живая карта команды: слои, передача находок, вопросы соседу, лента ----------
+  const SLOJ_IMYA = { 1: 'ядро', 2: 'скелет', 3: 'ткань', 4: 'рынок и риски', 5: 'синтез', 6: 'ходы' };
+  function glavnoe(r) {
+    if (!r || typeof r !== 'object') return '';
+    for (const [k, v] of Object.entries(r)) {
+      if (k.startsWith('_') || !Array.isArray(v)) continue;
+      const x = v.find((y) => y && typeof y === 'object');
+      if (!x) continue;
+      const t = x.sut || x.chto || x.pochemu || x.povorot || x.risk || x.kommentarij || x.nazvanie || x.slabo || '';
+      if (t) return (x.scena ? 'сц. ' + x.scena + ': ' : '') + t;
+    }
+    return r.itog || r.kontrakt || r.zhanr || '';
+  }
+  function nahodok(r) {
+    if (!r || typeof r !== 'object') return 0;
+    let n = 0; for (const [k, v] of Object.entries(r)) if (!k.startsWith('_') && Array.isArray(v)) n += v.filter((x) => x && typeof x === 'object').length;
+    return n;
+  }
+  const slov = (n) => n % 10 === 1 && n % 100 !== 11 ? 'находка' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'находки' : 'находок');
+  function feedPush(st, k, name, text, kind) { st.feed.push({ k, name, text: String(text || '').slice(0, 220), kind: kind || '', t: Math.round((Date.now() - st.t0) / 1000) }); }
+  function soobshcheniya(j, st, k, a) {
+    const r = (j.results || {})[k] || {};
+    if (k === 'serdce') feedPush(st, k, a.name, 'передал всей команде зеницу: ' + arr(j.zenica).length + ' пунктов, которые нельзя трогать', 'all');
+    else if (k === 'showrunner') feedPush(st, k, a.name, `собрал речь команды: ${arr(r.pravki).length} правок, ${arr(r.protivorechiya).length} споров разобрано, ${arr(r.voprosy_avtoru).length} вопросов вам`, 'all');
+    else { const n = nahodok(r); feedPush(st, k, a.name, (n ? n + ' ' + slov(n) + ' → следующему слою. ' : 'передал выводы. ') + glavnoe(r)); }
+    const vs = r.vopros_sosedu;
+    if (vs && vs.vopros) { const komuImya = (j.agents[vs.komu] || {}).name || vs.komu; feedPush(st, k, a.name, 'спрашивает ' + komuImya + ': «' + vs.vopros + '»', 'q'); st.q.push([k, vs.komu]); }
+  }
+  function teamBoard(j, st) {
+    const box = $('#flow'); if (!box) return;
+    const ags = Object.entries(j.agents || {});
+    if (!st.built) {
+      const sloi = {}; ags.forEach(([k, a]) => { (sloi[a.sloj || 0] = sloi[a.sloj || 0] || []).push([k, a]); });
+      const L = Object.keys(sloi).map(Number).sort((x, y) => x - y);
+      $('#flowcols').innerHTML = L.map((l, i) => `<div class="fcol"><span class="fl">${l ? l + ' · ' : ''}${esc(SLOJ_IMYA[l] || '')}</span>${i === 0 ? '<div class="fnode" data-k="chitatel" data-s="готово"><i></i><b>Читатель</b><small>карта сцен · код</small><span class="fn">сцены и минуты</span></div>' : ''}${sloi[l].map(([k, a]) => `<div class="fnode${k === 'kritik' ? ' blind' : ''}" data-k="${esc(k)}" data-s="${esc(a.state)}"><i></i><b>${esc(a.name)}</b><small>${esc(a.role)}</small><span class="fn"></span></div>`).join('')}</div>`).join('');
+      st.built = true; st.sloj = Object.fromEntries(ags.map(([k, a]) => [k, a.sloj || 0])); st.sloi = L;
+      feedPush(st, 'chitatel', 'Читатель', j.chitatel ? `разметил ${j.chitatel.scen} сцен и героев — карта ушла всей команде` : 'размечает сцены', 'all');
+    }
+    ags.forEach(([k, a]) => {
+      const n = box.querySelector(`.fnode[data-k="${k}"]`); if (!n) return;
+      n.dataset.s = a.state;
+      const c = nahodok((j.results || {})[k]);
+      n.querySelector('.fn').textContent = a.state === 'работает' ? (k === 'kritik' ? 'читает вслепую…' : 'читает доску и пишет…')
+        : (a.state === 'готово' || a.state === 'частично') ? (c ? c + ' ' + slov(c) : 'готово') + (a.sec ? ' · ' + a.sec + ' с' : '')
+          : a.state === 'ошибка' ? 'не ответил' : 'ждёт свой слой';
+      const was = st.prev[k];
+      if (was !== a.state) {
+        st.prev[k] = a.state;
+        if (a.state === 'работает') feedPush(st, k, a.name, k === 'kritik' ? 'начал вслепую: видит только сценарий и ваши ответы' : st.sloj[k] === 1 ? 'читает сценарий и ваши ответы' : 'получил доску прошлых слоёв, начал работу');
+        if (a.state === 'готово' || a.state === 'частично') soobshcheniya(j, st, k, a);
+        if (a.state === 'ошибка') feedPush(st, k, a.name, 'не ответил — команда идёт дальше без него', 'err');
+      }
+    });
+    drawEdges(st, j);
+    const f = $('#tfeed');
+    if (f) f.innerHTML = st.feed.slice().reverse().slice(0, 40).map((m) => `<li class="${m.kind}"><span class="av" data-sl="${st.sloj[m.k] || 0}">${esc(m.name.slice(0, 1))}</span><div><b>${esc(m.name)}</b> <span class="dim">+${m.t} с</span><p>${esc(m.text)}</p></div></li>`).join('');
+  }
+  function drawEdges(st, j) {
+    const box = $('#flow'); if (!box || !st.sloi) return;
+    const svg = box.querySelector('.flow-svg'); const B = box.getBoundingClientRect();
+    svg.setAttribute('viewBox', `0 0 ${B.width} ${B.height}`);
+    const node = (k) => box.querySelector(`.fnode[data-k="${k}"]`);
+    const rect = (el) => { const r = el.getBoundingClientRect(); return { l: r.left - B.left, r: r.right - B.left, t: r.top - B.top, b: r.bottom - B.top, cx: (r.left + r.right) / 2 - B.left, cy: (r.top + r.bottom) / 2 - B.top }; };
+    const ks = (l) => Object.keys(st.sloj).filter((k) => st.sloj[k] === l);
+    const pairs = [['chitatel', ks(st.sloi[0])[0]]];
+    st.sloi.forEach((l, i) => { const nx = st.sloi[i + 1]; if (nx == null) return; ks(l).forEach((a) => { if (a === 'kritik') return; ks(nx).forEach((b) => { if (b !== 'kritik') pairs.push([a, b]); }); }); });
+    if (st.sloj.kritik && st.sloj.showrunner) pairs.push(['kritik', 'showrunner']);   // слепая оценка Критика идёт прямо в синтез и формулу балла
+    const path = (s, t) => {
+      if (t.l >= s.r - 4) { const dx = Math.max(24, (t.l - s.r) / 2); return `M${s.r},${s.cy} C${s.r + dx},${s.cy} ${t.l - dx},${t.cy} ${t.l},${t.cy}`; }
+      const dy = Math.max(16, (t.t - s.b) / 2); return `M${s.cx},${s.b} C${s.cx},${s.b + dy} ${t.cx},${t.t - dy} ${t.cx},${t.t}`;
+    };
+    const stt = (k) => (node(k) || {}).dataset ? node(k).dataset.s : '';
+    let html = '';
+    pairs.forEach(([a, b]) => {
+      const na = node(a), nb = node(b); if (!na || !nb) return;
+      const sa = stt(a), sb = stt(b);
+      const cls = sb === 'работает' && (sa === 'готово' || sa === 'частично') ? 'flowing' : (sa === 'готово' || sa === 'частично') && (sb === 'готово' || sb === 'частично') ? 'done' : 'idle';
+      html += `<path class="e ${cls}" d="${path(rect(na), rect(nb))}"/>`;
+    });
+    st.q.forEach(([a, b]) => {
+      const na = node(a), nb = node(b); if (!na || !nb) return;
+      const s = rect(na), t = rect(nb);
+      if (Math.abs(s.cx - t.cx) < 30) {   // соседи по одному слою — дуга сбоку, слева от столбца
+        const bx = Math.max(4, Math.min(s.l, t.l) - 34);   // на узком экране дуга не уходит за край
+        html += `<path class="e ask" d="M${s.l},${s.cy} C${bx},${s.cy} ${bx},${t.cy} ${t.l},${t.cy}" marker-end="url(#ah)"/>`;
+      } else {
+        const top = Math.min(s.t, t.t) - 28;
+        html += `<path class="e ask" d="M${s.cx},${s.t} Q${(s.cx + t.cx) / 2},${top} ${t.cx},${t.t}" marker-end="url(#ah)"/>`;
+      }
+    });
+    svg.innerHTML = '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahd"/></marker></defs>' + html;
+  }
   function pollJob(id) {
     let first = true; let fails = 0; const token = S.pollToken;
+    const st = { built: false, prev: {}, feed: [], t0: Date.now(), q: [] };
+    const onResize = () => { if ($('#flow')) drawEdges(st); else removeEventListener('resize', onResize); };
+    addEventListener('resize', onResize);
     const tick = async () => {
       if (token !== S.pollToken || !$('#sc')) return;
       let j; try { j = await api('/api/scenariy/razbor/' + id); } catch (e) { if (token !== S.pollToken || !$('#sc')) return; fails++; if (fails < 5 && !/нет такой/.test(e.message)) { setTimeout(tick, 3000); return; } $('#sc').innerHTML = `<div class="warn"><b>Задача потеряна:</b> ${esc(e.message)}</div><p style="margin-top:12px"><button class="btn sm" id="again">Начать заново</button></p>`; $('#again').onclick = () => { S.job = null; store.set('job', null); route(); }; return; }
       if (token !== S.pollToken || !$('#sc')) return;
       if (first) { first = false; $('#sc').innerHTML = `<div class="steps"><span class="done">1 · Сценарий</span><span class="done">2 · Четыре вопроса</span><span class="on">3 · Агенты</span><span>4 · Отчёт</span></div>
-        <section style="margin-bottom:18px"><h2>Команда работает по слоям</h2><p class="dim small" style="margin-top:6px">Каждый следующий слой видит находки предыдущих. Критик оценивает вслепую.</p><div class="chitatel" id="chit" style="margin-top:10px"></div></section><div class="board" id="board"></div><p class="dim small" style="margin-top:14px" id="jmeta"></p>`; }
+        <section style="margin-bottom:18px"><h2>Команда работает по слоям</h2><p class="dim small" style="margin-top:6px">Каждый следующий слой получает находки предыдущих. Критик оценивает вслепую. Линии показывают, кто кому передаёт.</p><div class="chitatel" id="chit" style="margin-top:10px"></div></section>
+        <div class="flow" id="flow"><svg class="flow-svg" aria-hidden="true"></svg><div class="flow-cols" id="flowcols"></div></div>
+        <div class="tfeed-wrap"><span class="caps">Лента команды</span><ol class="tfeed" id="tfeed"></ol></div><p class="dim small" style="margin-top:14px" id="jmeta"></p>`; }
       if (j.chitatel) $('#chit').innerHTML = `<span>Читатель: <b>${j.chitatel.scen}</b> сцен</span><span><b>${j.chitatel.stranic}</b> стр ≈ <b>${j.chitatel.minut}</b> мин</span><span>героев: <b>${j.chitatel.geroi.length}</b></span><span>режим: <b>${esc(j.rezhim)}</b></span>`;
-      $('#board').innerHTML = Object.entries(j.agents).map(([k, a]) => `<div class="ag" data-s="${a.state}"><b>${esc(a.name)}</b><span class="st"></span><small>${a.sloj ? 'слой ' + esc(a.sloj) + ' · ' : ''}${esc(a.role)}${a.sec ? ' · ' + a.sec + ' с' : ''}${j.errors[k] ? ' · ' + esc(j.errors[k]).slice(0, 60) : ''}</small></div>`).join('');
+      teamBoard(j, st);
       $('#jmeta').textContent = 'потрачено ' + j.kredity + ' кр';
       if (j.done) { S.job = j; store.set('job', j); if (!S.spentJobs[j.id]) { S.spentJobs[j.id] = 1; store.set('spentJobs', S.spentJobs); spend(j.kredity, j.ostatok); } setTimeout(() => { if (token === S.pollToken) renderReport(j); }, 900); return; }
       setTimeout(tick, 1500);
@@ -655,7 +752,7 @@
     const ry = arr(R.rynochnik && R.rynochnik.leyery); const best = Math.max(...ry.map((l) => +l.ball || 0), 0);
     const kr = R.kritik || {}; const zen = arr(R.serdce && R.serdce.zenica);
     const B = j.ball || {}; const ball = B.tekst != null ? +B.tekst : (+sr.ball || +kr.obshchiy || 0);
-    const CH = { syuzhet: 'сюжет', geroi: 'герой', dialog: 'диалог', premisa: 'премиса', mir: 'мир' };
+    const CH = { syuzhet: 'сюжет', geroi: 'герой', dialog: 'диалог', premisa: 'премиса', mir: 'мир', polza: 'польза' };
     const RP = { kz: 'Казахстан', asia: 'Азия', stream: 'стриминги', eu: 'фестивали', vse: 'среднее по рынкам' };
     const otbr = Object.values(j.proverka || {}).reduce((a, x) => a + (+x.otbrosheno || 0), 0);
     const chasti = Object.entries(B.chasti || {}).filter(([, v]) => v != null).map(([k, v]) => `<span class="${arr(B.potolok).includes(k) ? 'low' : ''}">${CH[k]} <b>${esc(v)}</b></span>`).join('');
@@ -681,9 +778,13 @@
         <div class="card rv"><span class="caps">Миксер · а что если</span><div class="mix" style="margin-top:12px">${arr(R.mikser && R.mikser.varianty).map((v) => `<div class="mixv">${v.k_pravke && v.k_pravke !== '—' ? `<small class="dim">к правке ${esc(v.k_pravke)}</small>` : ''}<b>${esc(v.nazvanie)}</b><p>${esc(v.sut)}</p><p class="dim">сохраняется: ${esc(v.sohranyaetsya)} · риск: ${esc(v.risk)}</p></div>`).join('')}</div></div>
         <div class="two"><div class="card rv"><span class="caps">Персонажник</span>${arr(R.personazhnik && R.personazhnik.geroi).map((g) => `<p class="small" style="margin-top:10px"><b>${esc(g.imya)}</b> — ${esc(g.zhelanie)} / нужда: ${esc(g.nuzhda)}<br><span class="dim">${esc(g.arka)} · ${esc(g.slabo)}</span></p>`).join('')}<p class="small muted" style="margin-top:10px">${esc((R.personazhnik && R.personazhnik.test_imen) || '')}</p></div>
         <div class="card rv"><span class="caps">Страж · риски и рейтинг</span><p class="small" style="margin-top:8px"><b>${esc((R.strazh && R.strazh.reyting) || '')}</b></p>${arr(R.strazh && R.strazh.riski).map((r) => `<p class="small" style="margin-top:8px"><b>Сц. ${esc(r.scena)}</b> · ${esc(r.risk)}<br><span class="dim">${esc(r.smyagchit)}</span></p>`).join('')}
+          ${arr(R.strazh && R.strazh.fakty).length ? `<span class="caps" style="display:block;margin-top:18px">Факты и советы · проверка</span>${arr(R.strazh.fakty).map((f) => `<p class="small" style="margin-top:8px"><b>Сц. ${esc(f.scena)}</b> · «${esc(f.citata)}»<br><span class="${/сверить/.test(f.status) ? '' : 'dim'}">${esc(f.status)}</span> <span class="dim">${esc(f.kommentarij)}</span></p>`).join('')}` : ''}
           <span class="caps" style="display:block;margin-top:18px">Продюсер</span><p class="small" style="margin-top:6px"><b>${esc((R.prodyuser && R.prodyuser.kategoriya) || '')}</b> · ${R.prodyuser && R.prodyuser.ii_proizvodstvo ? `кадров ${esc(R.prodyuser.ii_proizvodstvo.kadrov)}, видео ${esc(R.prodyuser.ii_proizvodstvo.video_sekund)} с · ${esc(R.prodyuser.ii_proizvodstvo.zamechanie)}` : ''}</p></div></div>
         ${R.yazykoved ? `<div class="card rv"><span class="caps">Языковед · речь RU/KZ</span><p class="small" style="margin-top:8px">${esc(R.yazykoved.dvuyazychie || '')}</p>${arr(R.yazykoved.zamechaniya).map((z) => `<p class="small" style="margin-top:8px"><b>Сц. ${esc(z.scena)}</b> · ${esc(z.chto)}: «${esc(z.replika)}» <span class="dim">→ ${esc(z.kak)}</span></p>`).join('')}</div>` : ''}
         ${R.arhitektor ? `<div class="card rv"><span class="caps">Архитектор · структура</span><p class="small" style="margin-top:8px">${esc(R.arhitektor.hronometrazh || '')}</p>${arr(R.arhitektor.zatyanuto).map((z) => `<p class="small" style="margin-top:8px"><b>Затянуто · сц. ${esc(z.scena)}</b> — ${esc(z.pochemu)} <span class="dim">→ ${esc(z.predlozhenie)}</span></p>`).join('')}${arr(R.arhitektor.skomkano).map((z) => `<p class="small" style="margin-top:8px"><b>Скомкано · сц. ${esc(z.scena)}</b> — ${esc(z.pochemu)} <span class="dim">→ ${esc(z.predlozhenie)}</span></p>`).join('')}</div>` : ''}
+        ${(() => { const st2 = { feed: [], t0: Date.now(), q: [], sloj: Object.fromEntries(Object.entries(j.agents || {}).map(([k, a]) => [k, a.sloj || 0])) };
+          Object.entries(j.agents || {}).sort((a, b) => (a[1].sloj || 0) - (b[1].sloj || 0)).forEach(([k, a]) => { if (a.state === 'готово' || a.state === 'частично') soobshcheniya(j, st2, k, a); });
+          return st2.feed.length ? `<details class="card rv team-log"><summary><span class="caps">Как работала команда · ${st2.feed.length} передач</span></summary><ol class="tfeed">${st2.feed.map((m) => `<li class="${m.kind}"><span class="av" data-sl="${st2.sloj[m.k] || 0}">${esc(m.name.slice(0, 1))}</span><div><b>${esc(m.name)}</b> <span class="dim">слой ${esc(st2.sloj[m.k] || '')}</span><p>${esc(m.text)}</p></div></li>`).join('')}</ol></details>` : ''; })()}
         ${arr(sr.plan_v2).length ? `<div class="card rv"><span class="caps">План версии 2</span><ol style="margin:10px 0 0;padding-left:20px">${arr(sr.plan_v2).map((p) => `<li>${esc(p)}</li>`).join('')}</ol>${sr.rezhim_otvet ? `<p class="small muted" style="margin-top:12px">${esc(sr.rezhim_otvet)}</p>` : ''}</div>` : ''}
       </div>`;
     $$('.rv', $('#sc')).forEach((n, i) => (n.style.animationDelay = Math.min(i * 120, 1500) + 'ms'));
