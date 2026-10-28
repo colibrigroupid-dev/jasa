@@ -190,7 +190,7 @@
     voice($('#mic'), (t) => { ta.value = (ta.value ? ta.value + ' ' : '') + t; grow(); });
     drawPrice();
     const pre = sessionStorage.getItem('jasa:prefill');
-    if (pre) { const p = JSON.parse(pre); sessionStorage.removeItem('jasa:prefill'); setTip(p.tip); ta.value = p.text; grow(); if (p.auto) send({ ploshchadka: p.ploshchadka, recept: p.recept, pravka: true }); }
+    if (pre) { const p = JSON.parse(pre); sessionStorage.removeItem('jasa:prefill'); setTip(p.tip); ta.value = p.text; grow(); if (p.auto) send({ ploshchadka: p.ploshchadka, recept: p.recept, pravka: true, besplatno: p.besplatno, poyasnenie: p.poyasnenie }); }
     S.feed.slice().reverse().slice(0, 8).forEach((item) => $('#feed').appendChild(sheet(item)));
     $('#brandpill') && $('#brandpill').addEventListener('click', () => { S.useBrend = !S.useBrend; store.set('useBrend', S.useBrend); route(); });
 
@@ -208,14 +208,14 @@
         toast('Разбираю ролик-пример…');
         try { const r = await api('/api/transcribe', { url: link }); primer = r.text; spend(1, r.ostatok); text = text.replace(link, '').trim() || 'пост в подаче этого примера'; } catch (e) { toast('Пример не разобран: ' + e.message); }
       }
-      const item = { id: Date.now(), tip: S.tip, tema: text, yazyk: S.yazyk, state: 'working', primer, recept: opts.recept || '' };
+      const item = { id: Date.now(), tip: S.tip, tema: text, yazyk: S.yazyk, state: 'working', primer, recept: opts.recept || '', besplatno: !!opts.besplatno };
       const el = sheet(item);
       $('#feed').prepend(el);
       ta.value = ''; grow();
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       try {
-        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: opts.ploshchadka || (item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram'), primer, depo: S.stil.length ? S.stil : undefined });
-        Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null });
+        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: opts.ploshchadka || (item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram'), primer, depo: S.stil.length ? S.stil : undefined, besplatno: opts.besplatno || undefined });
+        Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null, zid: res.zid || '', besplatno: !!res.besplatno });
         spend(res.kredity, res.ostatok);
         S.made += 1; store.set('made', S.made);
       } catch (e) {
@@ -313,13 +313,43 @@
     return `<div class="fb rv"><span class="small muted">Как вам результат?</span><button class="btn sm quiet fb-ok" type="button">👍 Подходит</button><button class="btn sm quiet fb-no" type="button">👎 Не то</button></div>`;
   }
   function fbPanel(item) {
-    return `<div class="fbpanel"><span class="small"><b>Что не так?</b> Отметьте — переделаем с учётом.</span><div class="chips">${FB_PRICHINY.map(([k, l]) => `<button type="button" class="chip" data-p="${k}">${l}</button>`).join('')}</div><input class="fbtext" placeholder="Своими словами: короче, теплее, без эмодзи, другая картинка…"><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm accent fb-redo" type="button">Переделать · ${esc(priceLabel(item.tip))}, спишем по факту</button><button class="btn sm ghost fb-mark" type="button">Просто отметить</button></div></div>`;
+    return `<div class="fbpanel"><span class="small"><b>Что не так?</b> Отметьте — переделаем с учётом.</span><div class="chips">${FB_PRICHINY.map(([k, l]) => `<button type="button" class="chip" data-p="${k}">${l}</button>`).join('')}</div><input class="fbtext" placeholder="Своими словами: короче, теплее, без эмодзи, другая картинка…"><div class="fbsverka"></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm accent fb-redo" type="button" data-plat="Переделать · ${esc(priceLabel(item.tip))}, спишем по факту" data-besp="Сверить и переделать бесплатно, если ошибка наша">Переделать · ${esc(priceLabel(item.tip))}, спишем по факту</button><button class="btn sm ghost fb-mark" type="button">Просто отметить</button></div></div>`;
   }
   async function fbSend(item, ocenka, el) {
     const p = $$('.fbpanel .chip.on', el).map((c) => c.dataset.p); const t = (($('.fbtext', el) || {}).value || '').trim();
     try { await api('/api/otzyv', { ocenka, tip: item.tip, recept: item.recept || '', sheet: String(item.id), prichiny: p, tekst: t, tema: item.tema }); } catch (e) { /* отзыв не критичен */ }
     item.fb = ocenka; store.set('feed', S.feed);
     return { p, t };
+  }
+  function fbPeredelat(item, p, t, besplatno) {
+    const prichiny = FB_PRICHINY.filter(([k]) => p.includes(k)).map(([, l]) => l.toLowerCase());
+    // при ошибке в фактах/цене старый текст не подсовываем — модель повторила бы ту же выдумку (правка Грока)
+    const fakty = p.some((k) => ['fakty', 'cena'].includes(k));
+    const proshloe = fakty ? '' : String((item.result && (item.result.text || item.result.hook || item.result.headline || item.result.caption || item.result.goal)) || '').slice(0, 600);
+    // бесплатная переделка: тему и тип сервер берёт из записи результата, здесь — только подпись листа
+    const tekst = besplatno ? item.tema + ' · переделка без ошибки' : item.tema + '\n\nПравка к прошлому варианту: ' + [prichiny.join(', '), t].filter(Boolean).join('; ') + (proshloe ? '.\nПрошлый вариант (начало): ' + proshloe : '') + (fakty ? '. Цены, даты и контакты — строго как в задании.' : '');
+    sessionStorage.setItem('jasa:prefill', JSON.stringify({ tip: item.tip, text: tekst, auto: true, recept: item.recept || '', besplatno: besplatno || '', poyasnenie: besplatno ? t : '' }));
+    if ((location.hash || '#/sozdat').startsWith('#/sozdat')) route(); else location.hash = '#/sozdat';
+  }
+  // Решение Александра 28.10: ошибка в фактах или цене по нашей вине — первая переделка бесплатно. Чья ошибка — сверяет сервер.
+  async function fbSverka(item, el, btn) {
+    const box = $('.fbsverka', el); btn.disabled = true; btn.textContent = 'Сверяю задание и результат…';
+    const { p, t } = await fbSend(item, 'no', el);
+    let r; try { r = await api('/api/pravka/sverit', { zid: item.zid, prichiny: p }); } catch (e) { r = { nasha: false, pochemu: e.message }; }
+    if (r.nasha) {
+      // право выбора: переделать бесплатно или вернуть кредиты за этот результат
+      box.innerHTML = `<div class="ok-box"><b>Вы правы, ошибка наша.</b> ${arr(r.gde).map(esc).join(' · ')}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sm accent pv-redo" type="button">Переделать бесплатно · около минуты</button>${r.kredity ? `<button class="btn sm quiet pv-back" type="button">Вернуть ${esc(r.kredity)} кр за этот результат</button>` : ''}</div>${r.vozvrat_pochemu ? `<div class="dim small" style="margin-top:6px">${esc(r.vozvrat_pochemu)} <a href="https://t.me/jasa_asia" target="_blank" rel="noopener">Написать нам</a></div>` : ''}</div>`;
+      btn.remove();
+      $('.pv-redo', box).onclick = (ev) => { ev.stopPropagation(); fbPeredelat(item, p, t, r.token); };
+      const back = $('.pv-back', box);
+      if (back) back.onclick = async (ev) => {
+        ev.stopPropagation(); back.disabled = true;
+        try { const v = await api('/api/pravka/vernut', { token: r.token }); spend(0, v.ostatok); box.innerHTML = `<div class="ok-box">Вернули ${esc(v.kredity)} кр на баланс. Извините за ошибку.</div>`; } catch (e2) { toast(e2.message); back.disabled = false; }
+      };
+      return;
+    }
+    box.innerHTML = `<div class="warn small">${esc(r.pochemu || 'Мы сверили результат с вашим заданием — расхождений нет.')} <a href="https://t.me/jasa_asia" target="_blank" rel="noopener">Написать нам</a></div>`;
+    btn.disabled = false; btn.dataset.mode = 'plat'; btn.dataset.p = JSON.stringify(p); btn.dataset.t = t; btn.textContent = btn.dataset.plat;
   }
   function stilPill() {
     if (!S.stil.length) return '';
@@ -335,7 +365,7 @@
   function sheet(item) {
     const el = document.createElement('article');
     el.className = 'sheet';
-    const head = `<div class="head"><span class="kind">${TIPS[item.tip] || item.tip}</span>${item.yazyk === 'kz' ? '<span class="pill">қазақша</span>' : ''}<span class="meta">${item.kredity ? item.kredity + ' кр' : ''}</span></div><div class="q">${esc(item.tema)}</div>`;
+    const head = `<div class="head"><span class="kind">${TIPS[item.tip] || item.tip}</span>${item.yazyk === 'kz' ? '<span class="pill">қазақша</span>' : ''}<span class="meta">${item.besplatno ? 'бесплатно — ошибка JASA' : (item.kredity ? item.kredity + ' кр' : '')}</span></div><div class="q">${esc(item.tema)}</div>`;
     if (item.state === 'working') {
       const ags = { post: ['Понимающий', 'Копирайтер', 'Художник', 'Страж'], rils: ['Понимающий', 'Рилсмейкер', 'Художник', 'Тренд-скаут'], afisha: ['Понимающий', 'Художник', 'Копирайтер'], karusel: ['Понимающий', 'Копирайтер', 'Художник'], plan: ['Понимающий', 'Планировщик', 'Тренд-скаут'] }[item.tip] || ['Понимающий', 'Копирайтер'];
       el.innerHTML = head + `<div class="working"><span class="spin"></span><div class="agents">${ags.map((a) => `<span>${a}</span>`).join('')}</div></div>`;
@@ -357,15 +387,14 @@
       const vg = e.target.closest('.vgo'); if (vg) { startVideo(vg, item, el); return; }
       if (e.target.closest('.fb-ok')) { fbSend(item, 'ok', el).then(() => { $('.fb', el).outerHTML = fbBlock(item); }); return; }
       if (e.target.closest('.fb-no')) { const fb = $('.fb', el); if (!$('.fbpanel', el)) fb.insertAdjacentHTML('beforeend', fbPanel(item)); $('.fbtext', el).focus(); return; }
-      const fp = e.target.closest('.fbpanel .chip'); if (fp) { fp.classList.toggle('on'); return; }
+      const fp = e.target.closest('.fbpanel .chip'); if (fp) { fp.classList.toggle('on'); const rb = $('.fb-redo', el); const nasha = $$('.fbpanel .chip.on', el).some((c) => ['fakty', 'cena'].includes(c.dataset.p)) && item.zid && !item.besplatno; rb.textContent = nasha ? rb.dataset.besp : rb.dataset.plat; rb.dataset.mode = nasha ? 'sverka' : ''; return; }
+      const rb = e.target.closest('.fb-redo');
+      if (rb && rb.dataset.mode === 'sverka') { fbSverka(item, el, rb); return; }
+      if (rb && rb.dataset.mode === 'plat') { fbPeredelat(item, JSON.parse(rb.dataset.p || '[]'), rb.dataset.t || ''); return; }
       if (e.target.closest('.fb-mark')) { fbSend(item, 'no', el).then(() => { $('.fb', el).outerHTML = fbBlock(item); }); return; }
       if (e.target.closest('.fb-redo')) {
         fbSend(item, 'no', el).then(({ p, t }) => {
-          const prichiny = FB_PRICHINY.filter(([k]) => p.includes(k)).map(([, l]) => l.toLowerCase());
-          const proshloe = String((item.result && (item.result.text || item.result.hook || item.result.headline || item.result.caption || item.result.goal)) || '').slice(0, 600);
-          const tekst = item.tema + '\n\nПравка к прошлому варианту: ' + [prichiny.join(', '), t].filter(Boolean).join('; ') + (proshloe ? '.\nПрошлый вариант (начало): ' + proshloe : '');
-          sessionStorage.setItem('jasa:prefill', JSON.stringify({ tip: item.tip, text: tekst, auto: true, recept: item.recept || '' }));
-          if ((location.hash || '#/sozdat').startsWith('#/sozdat')) route(); else location.hash = '#/sozdat';
+          fbPeredelat(item, p, t);
         });
         return;
       }
@@ -1006,7 +1035,7 @@
         <div class="chips">${[['500', '5 990 ₸'], ['2 000', '19 990 ₸'], ['10 000', '89 990 ₸']].map(([n, c]) => `<button class="chip" data-paket="${n}">${n} кр · ${c}</button>`).join('')}</div>
         <p class="small dim" style="margin-top:10px">Цены пакетов предварительные.</p></div>
       </div>
-      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:${h.vozvrat ? 'var(--ok)' : 'var(--accent)'}">${h.vozvrat ? '+' : '−'}${esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто — создайте первый пост.</p>'}</div>`;
+      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:${h.vozvrat ? 'var(--ok)' : 'var(--accent)'}">${h.besplatno ? 'бесплатно' : (h.vozvrat ? '+' : '−') + esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто — создайте первый пост.</p>'}</div>`;
     const lo = $('#logout'); if (lo) lo.addEventListener('click', async () => { try { await api('/api/logout', {}); } catch (e) { /* и так выйдем */ } S.session = null; store.set('session', null); S.me = null; S.stil = []; store.set('stil', []); toast('Вы вышли'); loadMe(); kabinet(); });
     k.addEventListener('click', async (e) => { const b = e.target.closest('[data-paket]'); if (!b) return; b.disabled = true; try { await api('/api/popolnit', { paket: b.dataset.paket }); toast('Заявка принята — ответим в Telegram'); } catch (er) { toast(er.message); b.disabled = false; } });
   }

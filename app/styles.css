@@ -447,3 +447,4 @@ ul.good{margin:10px 0 0;padding-left:20px}ul.good li{margin:4px 0}
 .rq label{display:block;font-size:var(--fs-small);color:var(--muted);margin-bottom:6px}
 .rq .chips{display:flex;gap:6px;flex-wrap:wrap}
 .vrisk{margin-top:10px;font-size:var(--fs-small)}
+.ok-box{padding:10px 12px;border-radius:var(--r-sm);background:var(--ok-soft);color:var(--ink);font-size:var(--fs-small)}
