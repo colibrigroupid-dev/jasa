@@ -45,7 +45,7 @@
     svg.setAttribute('width', '0'); svg.setAttribute('height', '0'); svg.setAttribute('aria-hidden', 'true');
     svg.style.position = 'absolute';
     svg.innerHTML = '<filter id="lupa-voda" x="-12%" y="-12%" width="124%" height="124%" color-interpolation-filters="sRGB">' +
-      '<feTurbulence type="fractalNoise" baseFrequency="0.011 0.026" numOctaves="2" seed="7" result="n"/>' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.006 0.012" numOctaves="1" seed="7" result="n"/>' +
       '<feDisplacementMap in="SourceGraphic" in2="n" scale="0" xChannelSelector="R" yChannelSelector="G"/></filter>';
     document.body.appendChild(svg);
     turb = svg.querySelector('feTurbulence'); disp = svg.querySelector('feDisplacementMap');
@@ -118,23 +118,21 @@
     if (reduce) return;
     if (webkit) {
       const k = mode === 'in'
-        ? [{ filter: 'blur(9px) saturate(1.25)' }, { filter: 'blur(3px) saturate(1.1)', offset: .45 }, { filter: 'blur(0) saturate(1)' }]
-        : [{ filter: 'blur(0) saturate(1)' }, { filter: 'blur(10px) saturate(1.3)' }];
+        ? [{ filter: 'blur(0)' }, { filter: 'blur(2.5px)', offset: .35 }, { filter: 'blur(0)' }]
+        : [{ filter: 'blur(0)' }, { filter: 'blur(2.5px)', offset: .5 }, { filter: 'blur(0)' }];
       m.animate(k, { duration: dur, easing: 'ease-out' });
       return;
     }
     m.style.filter = 'url(#lupa-voda)';
-    const t0 = performance.now(), A = mode === 'in' ? 85 : 110;
+    const t0 = performance.now(), A = 16;
     const tick = (now) => {
       const t = Math.min(1, (now - t0) / dur);
-      // открытие: сильная рябь гаснет с затухающими колебаниями; закрытие: рябь нарастает, как от брошенного камня
-      const s = mode === 'in'
-        ? A * Math.pow(1 - t, 2.2) * (0.55 + 0.45 * Math.cos(t * Math.PI * 5))
-        : A * Math.pow(t, 1.4) * (0.75 + 0.25 * Math.sin(t * Math.PI * 4));
+      // одна мягкая волна: поднимается и уходит один раз, пока картинка растёт (или сжимается), без ряби
+      const s = A * Math.sin(Math.PI * t);
       disp.setAttribute('scale', s.toFixed(1));
-      turb.setAttribute('baseFrequency', (0.011 + 0.006 * Math.sin(t * 6.3)).toFixed(4) + ' ' + (0.026 + 0.012 * Math.cos(t * 5.1)).toFixed(4));
+      turb.setAttribute('baseFrequency', (0.006 + 0.002 * t).toFixed(4) + ' ' + (0.012 + 0.004 * t).toFixed(4));
       if (t < 1) raf = requestAnimationFrame(tick);
-      else if (mode === 'in') { m.style.filter = ''; disp.setAttribute('scale', '0'); }
+      else { m.style.filter = ''; disp.setAttribute('scale', '0'); }
     };
     raf = requestAnimationFrame(tick);
     if (mode === 'in') setTimeout(() => { if (m.isConnected && st && st.m === m) { cancelAnimationFrame(raf); m.style.filter = ''; disp.setAttribute('scale', '0'); } }, dur + 60);
@@ -142,11 +140,11 @@
   function rings(x, y, big) {
     if (reduce) return;
     const R = Math.hypot(innerWidth, innerHeight) / 48 * (big ? 1 : 0.6);
-    [0, 140, 300].forEach((d, i) => {
+    [0].forEach((d, i) => {   // один круг по воде — от точки нажатия
       const r = document.createElement('div'); r.className = 'lp-ring';
       r.style.left = x + 'px'; r.style.top = y + 'px';
       root.appendChild(r);
-      r.animate([{ transform: 'scale(.2)', opacity: 0.85 - i * 0.2 }, { transform: `scale(${R * (1 - i * 0.18)})`, opacity: 0 }],
+      r.animate([{ transform: 'scale(.2)', opacity: 0.5 }, { transform: `scale(${R * (1 - i * 0.18)})`, opacity: 0 }],
         { duration: 1000 + i * 120, delay: d, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' }).onfinish = () => r.remove();
     });
   }
