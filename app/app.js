@@ -86,6 +86,7 @@
     { r: 'izuchit', i: 'i-lupa', n: 'Изучить', tag: 'Рилс', d: 'Разобрать ролик по ссылке: текст, крючки, кадры, сценарий' },
     { r: 'biblioteka', i: 'i-lib', n: 'Библиотека', d: 'Всё сделанное и ваши кадры для стиля' },
     { r: 'multiki', i: 'i-multik', n: 'Мультики', tag: 'Урок', d: 'Обучающий мультик к уроку — по шагам' },
+    { r: 'prezentacii', i: 'i-slides', n: 'Презентации', tag: 'PPTX', d: 'Защита, курсовая, питч, КП — слайды, речь и тайминг' },
     { r: 'scenariy', i: 'i-film', n: 'Кино', tag: 'Studio', d: 'Разбор сценария фильма или сериала' },
     { r: 'partnery', i: 'i-share', n: 'Партнёрам', tag: '10 %', d: 'Приглашайте — 10 % и 5 % с оплат' },
     { r: 'tarify', i: 'i-tarif', n: 'Тарифы', d: 'Кредиты и пакеты' },
@@ -159,7 +160,7 @@
           ${stilPill()}
           <textarea id="ask" rows="1" placeholder="Например: пост про открытие второго салона в Астане"></textarea>
           <div class="row">
-            <div class="chips" id="tips">${Object.entries(TIPS).map(([k, v]) => `<button class="chip ${k === S.tip ? 'on' : ''} ${TIPS_MAIN.includes(k) || k === S.tip || store.get('tipsAll', false) ? '' : 'hide'}" data-tip="${k}">${v}</button>`).join('')}${store.get('tipsAll', false) ? '' : '<button class="chip ghost" id="tipsmore" type="button" title="Карусель, план на неделю">ещё</button>'}</div>
+            <div class="chips" id="tips">${Object.entries(TIPS).map(([k, v]) => `<button class="chip ${k === S.tip ? 'on' : ''} ${TIPS_MAIN.includes(k) || k === S.tip || store.get('tipsAll', false) ? '' : 'hide'}" data-tip="${k}">${v}</button>`).join('')}${store.get('tipsAll', false) ? '' : '<button class="chip ghost" id="tipsmore" type="button" title="Карусель, план на неделю, презентация">ещё</button>'}<button class="chip ${store.get('tipsAll', false) ? '' : 'hide'}" data-prez type="button" title="Отдельный мастер: слайды, речь и тайминг, выгрузка PPTX и PDF">Презентация →</button></div>
             <div class="send">
               <button class="chip ${S.yazyk === 'kz' ? 'on' : ''}" id="lang" title="Язык результата">${S.yazyk === 'kz' ? 'Қаз' : 'Рус'}</button>
               <button class="icobtn" id="mic" title="Сказать голосом"><svg><use href="#i-mic"/></svg></button>
@@ -179,7 +180,9 @@
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
     $('#tips').addEventListener('click', (e) => {
       if (e.target.closest('#tipsmore')) { store.set('tipsAll', true); $$('#tips .chip.hide').forEach((c) => c.classList.remove('hide')); e.target.closest('#tipsmore').remove(); return; }
-      const b = e.target.closest('.chip'); if (!b) return; setTip(b.dataset.tip); ta.focus();
+      const b = e.target.closest('.chip'); if (!b) return;
+      if (b.hasAttribute('data-prez')) { sessionStorage.setItem('jasa:prez', JSON.stringify({ tema: ta.value.trim() })); location.hash = '#/prezentacii'; return; }
+      setTip(b.dataset.tip); ta.focus();
     });
     $('#ideas').addEventListener('click', (e) => { const on = $('#recwrap').classList.toggle('hide') === false; store.set('recOpen', on); e.currentTarget.setAttribute('aria-expanded', on); e.currentTarget.textContent = 'Готовые идеи' + (S.recepty.length ? ' · ' + S.recepty.length : '') + (on ? ' ▴' : ' ▾'); });
     $('#recepty').addEventListener('click', (e) => { const b = e.target.closest('[data-rec]'); if (!b) return; const r = S.recepty.find((x) => x.id === b.dataset.rec); if (r) receptForm(r, (tip, text, opts) => { setTip(tip); ta.value = text; grow(); send(Object.assign({ recept: r.id }, opts)); }); });
