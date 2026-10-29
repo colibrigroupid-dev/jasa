@@ -59,6 +59,7 @@
   api('/api/ceny').then((c) => { S.ceny = c; const ta = document.getElementById('ask'); if (ta) ta.dispatchEvent(new Event('input')); }).catch(() => {});
   api('/api/recepty').then((r) => { S.recepty = arr(r.recepty); const box = $('#recepty'); if (box) box.innerHTML = receptyHtml(); }).catch(() => {});
   // цена до запуска = тем же расчётом, что резерв на сервере (Plumar: «цена под кнопкой совпадает со счётом»)
+  const LANG_LABEL = { ru: 'Рус', kz: 'Қаз', en: 'Eng' }, LANG_NEXT = { ru: 'kz', kz: 'en', en: 'ru' };
   const priceOf = (tip) => (S.ceny.zadanie && S.ceny.zadanie[tip]) || 3;
   const priceLabel = (tip, extra) => 'до ' + (priceOf(tip) + (extra || 0)) + ' кр';
   const LINK_RE = /https?:\/\/\S*(instagram\.com|tiktok\.com|youtu|vk\.com)\S*/;
@@ -66,12 +67,20 @@
   loadMe();
 
   // ---------- тема ----------
-  const theme = TG && TG.colorScheme === 'dark' ? 'dark' : store.get('theme', 'light');
-  document.documentElement.dataset.theme = theme;
+  // Вечером (19:00–07:00 по часам устройства) всегда тёмный слой, днём — светлый или как в Telegram.
+  // Ручной выбор действует до ближайшей смены дня и вечера, потом снова включается авто.
+  const EVE_FROM = 19, EVE_TO = 7;
+  const isEvening = (d) => { const h = (d || new Date()).getHours(); return h >= EVE_FROM || h < EVE_TO; };
+  const nextSwitch = () => { const d = new Date(); const t = new Date(d); t.setMinutes(0, 0, 0); t.setHours(isEvening(d) && d.getHours() >= EVE_FROM ? 24 + EVE_TO : (isEvening(d) ? EVE_TO : EVE_FROM)); return t.getTime(); };
+  const autoTheme = () => (isEvening() || (TG && TG.colorScheme === 'dark')) ? 'dark' : 'light';
+  function currentTheme() { const m = store.get('themeManual', null); return m && m.until > Date.now() ? m.t : autoTheme(); }
+  function applyTheme() { const t = currentTheme(); document.documentElement.dataset.theme = t; const mc = $('meta[name=theme-color]'); if (mc) mc.content = t === 'dark' ? '#0f0f0f' : '#F5F1E8'; }
+  applyTheme();
+  setInterval(applyTheme, 60000);   // вкладка открыта на закате — слой переключается сам
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) applyTheme(); });
   $('#theme').addEventListener('click', () => {
     const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = t; store.set('theme', t);
-    $('meta[name=theme-color]').content = t === 'dark' ? '#0f0f0f' : '#F5F1E8';
+    store.set('themeManual', { t, until: nextSwitch() }); applyTheme();
   });
 
   // ---------- маршруты ----------
@@ -162,7 +171,7 @@
           <div class="row">
             <div class="chips" id="tips">${Object.entries(TIPS).map(([k, v]) => `<button class="chip ${k === S.tip ? 'on' : ''} ${TIPS_MAIN.includes(k) || k === S.tip || store.get('tipsAll', false) ? '' : 'hide'}" data-tip="${k}">${v}</button>`).join('')}${store.get('tipsAll', false) ? '' : '<button class="chip ghost" id="tipsmore" type="button" title="Карусель, план на неделю, презентация">ещё</button>'}<button class="chip ${store.get('tipsAll', false) ? '' : 'hide'}" data-prez type="button" title="Отдельный мастер: слайды, речь и тайминг, выгрузка PPTX и PDF">Презентация →</button></div>
             <div class="send">
-              <button class="chip ${S.yazyk === 'kz' ? 'on' : ''}" id="lang" title="Язык результата">${S.yazyk === 'kz' ? 'Қаз' : 'Рус'}</button>
+              <button class="chip ${S.yazyk !== 'ru' ? 'on' : ''}" id="lang" title="Язык результата: русский, казахский, английский">${LANG_LABEL[S.yazyk] || 'Рус'}</button>
               <button class="icobtn" id="mic" title="Сказать голосом"><svg><use href="#i-mic"/></svg></button>
               <span class="price" id="price" title="Больше этой суммы не спишем. Текст — по факту, картинки — только готовые. Голосовой ввод — 1 кр отдельно">${priceLabel(S.tip)}</span>
               <button class="icobtn go" id="go" title="Сделать"><svg><use href="#i-send"/></svg></button>
@@ -187,7 +196,7 @@
     $('#ideas').addEventListener('click', (e) => { const on = $('#recwrap').classList.toggle('hide') === false; store.set('recOpen', on); e.currentTarget.setAttribute('aria-expanded', on); e.currentTarget.textContent = 'Готовые идеи' + (S.recepty.length ? ' · ' + S.recepty.length : '') + (on ? ' ▴' : ' ▾'); });
     $('#recepty').addEventListener('click', (e) => { const b = e.target.closest('[data-rec]'); if (!b) return; const r = S.recepty.find((x) => x.id === b.dataset.rec); if (r) receptForm(r, (tip, text, opts) => { setTip(tip); ta.value = text; grow(); send(Object.assign({ recept: r.id }, opts)); }); });
     const sp = $('#stilpill'); if (sp) sp.addEventListener('click', () => { S.stil = []; store.set('stil', S.stil); sp.remove(); toast('Стиль из депо снят'); });
-    $('#lang').addEventListener('click', (e) => { S.yazyk = S.yazyk === 'kz' ? 'ru' : 'kz'; e.currentTarget.textContent = S.yazyk === 'kz' ? 'Қаз' : 'Рус'; e.currentTarget.classList.toggle('on', S.yazyk === 'kz'); });
+    $('#lang').addEventListener('click', (e) => { S.yazyk = LANG_NEXT[S.yazyk] || 'ru'; e.currentTarget.textContent = LANG_LABEL[S.yazyk]; e.currentTarget.classList.toggle('on', S.yazyk !== 'ru'); });
     $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button[data-text]'); if (!b) return; setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); send(); });
     $('#go').addEventListener('click', send);
     voice($('#mic'), (t) => { ta.value = (ta.value ? ta.value + ' ' : '') + t; grow(); });
@@ -368,7 +377,7 @@
   function sheet(item) {
     const el = document.createElement('article');
     el.className = 'sheet';
-    const head = `<div class="head"><span class="kind">${TIPS[item.tip] || item.tip}</span>${item.yazyk === 'kz' ? '<span class="pill">қазақша</span>' : ''}<span class="meta">${item.besplatno ? 'бесплатно — ошибка JASA' : (item.kredity ? item.kredity + ' кр' : '')}</span></div><div class="q">${esc(item.tema)}</div>`;
+    const head = `<div class="head"><span class="kind">${TIPS[item.tip] || item.tip}</span>${item.yazyk === 'kz' ? '<span class="pill">қазақша</span>' : (item.yazyk === 'en' ? '<span class="pill">English</span>' : '')}<span class="meta">${item.besplatno ? 'бесплатно — ошибка JASA' : (item.kredity ? item.kredity + ' кр' : '')}</span></div><div class="q">${esc(item.tema)}</div>`;
     if (item.state === 'working') {
       const ags = { post: ['Понимающий', 'Копирайтер', 'Художник', 'Страж'], rils: ['Понимающий', 'Рилсмейкер', 'Художник', 'Тренд-скаут'], afisha: ['Понимающий', 'Художник', 'Копирайтер'], karusel: ['Понимающий', 'Копирайтер', 'Художник'], plan: ['Понимающий', 'Планировщик', 'Тренд-скаут'] }[item.tip] || ['Понимающий', 'Копирайтер'];
       el.innerHTML = head + `<div class="working"><span class="spin"></span><div class="agents">${ags.map((a) => `<span>${a}</span>`).join('')}</div></div>`;
@@ -577,7 +586,7 @@
       if (mr) { mr.stop(); return; }
       if (!(navigator.mediaDevices && window.MediaRecorder)) {
         if (!SR) { toast('Голос работает в Chrome, Safari и Telegram'); return; }
-        const rec = new SR(); rec.lang = S.yazyk === 'kz' ? 'kk-KZ' : 'ru-RU';
+        const rec = new SR(); rec.lang = { kz: 'kk-KZ', en: 'en-US' }[S.yazyk] || 'ru-RU';
         rec.onresult = (e) => onText(Array.from(e.results).map((r) => r[0].transcript).join(' '));
         rec.onend = () => btn.classList.remove('zapis'); btn.classList.add('zapis'); rec.start(); return;
       }
@@ -593,7 +602,7 @@
           toast('Распознаю…');
           try {
             const b64 = await toB64(blob);
-            const r = await api('/api/transcribe', { audio: { b64, mime: blob.type.split(';')[0] }, lang: S.yazyk === 'kz' ? 'kk' : 'ru' });
+            const r = await api('/api/transcribe', { audio: { b64, mime: blob.type.split(';')[0] }, lang: { kz: 'kk', en: 'en' }[S.yazyk] || 'ru' });
             spend(1, r.ostatok); onText(r.text || '');
           } catch (e) { toast(e.message); }
         };
