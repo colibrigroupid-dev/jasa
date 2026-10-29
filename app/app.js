@@ -1023,7 +1023,7 @@
     if (!m) { k.innerHTML = '<div class="warn">Сервер недоступен. Попробуйте через минуту.</div>'; return; }
     if (m.guest && !TG) {
       k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите — и всё сохранится</h2><p class="muted" style="margin-top:10px">Без регистрации и паролей: нажмите кнопку или наведите камеру телефона на код, бот подтвердит вход. Ваши посты, бренд, кредиты и история будут одни и те же в Telegram и на компьютере.</p></section>
-        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><p class="dim small" style="margin-top:10px">Входя, вы принимаете <a href="/oferta/" target="_blank" rel="noopener">условия использования</a> и <a href="/privacy/" target="_blank" rel="noopener">политику обработки персональных данных</a>.</p><div id="loginbox" style="margin-top:16px"></div></div>
+        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div></div>
         <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сегодня у вас ${esc(Math.floor(m.kredity))} кр, завтра снова 50. После входа — ${esc(m.trial)} пробных: хватит примерно на 6 постов с картинками.</p></div></div>`;
       $('#login').addEventListener('click', startLogin);
       return;
