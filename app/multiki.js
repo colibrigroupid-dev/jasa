@@ -235,12 +235,31 @@
         <div><span class="caps">Локация</span><div class="mk-img">${imgBox(lo, 'Локация')}</div>
         <div class="field"><label>Где происходит</label><textarea id="mklok" rows="4">${esc(P.raskadrovka.lokaciya || '')}</textarea></div>
         <div class="mk-row"><button class="btn sm accent" data-ris="lokaciya">${lo.url ? 'Перерисовать' : 'Нарисовать'} · ${kr(L.ceny.kartinka)}</button>${upBtn('lokaciya')}</div></div></div>
+      ${L.ceny.kartochka ? `<section class="mk-kartas"><span class="caps">Карта героя</span><p class="small muted" style="margin:6px 0 14px">Один раз точно описываем героя: одежду, цвета, что нельзя менять. Дальше он одинаковый во всех кадрах. Карта по желанию, но с ней герои не путаются.</p>${P.brif.geroi.map(kartaGeroya).join('')}</section>` : ''}
       <div class="mk-row" style="margin-top:18px">${P.ok.geroi ? '' : utvBtn('geroi', 'Утвердить героев и локацию')}</div>`;
     bindCommon(pan);
+    $$('[data-kmk]', pan).forEach((b) => { b.onclick = () => { const g = P.brif.geroi.find((x) => x.imya === b.dataset.kmk); if (g && g.kartochka && !confirm('Правки текста пропадут, картинки героя устареют. Собрать карту заново?')) return; run(b, '/api/multiki/kartochka', { imya: b.dataset.kmk }, 'Собираю карту…'); }; });
+    $$('[data-kris]', pan).forEach((b) => { b.onclick = () => run(b, '/api/multiki/geroi', { chto: b.dataset.kris, imya: b.dataset.im }, 'Отправляю художнику…'); });
+    $$('[data-ksave]', pan).forEach((b) => { b.onclick = async () => { const ta = $('textarea', b.closest('details')); try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'geroi', geroi: [{ imya: b.dataset.ksave, kartochka: { kanon: ta.value } }] })).proekt; toast('Карта сохранена'); drawProekt(); } catch (e) { toast(e.message); } }; });
     $$('[data-g]', pan).forEach((t) => t.addEventListener('change', async () => { try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'geroi', geroi: [{ imya: t.dataset.g, vneshnost: t.value }] })).proekt; } catch (e) { toast(e.message); } }));
     $('#mklok').addEventListener('change', async (e) => { try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'geroi', lokaciya: e.target.value })).proekt; } catch (er) { toast(er.message); } });
     $$('[data-ris]', pan).forEach((b) => { b.onclick = () => run(b, '/api/multiki/geroi', { chto: b.dataset.ris }, 'Отправляю художнику…'); });
     $$('input[data-up]', pan).forEach((inp) => { inp.onchange = () => upload(inp); });
+  }
+  const li = (a) => arr(a).map((x) => `<li>${esc(x)}</li>`).join('');
+  function kartaGeroya(g) {
+    const k = g.kartochka; const i = P.brif.geroi.indexOf(g);
+    const head1 = `<div class="mk-kh"><b>${esc(g.imya)}</b><span class="small muted">${esc(g.kto)}${k ? ' · ' + (k.klass ? k.klass + ' класс' : 'предшкола') : ''}</span>${k && k.klass !== P.brif.klass ? `<span class="mk-old" style="position:static">карта для ${k.klass} класса, в брифе ${P.brif.klass}</span>` : ''}</div>`;
+    if (!k) return `<div class="mk-karta">${head1}<div class="mk-row" style="margin-top:8px"><button class="btn sm accent" data-kmk="${esc(g.imya)}">Собрать карту · до ${kr(L.ceny.kartochka)}</button></div></div>`;
+    const pv = it('geroi', 'povorot-' + i), em = it('geroi', 'emocii-' + i);
+    return `<div class="mk-karta">${head1}<p class="small" style="margin:6px 0 10px">${esc(k.vneshnost)}</p>
+      <div class="mk-kgrid"><div><span class="caps">Одежда</span><ul>${li(k.odezhda)}</ul></div><div><span class="caps">Реквизит по сцене</span><ul>${li(k.rekvizit) || '<li class="dim">нет</li>'}</ul></div>
+        <div><span class="caps">Не менять</span><ul>${li(k.ne_menyat)}</ul></div><div><span class="caps">Не добавлять</span><ul>${li(k.ne_dobavlyat)}</ul></div></div>
+      <div class="mk-pal">${arr(k.palitra).map((c) => `<span title="${esc(c.hex)}"><i style="background:${esc(c.hex)}"></i>${esc(c.nazvanie)}</span>`).join('')}</div>
+      <details class="mk-kan"><summary>Текст для художника (английский)</summary><textarea rows="6">${esc(k.kanon)}</textarea><div class="mk-row" style="margin-top:8px"><button class="btn sm quiet" data-ksave="${esc(g.imya)}">Сохранить текст</button><span class="small dim">Он вставляется в каждый кадр слово в слово. Предметов в руках здесь нет.</span></div></details>
+      <div class="mk-2col"><div><span class="caps">Четыре вида</span><div class="mk-img">${imgBox(pv, g.imya + ': четыре вида')}</div><button class="btn sm ${pv.url ? 'quiet' : 'accent'}" data-kris="povorot" data-im="${esc(g.imya)}">${pv.url ? 'Перерисовать' : 'Нарисовать'} · ${kr(L.ceny.kartinka)}</button></div>
+        <div><span class="caps">Шесть лиц</span><div class="mk-img">${imgBox(em, g.imya + ': шесть лиц')}</div><button class="btn sm ${em.url ? 'quiet' : 'accent'}" data-kris="emocii" data-im="${esc(g.imya)}"${pv.url ? '' : ' disabled title="сначала нарисуйте четыре вида"'}>${em.url ? 'Перерисовать' : 'Нарисовать'} · ${kr(L.ceny.kartinka)}</button></div></div>
+      <div class="mk-row" style="margin-top:10px"><button class="btn sm quiet" data-kmk="${esc(g.imya)}">Собрать карту заново · до ${kr(L.ceny.kartochka)}</button></div></div>`;
   }
   const upBtn = (chto) => `<label class="btn sm quiet"><input type="file" accept="image/png,image/jpeg,image/webp" hidden data-up="${chto}">Свой рисунок</label>`;
 
@@ -457,6 +476,10 @@
 .mk-ph{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}.mk-ph b{font-family:var(--disp);font-size:20px}.mk-ph small{width:100%;color:var(--dim)}
 .mk-rep{border-left:3px solid var(--accent);padding-left:8px}
 .mk-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.mk-kartas{margin-top:26px}.mk-karta{padding:16px;border-radius:var(--r-sm);background:var(--surface-2);margin-bottom:14px}.mk-kh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.mk-kh b{font-size:1.1rem;color:var(--ink)}
+.mk-kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 18px}.mk-kgrid ul{margin:6px 0 0;padding-left:18px;font-size:var(--fs-small)}.mk-kgrid li{margin:2px 0}
+.mk-pal{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.mk-pal span{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border-radius:999px;background:var(--surface);font-size:13px}.mk-pal i{width:16px;height:16px;border-radius:50%;border:1px solid var(--line);display:block}
+.mk-kan{margin:6px 0 14px}.mk-kan summary{cursor:pointer;color:var(--ink);font-weight:500;min-height:40px;display:flex;align-items:center}.mk-kan textarea{width:100%;font:13px/1.45 var(--mono);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;background:var(--field);color:var(--ink)}
 .mk-img{position:relative;aspect-ratio:16/9;border-radius:var(--r-sm);overflow:hidden;background:var(--surface-2);margin:8px 0 10px}
 .mk-img img,.mk-img video{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}.mk-img video{cursor:auto;background:#000}
 .mk-ph-img{position:absolute;inset:0;display:flex;gap:8px;align-items:center;justify-content:center;padding:12px;text-align:center}.mk-ph-img.err{color:var(--bad)}
