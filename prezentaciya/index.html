@@ -405,15 +405,18 @@ footer .wrap{display:flex;gap:8px 24px;flex-wrap:wrap;justify-content:space-betw
       .then(function (j) { clearTimeout(to); gotovo(j.otkryto, !!kont, true); })
       .catch(function (e) {
         clearTimeout(to);
-        if (e && e.name !== 'TypeError' && e.name !== 'AbortError') { btn.disabled = false; btn.textContent = 'Собрать мою презентацию'; osh.textContent = e.message; return; }
-        gotovo(null, !!kont, false);   // связи нет — анкета всё равно уедет в приложение в ссылке
+        var mjagko = e && (e.name === 'TypeError' || e.name === 'AbortError' || /скоро откроется|нет такой ручки|нет такого файла/.test(e.message || ''));   // нет связи или сервер ещё без приёма заявок
+        if (!mjagko) { btn.disabled = false; btn.textContent = 'Собрать мою презентацию'; osh.textContent = e.message; return; }
+        gotovo(null, !!kont, false);   // анкета всё равно уедет в приложение в ссылке
       });
   }
   function gotovo(otkryto, estKontakt, sohraneno) {
     otpravleno = true; cur = 4; renderProg(); obnovitSlide();
     var tekst = otkryto === false
       ? '<p>Презентации откроются для всех в ближайшие дни. Ваша анкета у нас' + (estKontakt ? ' — как только раздел заработает, мы вам напишем.' : '. Вы не оставили контакт, поэтому загляните сюда позже или откройте JASA в Telegram.') + '</p>'
-      : '<p>Осталось войти через Telegram — это пять секунд. Сразу после входа презентация начнёт собираться сама: план слайдов, тексты, речь. Заново ничего заполнять не нужно.</p>';
+      : otkryto === true
+        ? '<p>Осталось войти через Telegram — это пять секунд. Сразу после входа презентация начнёт собираться сама: план слайдов, тексты, речь. Заново ничего заполнять не нужно.</p>'
+        : '<p>Нажмите кнопку — откроется JASA с вашей анкетой. Если раздел уже работает, после входа через Telegram презентация начнёт собираться сама; если ещё нет — анкета подождёт.</p>';
     stepsEl.innerHTML = '<div class="step gotovo" id="st"><div class="galka" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div><h2 id="lg" tabindex="-1">' +
       (sohraneno ? 'Анкета принята' : 'Анкета готова') + '</h2>' + tekst +
       (sohraneno ? '' : '<p>Не получилось сохранить заявку на нашей стороне, но анкета не потеряется: она передаётся вместе с переходом.</p>') +
