@@ -20,6 +20,9 @@
     useBrend: store.get('useBrend', true),
     feed: store.get('feed', []),
     tip: 'post',
+    aspect: store.get('aspect', 'auto'),   // размер картинки из настроек: auto | 4:5 | 1:1 | 9:16 | 16:9
+    hud: store.get('hud', 'auto'),         // художник варианта 1: auto | gpt | nb | seedream (человеку — «Художник 1/2/3»)
+    kartOpis: store.get('kartOpis', ''),   // своё описание картинки (пусто — промптер решает сам по посту)
     yazyk: 'ru',   // ниже подставляется выбранный при первом запуске
     job: store.get('job', null),
     status: { key: false, images: false },
@@ -97,7 +100,8 @@
   // после /api/yazyk баланс мог вырасти на пробные: перечитать профиль и, если открыт Кабинет, перерисовать его цифры
   function posleYazyka() { return loadMe().then(() => { if (/^#\/kabinet/.test(location.hash) && typeof kabinet === 'function') kabinet(); }); }
   const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); try { document.cookie = 'jasa_yazyk=' + l + '; max-age=31536000; path=/; SameSite=Lax'; } catch (e) { /* без cookie */ } api('/api/yazyk', { yazyk: l }).then(posleYazyka).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
-  const priceOf = (tip) => (S.ceny.zadanie && S.ceny.zadanie[tip]) || 3;
+  const S_KART = () => (store.get('kartinki', 1) === 3 ? 3 : 1);   // сколько картинок рисовать сразу: 1 по умолчанию, 3 — по выбору (+24 кр)
+  const priceOf = (tip) => { const z = (S_KART() === 3 && S.ceny.zadanie_3) || S.ceny.zadanie; return (z && z[tip]) || 3; };
   const priceLabel = (tip, extra) => 'до ' + (priceOf(tip) + (extra || 0)) + ' кр';
   const LINK_RE = /https?:\/\/\S*(instagram\.com|tiktok\.com|youtu|vk\.com)\S*/;
   function loadMe() { return api('/api/me').then((m) => { S.me = m; if (m.yazyk && !store.get('yazyk', null)) { S.yazyk = m.yazyk; S.yazykChosen = true; store.set('yazyk', m.yazyk); } else if (!m.guest && !m.yazyk && store.get('yazyk', null)) { api('/api/yazyk', { yazyk: store.get('yazyk', 'ru') }).then(posleYazyka).catch(() => {}); } S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
@@ -111,7 +115,7 @@
   const nextSwitch = () => { const d = new Date(); const t = new Date(d); t.setMinutes(0, 0, 0); t.setHours(isEvening(d) && d.getHours() >= EVE_FROM ? 24 + EVE_TO : (isEvening(d) ? EVE_TO : EVE_FROM)); return t.getTime(); };
   const autoTheme = () => (isEvening() || (TG && TG.colorScheme === 'dark')) ? 'dark' : 'light';
   function currentTheme() { const m = store.get('themeManual', null); return m && m.until > Date.now() ? m.t : autoTheme(); }
-  function applyTheme() { const t = currentTheme(); document.documentElement.dataset.theme = t; const mc = $('meta[name=theme-color]'); if (mc) mc.content = t === 'dark' ? '#0f0f0f' : '#F5F1E8'; if (TG) { try { const c = t === 'dark' ? '#0f0f0f' : '#F5F1E8'; TG.setHeaderColor && TG.setHeaderColor(c); TG.setBackgroundColor && TG.setBackgroundColor(c); TG.setBottomBarColor && TG.setBottomBarColor(t === 'dark' ? '#1c1c1c' : '#FFFDF8'); } catch (e) { /* старый клиент */ } } }
+  function applyTheme() { const t = currentTheme(); document.documentElement.dataset.theme = t; const mc = $('meta[name=theme-color]'); if (mc) mc.content = t === 'dark' ? '#12151E' : '#F4EFE4'; if (TG) { try { const c = t === 'dark' ? '#12151E' : '#F4EFE4'; TG.setHeaderColor && TG.setHeaderColor(c); TG.setBackgroundColor && TG.setBackgroundColor(c); TG.setBottomBarColor && TG.setBottomBarColor(t === 'dark' ? '#1B2029' : '#FFFDF8'); } catch (e) { /* старый клиент */ } } }
   applyTheme();
   setInterval(applyTheme, 60000);   // вкладка открыта на закате — слой переключается сам
   document.addEventListener('visibilitychange', () => { if (!document.hidden) applyTheme(); });
@@ -253,21 +257,22 @@
     const recOpen = store.get('recOpen', false);
     const ico = (n) => `<svg class="ic"><use href="#${n}"/></svg>`;
     main.innerHTML = topbar('Создать', S.made || S.brandId ? brandPill() : '', 'only-desk') + `
-      <section class="hero ${first ? '' : 'compact'}">
+      <section class="hero ${first ? 'first' : 'compact'}">
         <h1>${first ? 'Что <em>сделать</em>?' : 'Что ещё <em>сделать</em>?'}</h1>
-        ${first ? '<p>Скажите или напишите. Получите текст и три картинки.</p>' : ''}
+        ${first ? '<p>Скажите или напишите. Получите текст и картинку — или сразу три варианта.</p><div class="demo" aria-hidden="true"><img src="demo-1.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-2.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-3.jpg" width="640" height="800" alt="" decoding="async"></div>' : ''}
         <div class="examples" id="examples">${first ? '<span class="caps">Попробуйте</span>' : ''}${(first ? EXAMPLES : []).map(([t, l, e]) => `<button type="button" data-tip="${t}" data-text="${esc(e)}"><span>${esc(l)}</span>${ico('i-chevr')}</button>`).join('')}<button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}"><span>Готовые идеи</span><em>${S.recepty.length || ''}</em>${ico('i-chevr')}</button></div>
       </section>
       <section class="recwrap ${recOpen ? '' : 'hide'}" id="recwrap"><div class="rechead"><span class="caps">Заполните пару полей, остальное сделаем сами</span><span class="dim small">цена до запуска</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
       <div class="feed" id="feed"></div>
       <div class="composer" id="composer">
         <div class="box">
-          ${stilPill()}
+          ${stilPill()}${kartPill()}
           <textarea id="ask" rows="1" placeholder="${first ? 'Опишите задачу' : 'Что дальше?'}" enterkeyhint="send"></textarea>
           <div class="cmp-warn" id="cwarn">${ico('i-warn')}<span id="cwarntx"></span></div>
           <div class="cmp-act">
             <button type="button" class="cmp-mode" id="mode" aria-haspopup="dialog">${ico('i-sliders')}<span id="modetx">${TIPS[S.tip]}</span></button>
             <div class="chips" id="tips">${Object.entries(TIPS).map(([k, v]) => `<button class="chip ${k === S.tip ? 'on' : ''} ${TIPS_MAIN.includes(k) || k === S.tip || store.get('tipsAll', false) ? '' : 'hide'}" data-tip="${k}">${v}</button>`).join('')}${store.get('tipsAll', false) ? '' : '<button class="chip ghost" id="tipsmore" type="button" title="Карусель, план на неделю, презентация">ещё</button>'}<button class="chip ${store.get('tipsAll', false) ? '' : 'hide'}" data-prez type="button" title="Отдельный мастер: слайды, речь и тайминг, выгрузка PPTX и PDF">Презентация →</button></div>
+            <button type="button" class="chip ${S_KART() === 3 ? 'on' : ''} ${['post', 'afisha', 'karusel'].includes(S.tip) ? '' : 'hide'}" id="kart3" aria-pressed="${S_KART() === 3}" title="Сразу три варианта картинки от трёх художников вместо одной. Остальные можно дорисовать потом по 12 кр">×3 картинки</button>
             <span class="sp"></span>
             <button type="button" class="cmp-mic" id="mic" aria-label="Сказать голосом">${ico('i-mic')}</button>
             <button type="button" class="cmp-go" id="go">Сделать <small id="price"></small></button>
@@ -289,7 +294,8 @@
       $('#price').style.display = low ? 'none' : '';
       $('#go').title = link ? 'С разбором ссылки-примера. Больше этой суммы не спишем' : 'Больше этой суммы не спишем. Текст по факту, картинки только готовые. Голос стоит 1 кр отдельно';
     };
-    const setTip = (tip) => { S.tip = TIPS[tip] ? tip : 'post'; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c.dataset.tip === S.tip)); $('#modetx').textContent = TIPS[S.tip]; drawPrice(); };
+    const setTip = (tip) => { S.tip = TIPS[tip] ? tip : 'post'; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c.dataset.tip === S.tip)); $('#modetx').textContent = TIPS[S.tip]; const k3 = $('#kart3'); if (k3) k3.classList.toggle('hide', !['post', 'afisha', 'karusel'].includes(S.tip)); drawPrice(); };
+    $('#kart3').addEventListener('click', () => { const v = S_KART() === 3 ? 1 : 3; store.set('kartinki', v); $('#kart3').classList.toggle('on', v === 3); $('#kart3').setAttribute('aria-pressed', v === 3); drawPrice(); });
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; drawPrice(); };
     ta.addEventListener('input', grow);
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !$('html').classList.contains('mob')) { e.preventDefault(); go(); } });
@@ -303,6 +309,7 @@
     $('#ideas').addEventListener('click', (e) => { const on = $('#recwrap').classList.toggle('hide') === false; store.set('recOpen', on); e.currentTarget.setAttribute('aria-expanded', on); if (on) hap('light'); });
     $('#recepty').addEventListener('click', (e) => { const b = e.target.closest('[data-rec]'); if (!b) return; const r = S.recepty.find((x) => x.id === b.dataset.rec); if (r) receptForm(r, (tip, text, opts) => { setTip(tip); ta.value = text; grow(); send(Object.assign({ recept: r.id }, opts)); }); });
     const sp = $('#stilpill'); if (sp) sp.addEventListener('click', () => { S.stil = []; store.set('stil', S.stil); sp.remove(); toast('Стиль из депо снят'); });
+    const kp = $('#kartpill'); if (kp) kp.addEventListener('click', () => { S.kartOpis = ''; store.set('kartOpis', ''); kp.remove(); toast('Картинку решит промптер'); });
     // примеры только подставляют текст: кредиты списываются кнопкой «Сделать»
     $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button[data-text]'); if (!b) return; hap('light'); setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); });
     const go = () => { const { n } = priceNow(); if (ta.value.trim() && n < 1) { hap('error'); sessionStorage.setItem('jasa:draft', JSON.stringify({ tip: S.tip, text: ta.value })); location.hash = '#/kabinet'; return; } hap('medium'); send(); };
@@ -315,16 +322,38 @@
       const html = `${bsHead('Настройки')}
         <div class="bs-lab">Формат</div>
         <div class="bs-tiles">${Object.entries(TIPS).map(([k, v]) => `<button type="button" class="bs-tile ${k === S.tip ? 'on' : ''}" data-tip="${k}" aria-pressed="${k === S.tip}">${v}<small>до ${priceOf(k)} кр</small></button>`).join('')}<button type="button" class="bs-tile" data-prez>Слайды<small>мастер →</small></button></div>
+        <div class="bs-lab">Размер картинки</div>
+        <div class="bs-tiles kart">${[['auto', 'Авто', 'подскажет промптер'], ['4:5', '4:5', 'лента Instagram'], ['1:1', '1:1', 'квадрат'], ['9:16', '9:16', 'сторис · TikTok'], ['16:9', '16:9', 'широкая']].map(([k, v, d]) => `<button type="button" class="bs-tile ${S.aspect === k ? 'on' : ''}" data-aspect="${k}" aria-pressed="${S.aspect === k}">${v}<small>${d}</small></button>`).join('')}</div>
+        <div class="bs-lab">Художник</div>
+        <div class="bs-tiles kart">${[['auto', 'Авто', 'фото для поста, текст для афиши'], ['gpt', 'Художник 1', 'текст и графика'], ['nb', 'Художник 2', 'фото, люди'], ['seedream', 'Художник 3', 'стиль, арт'], ['vse', 'Все три', '+24 кр · три варианта сразу']].map(([k, v, d]) => { const on = k === 'vse' ? S_KART() === 3 : (S_KART() !== 3 && S.hud === k); return `<button type="button" class="bs-tile ${on ? 'on' : ''}" data-hud="${k}" aria-pressed="${on}">${v}<small>${d}</small></button>`; }).join('')}</div>
+        <p class="small dim" style="margin:-4px 0 10px">Остальных художников можно дорисовать потом — по 12 кр за картинку.</p>
+        <div class="bs-lab">Что на картинке</div>
+        <div class="bs-tiles kart"><button type="button" class="bs-tile ${S.kartOpis ? '' : 'on'}" data-kmode="auto" aria-pressed="${!S.kartOpis}">Авто<small>промптер решит по посту</small></button><button type="button" class="bs-tile ${S.kartOpis ? 'on' : ''}" data-kmode="svoe" aria-pressed="${!!S.kartOpis}">Своё описание<small>скажите или напишите</small></button></div>
+        <div id="kopis" class="${S.kartOpis ? '' : 'hide'}">${opisBlock('kopista', S.kartOpis)}</div>
         <div class="bs-lab">Стиль</div>
         ${hasBrand ? `<div class="bs-row"><span class="av">${esc(bname.trim().charAt(0).toUpperCase())}</span><span class="tx"><b>${esc(bname)}</b><small>Писать в моём стиле</small></span><button type="button" class="bs-sw ${S.useBrend ? 'on' : ''}" id="bssw" role="switch" aria-checked="${S.useBrend}" aria-label="Писать в стиле бренда"></button></div>` : `<a class="bs-row" href="#/brend" data-bs-close><span class="tx"><b>Настроить бренд</b><small>Тексты станут точнее</small></span>${ico('i-chevr')}</a>`}
         ${S.stil.length ? `<div class="bs-row"><span class="tx"><b>Стиль по ${S.stil.length} ${S.stil.length === 1 ? 'кадру' : 'кадрам'} из депо</b></span><button type="button" class="btn sm quiet" id="bsstil">Снять</button></div>` : ''}
         <div class="bs-sum" id="bssum"></div>
         <button type="button" class="bs-done" data-bs-close>Готово</button>`;
-      const b = bsheet(html, drawPrice); sum();
+      const b = bsheet(html, () => { drawPrice(); const kp0 = $('#kartpill'); if (S.kartOpis && !kp0) $('#ask').insertAdjacentHTML('beforebegin', kartPill()); if (!S.kartOpis && kp0) kp0.remove(); const kp1 = $('#kartpill'); if (kp1) kp1.onclick = () => { S.kartOpis = ''; store.set('kartOpis', ''); kp1.remove(); }; }); sum();
+      opisWire(b.el, 'kopista', () => $('#ask').value, (v) => { S.kartOpis = v.trim(); store.set('kartOpis', S.kartOpis); });
       b.el.addEventListener('click', (e) => {
+        const km = e.target.closest('.bs-tile[data-kmode]');
+        if (km) { hap('sel'); const svoe = km.dataset.kmode === 'svoe'; $$('.bs-tile[data-kmode]', b.el).forEach((x) => { x.classList.toggle('on', x === km); x.setAttribute('aria-pressed', x === km); }); $('#kopis', b.el).classList.toggle('hide', !svoe); if (svoe) { $('#kopista', b.el).focus(); } else { S.kartOpis = ''; store.set('kartOpis', ''); $('#kopista', b.el).value = ''; } return; }
         const t = e.target.closest('.bs-tile[data-tip]');
         if (t) { hap('sel'); setTip(t.dataset.tip); $$('.bs-tile', b.el).forEach((x) => { x.classList.toggle('on', x === t); x.setAttribute('aria-pressed', x === t); }); sum(); return; }
         if (e.target.closest('[data-prez]')) { b.close(); toPrez(); return; }
+        const ta2 = e.target.closest('.bs-tile[data-aspect]');
+        if (ta2) { hap('sel'); S.aspect = ta2.dataset.aspect; store.set('aspect', S.aspect); $$('.bs-tile[data-aspect]', b.el).forEach((x) => { x.classList.toggle('on', x === ta2); x.setAttribute('aria-pressed', x === ta2); }); return; }
+        const th = e.target.closest('.bs-tile[data-hud]');
+        if (th) {
+          hap('sel');
+          if (th.dataset.hud === 'vse') store.set('kartinki', 3); else { store.set('kartinki', 1); S.hud = th.dataset.hud; store.set('hud', S.hud); }
+          $$('.bs-tile[data-hud]', b.el).forEach((x) => { x.classList.toggle('on', x === th); x.setAttribute('aria-pressed', x === th); });
+          const k3 = $('#kart3'); if (k3) { k3.classList.toggle('on', S_KART() === 3); k3.setAttribute('aria-pressed', S_KART() === 3); }
+          $$('.bs-tile[data-tip]', b.el).forEach((x) => { const sm = x.querySelector('small'); if (sm) sm.textContent = 'до ' + priceOf(x.dataset.tip) + ' кр'; });
+          sum(); return;
+        }
         const sw = e.target.closest('#bssw'); if (sw) { hap('sel'); S.useBrend = !S.useBrend; store.set('useBrend', S.useBrend); sw.classList.toggle('on', S.useBrend); sw.setAttribute('aria-checked', S.useBrend); return; }
         if (e.target.closest('#bsstil')) { S.stil = []; store.set('stil', S.stil); const sp2 = $('#stilpill'); if (sp2) sp2.remove(); b.close(); toast('Стиль из депо снят'); }
       });
@@ -367,7 +396,7 @@
       ta.value = ''; grow(); ta.blur();
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       try {
-        const res = await api('/api/ask', { tip: item.tip, tema: text, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: opts.ploshchadka || (item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram'), primer, depo: S.stil.length ? S.stil : undefined, besplatno: opts.besplatno || undefined });
+        const res = await api('/api/ask', { tip: item.tip, tema: text, kartinok: S_KART(), aspect: S.aspect === 'auto' ? undefined : S.aspect, hudozhnik: S.hud === 'auto' ? undefined : S.hud, kartinka_opisanie: S.kartOpis || undefined, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: opts.ploshchadka || (item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram'), primer, depo: S.stil.length ? S.stil : undefined, besplatno: opts.besplatno || undefined });
         Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null, zid: res.zid || '', besplatno: !!res.besplatno });
         spend(res.kredity, res.ostatok);
         S.made += 1; store.set('made', S.made);
@@ -384,6 +413,16 @@
   // Приглашение открыть следующий раздел — одно за раз, после результата, без давления.
   function invite() {
     let c = null;
+    const me = S.me || {}; const podAkt = me.podpiska && me.podpiska.aktivna;
+    if (S.made >= 3 && !me.guest && !me.platit && !podAkt && S.made >= +store.get('skip_den', 0)) {
+      // третий результат — момент предложить «Каждый день»: счёт выставляется здесь же, без похода в тарифы
+      const el = document.createElement('div'); el.className = 'invite rv den';
+      const p = (me.ceny_oplaty || {}).podpiska || { tenge: 3990, v_den: 45 };
+      el.innerHTML = `<div><b>Понравилось? Делайте так каждый день</b><p>«Каждый день» — ${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${esc(tng(p.tenge))} за 30 дней, оплата в Kaspi.</p></div><div class="ib"><button class="btn sm accent" type="button" data-den>Выставить счёт</button><button class="btn sm quiet" type="button" data-skip>Не сейчас</button></div>`;
+      el.querySelector('[data-skip]').addEventListener('click', () => { store.set('skip_den', S.made + 3); el.remove(); });
+      el.querySelector('[data-den]').addEventListener('click', async (e) => { e.target.disabled = true; try { const r = await api('/api/schet', { tip: 'podpiska' }); toast('Счёт ' + r.schet.id + ' выставлен — он в кабинете'); location.hash = '#/kabinet'; } catch (er) { toast(er.message); e.target.disabled = false; } });
+      return el;
+    }
     if (S.made >= 1 && !S.brandId && S.made >= +store.get('skip_brend', 0)) {
       c = { k: 'brend', h: 'Настройте бренд', p: 'Три вопроса, полминуты. Тексты станут вашими.', b: 'Начать' };
     } else if (S.made >= 3 && !S.open.includes('kanaly') && S.made >= +store.get('skip_kanaly', 0)) {
@@ -503,6 +542,29 @@
     box.innerHTML = `<div class="warn small">${esc(r.pochemu || 'Мы сверили результат с вашим заданием — расхождений нет.')} <a href="https://t.me/jasa_asia" target="_blank" rel="noopener">Написать нам</a></div>`;
     btn.disabled = false; btn.dataset.mode = 'plat'; btn.dataset.p = JSON.stringify(p); btn.dataset.t = t; btn.textContent = btn.dataset.plat;
   }
+  function kartPill() {
+    if (!S.kartOpis) return '';
+    return `<button class="pill on stilpill" id="kartpill" type="button" title="Убрать своё описание картинки"><span class="dot"></span>Картинка: своё описание ×</button>`;
+  }
+  // общий блок «своё описание»: поле + голос + «Улучшить с ИИ» — в настройках и в листе «Своя картинка»
+  function opisBlock(id, value, ph) {
+    const c = (S.ceny && S.ceny.opisanie) || 1;
+    return `<textarea class="ed-ta opis" id="${id}" rows="3" placeholder="${esc(ph || 'Например: мастер стрижёт девушку у окна, за окном первый снег, тёплый свет')}">${esc(value || '')}</textarea>
+      <div class="ed-act"><button type="button" class="btn sm" id="${id}mic"><svg class="ic"><use href="#i-mic"/></svg>Сказать · 1 кр</button><button type="button" class="btn sm" id="${id}ai">Улучшить с ИИ · ${esc(c)} кр</button></div>
+      <p class="small dim" id="${id}sovet"></p>`;
+  }
+  function opisWire(root, id, tema, onChange) {
+    const ta = $('#' + id, root); if (!ta) return;
+    ta.addEventListener('input', () => onChange && onChange(ta.value));
+    voice($('#' + id + 'mic', root), (t) => { ta.value = (ta.value.trim() ? ta.value.trim() + ' ' : '') + t; ta.dispatchEvent(new Event('input')); });
+    $('#' + id + 'ai', root).addEventListener('click', async (e) => {
+      const btn = e.currentTarget; if (ta.value.trim().length < 5) { toast('Сначала скажите или напишите, что на картинке'); return; }
+      const o = btn.textContent; btn.disabled = true; btn.textContent = 'Улучшаю…';
+      try { const r = await api('/api/opisanie_uluchshit', { opisanie: ta.value, tema: typeof tema === 'function' ? tema() : tema, tip: S.tip }); ta.value = r.opisanie; ta.dispatchEvent(new Event('input')); $('#' + id + 'sovet', root).textContent = r.sovet || ''; spend(r.kredity, r.ostatok); hap('success'); }
+      catch (err) { toast(err.message); hap('error'); }
+      btn.disabled = false; btn.textContent = o;
+    });
+  }
   function stilPill() {
     if (!S.stil.length) return '';
     return `<button class="pill on stilpill" id="stilpill" type="button" title="Снять стиль"><span class="dot"></span>Стиль из депо · ${S.stil.length} ${S.stil.length === 1 ? 'кадр' : 'кадра'} ×</button>`;
@@ -535,6 +597,9 @@
     el.addEventListener('click', (e) => {
       const h = e.target.closest('.hooks button'); if (h) { $$('.hooks button', el).forEach((b) => b.classList.toggle('on', b === h)); return; }
       const d = e.target.closest('.draw'); if (d) { drawImage(d, item); return; }
+      if (e.target.closest('[data-edit]')) { hap('light'); editor(item, el); return; }
+      if (e.target.closest('[data-svoya]')) { hap('light'); svoyaKartinka(item, el); return; }
+      const fin = e.target.closest('[data-fin]'); if (fin) { hap('light'); finalAct(fin.dataset.fin, item, fin); return; }
       const wl = e.target.closest('.withlogo'); if (wl) { withLogo(wl); return; }
       const vg = e.target.closest('.vgo'); if (vg) { startVideo(vg, item, el); return; }
       if (e.target.closest('.fb-ok')) { fbSend(item, 'ok', el).then(() => { $('.fb', el).outerHTML = fbBlock(item); }); return; }
@@ -574,8 +639,8 @@
   function threeImgs(item) {
     const its = arr(item.imgItems);
     const logo = item.brand && item.brand.logo;
-    if (its.length) return `<div class="caps rv" style="margin-top:16px">Выберите картинку${logo ? ' · лого поставим без искажений' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(API_BASE + it.url)}" data-logo="${esc(API_BASE + logo.url)}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
-    if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Рисую картинки, 1–2 минуты…</span></div>`;
+    if (its.length) return `<div class="caps rv" style="margin-top:16px">Выберите картинку${logo ? ' · лого поставим без искажений' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}${it.svoya ? ' · по вашему описанию' : ''}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(API_BASE + it.url)}" data-logo="${esc(API_BASE + logo.url)}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : it.dorisovat ? `<div class="img dor rv" data-v="${esc(it.variant)}" data-prompt="${esc(it.prompt || '')}" data-aspect="${esc(it.aspect || '4:5')}"><div class="ph"></div><button class="btn sm accent draw" type="button">Нарисовать · 12 кр</button><div class="cap">вариант ${esc(it.variant)} · другой художник</div></div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
+    if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Рисую, 1–2 минуты…</span></div>`;
     if (item.imgError) return `<div class="warn rv">Картинки: ${esc(item.imgError)}</div>`;
     return '';
   }
@@ -584,15 +649,124 @@
     const its = arr(item.imgItems).filter((x) => x.url);
     return `<details class="more rv" open><summary>Вид в Telegram</summary><div class="tgwrap"><div class="tgmsg"><div class="tgname">JASA</div><div class="tgtext">${esc(text).slice(0, 900)}${text.length > 900 ? '…' : ''}\n\n<span class="dim">— создано с помощью ИИ · JASA</span></div></div>${its.length ? `<div class="tgmsg tgalbum">${its.map((x) => `<img src="${esc(API_BASE + x.url)}" alt="">`).join('')}<div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>` : ''}<div class="dim small" style="margin-top:8px">В боте можно отвечать голосом: наговорите правку, и пост переделается.</div></div></details>`;
   }
+  const editBtn = () => `<button class="btn sm accent" type="button" data-edit>Редактировать</button><button class="btn sm" type="button" data-svoya>Своя картинка</button>`;
+  // «Своя картинка»: описание голосом или текстом → «Улучшить с ИИ» → выбранный художник рисует (12 кр + промпт ≤ 1)
+  function svoyaKartinka(item, el) {
+    const cena = (S.ceny && S.ceny.kartinka_svoya) || 13;
+    let hud = S.hud !== 'auto' ? S.hud : (item.tip === 'afisha' ? 'gpt' : 'nb'); let aspect = S.aspect !== 'auto' ? S.aspect : '4:5';
+    const html = `${bsHead('Своя картинка')}
+      <p class="small muted">Скажите или напишите, что должно быть на картинке. «Улучшить с ИИ» сделает из этого ясное описание кадра — вы его увидите и сможете поправить.</p>
+      ${opisBlock('svta', S.kartOpis)}
+      <div class="bs-lab">Художник</div>
+      <div class="bs-tiles kart">${[['gpt', 'Художник 1', 'текст и графика'], ['nb', 'Художник 2', 'фото, люди'], ['seedream', 'Художник 3', 'стиль, арт']].map(([k, v, d]) => `<button type="button" class="bs-tile ${hud === k ? 'on' : ''}" data-sh="${k}">${v}<small>${d}</small></button>`).join('')}</div>
+      <div class="bs-lab">Размер</div>
+      <div class="bs-tiles kart">${[['4:5', '4:5', 'лента'], ['1:1', '1:1', 'квадрат'], ['9:16', '9:16', 'сторис'], ['16:9', '16:9', 'широкая']].map(([k, v, d]) => `<button type="button" class="bs-tile ${aspect === k ? 'on' : ''}" data-sa="${k}">${v}<small>${d}</small></button>`).join('')}</div>
+      <button type="button" class="bs-done" id="svgo">Нарисовать · до ${esc(cena)} кр</button>`;
+    const b = bsheet(html);
+    opisWire(b.el, 'svta', item.tema);
+    b.el.addEventListener('click', async (e) => {
+      const sh = e.target.closest('.bs-tile[data-sh]'); if (sh) { hap('sel'); hud = sh.dataset.sh; $$('.bs-tile[data-sh]', b.el).forEach((x) => x.classList.toggle('on', x === sh)); return; }
+      const sa = e.target.closest('.bs-tile[data-sa]'); if (sa) { hap('sel'); aspect = sa.dataset.sa; $$('.bs-tile[data-sa]', b.el).forEach((x) => x.classList.toggle('on', x === sa)); return; }
+      if (e.target.closest('#svgo')) {
+        const ta = $('#svta', b.el); if (ta.value.trim().length < 5) { toast('Опишите, что должно быть на картинке'); return; }
+        const btn = $('#svgo', b.el); btn.disabled = true; btn.textContent = 'Рисую, около минуты…';
+        try {
+          const r = await api('/api/kartinka_svoya', { opisanie: ta.value, hudozhnik: hud, aspect, zid: item.zid || '', brand_id: item.brand ? item.brand.id : null });
+          spend(r.kredity, r.ostatok);
+          const its = arr(item.imgItems); const n = its.reduce((m, x) => Math.max(m, +x.variant || 0), 0) + 1;
+          its.push({ variant: n, kod: r.kod, url: r.image, svoya: true }); item.imgItems = its; store.set('feed', S.feed);
+          b.close(); hap('success'); const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); fresh.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (err) { toast(err.message); hap('error'); btn.disabled = false; btn.textContent = `Нарисовать · до ${cena} кр`; }
+      }
+    });
+  }
+  function postText(item) {
+    const r = item.result || {};
+    if (item.tip === 'afisha') return [r.headline, r.sub, r.details].filter((x) => typeof x === 'string' && x.trim()).join('\n');
+    const hooks = arr(r.hooks); const h = (item.hook != null && hooks[item.hook]) || hooks[0] || '';
+    const tags = arr(r.hashtags);
+    return ((h ? h + '\n\n' : '') + (r.text || '')).trim() + (tags.length ? '\n\n' + tags.map((t) => '#' + t).join(' ') : '');
+  }
+  const copyPlain = (t) => { if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast('Скопировано')).catch(() => toast('Не удалось скопировать')); else toast('Не удалось скопировать'); };
+  // редактор готового поста: человек правит текст сам, «Проверить» — вычитка за 3 кр, одна картинка на выбор → финал
+  function editor(item, el) {
+    const hi = $$('.hooks button', el).findIndex((b) => b.classList.contains('on')); if (hi > -1) item.hook = hi;
+    const text0 = (item.final && item.final.text) || postText(item);
+    const pics = arr(item.imgItems).filter((x) => x.url);
+    let pick = (item.final && item.final.image) || (pics[0] && pics[0].url) || '';
+    const cena = (S.ceny && S.ceny.uluchshit) || 3;
+    const html = `${bsHead('Редактор')}
+      <p class="small muted ed-hint" id="edhint"></p>
+      <textarea class="ed-ta" id="edta" rows="10" spellcheck="true">${esc(text0)}</textarea>
+      <div class="ed-warn small" id="edwarn"></div>
+      ${pics.length ? `<div class="bs-lab">Картинка к посту</div><div class="ed-pics">${pics.map((p) => `<button type="button" class="ed-pic ${pick === p.url ? 'on' : ''}" data-pic="${esc(p.url)}" aria-label="вариант ${esc(p.variant)}"><img src="${esc(API_BASE + p.url)}" alt=""></button>`).join('')}</div>` : ''}
+      <div class="ed-act"><button type="button" class="btn sm" id="edcheck">Проверить и улучшить · ${esc(cena)} кр</button><button type="button" class="btn sm quiet" id="edcopy">Скопировать</button></div>
+      <button type="button" class="bs-done" id="eddone">Готово</button>`;
+    const b = bsheet(html);
+    const ta = $('#edta', b.el);
+    const left = () => (ta.value.match(/\[уточнить[^\]]*\]/g) || []).length;
+    const hint = () => { const n = left(); $('#edhint', b.el).textContent = n ? `Осталось заполнить: ${n} × [уточнить]. Пишите прямо в тексте — адрес, даты, условия. Потом «Проверить»: вычитаем, факты не трогаем.` : 'Поправьте, что не так, прямо в тексте. Потом «Проверить»: вычитаем орфографию и согласование, факты не трогаем.'; };
+    ta.addEventListener('input', hint); hint();
+    setTimeout(() => { const i = ta.value.indexOf('[уточнить'); if (i > -1) { ta.focus(); ta.setSelectionRange(i, i); } }, 250);
+    b.el.addEventListener('click', async (e) => {
+      const pb = e.target.closest('.ed-pic'); if (pb) { hap('sel'); pick = pb.dataset.pic; $$('.ed-pic', b.el).forEach((x) => x.classList.toggle('on', x === pb)); return; }
+      if (e.target.closest('#edcopy')) { copyPlain(ta.value); return; }
+      if (e.target.closest('#edcheck')) {
+        const btn = $('#edcheck', b.el); btn.disabled = true; btn.textContent = 'Проверяю…';
+        try { const r = await api('/api/uluchshit', { tekst: ta.value, tema: item.tema, tip: item.tip }); ta.value = r.text; spend(r.kredity, r.ostatok); $('#edwarn', b.el).innerHTML = r.warnings && r.warnings.length ? '<b>Проверьте:</b> ' + r.warnings.map(esc).join(' · ') : '<b>Проверено.</b> Ошибок не нашли.'; hint(); hap('success'); }
+        catch (err) { toast(err.message); hap('error'); }
+        btn.disabled = false; btn.textContent = `Проверить и улучшить · ${cena} кр`; return;
+      }
+      if (e.target.closest('#eddone')) {
+        item.final = { text: ta.value.trim(), image: pick, ts: Date.now() }; store.set('feed', S.feed); b.close();
+        const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); fresh.scrollIntoView({ behavior: 'smooth', block: 'start' }); hap('success');
+      }
+    });
+  }
+  function finalBlock(item) {
+    const f = item.final; if (!f) return '';
+    return `<div class="final rv"><div class="caps">Готово к публикации</div>
+      <div class="final-body">${f.image ? `<img src="${esc(API_BASE + f.image)}" alt="">` : ''}<div class="posttext">${esc(f.text)}</div></div>
+      <div class="final-act">
+        <button type="button" class="btn sm accent" data-fin="sebe">Себе в Telegram</button>
+        <button type="button" class="btn sm" data-fin="share">Поделиться…</button>
+        <button type="button" class="btn sm" data-fin="tg">В Telegram</button>
+        <button type="button" class="btn sm" data-fin="wa">В WhatsApp</button>
+        <button type="button" class="btn sm quiet" data-fin="copy">Скопировать</button>
+        <button type="button" class="btn sm quiet" data-edit>Изменить</button>
+      </div>
+      <p class="small dim" style="margin-top:10px">Instagram и TikTok — через «Поделиться…»: картинка и текст уйдут в приложение вместе. «Себе в Telegram» — чтобы переслать в любую группу или канал.</p></div>`;
+  }
+  async function finalAct(k, item, btn) {
+    const f = item.final || {}; const text = (f.text || '') + AI_MARK; const url = f.image ? (API_BASE || location.origin) + f.image : '';
+    if (k === 'copy') return copyPlain(text);
+    if (k === 'tg') { const u = 'https://t.me/share/url?url=' + encodeURIComponent(url || 'https://jasa.asia') + '&text=' + encodeURIComponent(text); if (TG && TG.openTelegramLink) TG.openTelegramLink(u); else window.open(u, '_blank', 'noopener'); return; }
+    if (k === 'wa') { const u = 'https://wa.me/?text=' + encodeURIComponent(text + (url ? '\n' + url : '')); if (TG && TG.openLink) TG.openLink(u); else window.open(u, '_blank', 'noopener'); return; }
+    if (k === 'share') {
+      try {
+        let files;
+        if (url && navigator.canShare) { const bl = await (await fetch(url)).blob(); const fl = new File([bl], 'jasa.' + ((bl.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')), { type: bl.type }); if (navigator.canShare({ files: [fl] })) files = [fl]; }
+        if (navigator.share) { await navigator.share(Object.assign({ text }, files ? { files } : {})); return; }
+      } catch (e) { if (e && e.name === 'AbortError') return; }
+      copyPlain(text); toast('Текст скопирован — вставьте в приложение, картинку сохраните с экрана'); return;
+    }
+    if (k === 'sebe') {
+      if (!S.me || S.me.guest) { toast('Отправка себе в Telegram — после входа'); location.hash = '#/kabinet'; return; }
+      const o = btn.textContent; btn.disabled = true; btn.textContent = 'Отправляю…';
+      try { const r = await api('/api/otpravit_sebe', { tekst: f.text || '', image: f.image || '' }); toast(r.foto ? 'Ушло в Telegram: картинка и текст. Перешлите, куда нужно' : 'Текст ушёл в Telegram'); hap('success'); }
+      catch (e) { toast(e.message); hap('error'); }
+      btn.disabled = false; btn.textContent = o;
+    }
+  }
   function renderPost(r, item) {
-    return `<div class="hooks rv">${(r.hooks || []).map((h, i) => `<button class="${i === 0 ? 'on' : ''}">${esc(h)}</button>`).join('')}</div>
+    return `${finalBlock(item)}${threeImgs(item)}
+      <div class="hooks rv">${(r.hooks || []).map((h, i) => `<button class="${i === 0 ? 'on' : ''}">${esc(h)}</button>`).join('')}</div>
       <div class="posttext rv" id="pt">${esc(r.text || r._raw || '')}</div>
       <div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>
-      ${threeImgs(item)}
       ${tgPreview(r, item)}
       <dl class="kv rv"><dt>Когда</dt><dd>${esc(r.best_time || '—')}</dd></dl>
       ${r.kz_version ? `<details class="more rv"><summary>Қазақша нұсқа</summary><div class="kzbox">${esc(r.kz_version)}</div></details>` : ''}
-      ${warnBlock(r.warnings)}${actionsBlock()}`;
+      ${warnBlock(r.warnings)}${actionsBlock(editBtn())}`;
   }
   function renderRils(r, item) {
     return `<div class="rils"><div>
@@ -607,11 +781,11 @@
   }
   function renderAfisha(r, item) {
     const V = (r.variants || []).map((v, i) => { const p = arr(v.palette).map((c) => col(c, '#15192A')); if (!p.length) p.push('#15192A', '#E8420F'); return `<div class="var rv"><div class="pv" style="background:linear-gradient(160deg,${p[0]},${p[1] || p[0]})">${v.url ? `<img src="${esc(v.url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">` : ''}<div class="hl">${esc(r.headline)}</div><div><div class="sb">${esc(r.sub)}</div><div class="sb" style="margin-top:6px;opacity:.7">${esc(r.details || '')}</div></div></div><div class="nm"><b>${esc(v.name)}</b>${esc(v.composition)}<div class="sw">${p.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div style="margin-top:10px">${v.url ? '' : `<button class="btn sm accent draw" data-prompt="${esc(v.prompt)}" data-aspect="4:5">Нарисовать фон · 12 кр</button>`}</div></div></div>`; }).join('');
-    return `<div class="variants">${V}</div>${threeImgs(item)}<dl class="kv rv"><dt>Форматы</dt><dd>${(r.formats || []).map(esc).join(' · ')}</dd>${r.kz_headline ? `<dt>Қазақша</dt><dd>${esc(r.kz_headline)}</dd>` : ''}</dl>${warnBlock(r.warnings)}${actionsBlock()}`;
+    return `${finalBlock(item)}<div class="variants">${V}</div>${threeImgs(item)}<dl class="kv rv"><dt>Форматы</dt><dd>${(r.formats || []).map(esc).join(' · ')}</dd>${r.kz_headline ? `<dt>Қазақша</dt><dd>${esc(r.kz_headline)}</dd>` : ''}</dl>${warnBlock(r.warnings)}${actionsBlock(editBtn())}`;
   }
   function renderKarusel(r, item) {
     return `<div class="slides">${(r.slides || []).map((s) => `<div class="slide rv"><span class="n">${esc(s.n)} / ${(r.slides || []).length}</span><div><b>${esc(s.headline)}</b><p>${esc(s.text)}</p></div></div>`).join('')}</div>
-      <div class="posttext rv" style="margin-top:16px">${esc(r.caption || '')}</div><div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>${threeImgs(item)}${warnBlock(r.warnings)}${actionsBlock()}`;
+      <div class="posttext rv" style="margin-top:16px">${esc(r.caption || '')}</div><div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>${threeImgs(item)}${warnBlock(r.warnings)}${actionsBlock(editBtn())}`;
   }
   function renderPlan(r) {
     return `<p class="rv muted">${esc(r.goal || '')}</p><div class="days">${(r.days || []).map((d) => `<div class="day rv"><div class="d">${esc(d.day)}</div><div class="f">${esc(d.format)}</div><div><b>${esc(d.topic)}</b><p>${esc(d.hook)}</p><p class="dim small">${esc(d.why)}</p></div></div>`).join('')}</div>
@@ -680,6 +854,7 @@
       spend(r.kredity, r.ostatok);
       const img = document.createElement('img'); img.src = r.image; img.alt = '';
       (card.querySelector('.pv') || card).prepend(img); btn.remove();
+      if (card.dataset.v && item && item.imgItems) { const it = item.imgItems[+card.dataset.v - 1]; if (it) { it.url = r.image; delete it.dorisovat; } store.set('feed', S.feed); }
       const i = card.dataset.i; if (item && item.result) { if (i !== '' && arr(item.result.images)[i]) item.result.images[i].url = r.image; else if (item.tip === 'rils' && item.result.cover) item.result.cover.url = r.image; else if (item.tip === 'afisha') { const k = $$('.var', btn.closest('.sheet')).indexOf(card); if (arr(item.result.variants)[k]) item.result.variants[k].url = r.image; } store.set('feed', S.feed); }
     } catch (e) { btn.disabled = false; btn.textContent = 'Нарисовать · 12 кр'; toast(e.message); }
   }
@@ -1178,6 +1353,37 @@
   // пакет, выбранный в «Тарифах»: подсвечен, пока человек дошёл до «Пополнить» (с входом — до 5 минут)
   const podsvet = () => (S.podsvetPaket && S.podsvetDo > Date.now() ? S.podsvetPaket : null);
   const KAB_SKELET = '<div class="two"><div class="card skel"><i></i><i></i><i class="w60"></i></div><div class="card skel"><i></i><i class="w60"></i></div></div><div class="card skel" style="margin-top:22px"><i class="w60"></i></div>';
+  // ---------- оплата: три кошелька, «Купить», счета ----------
+  const tng = (n) => String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₸';
+  function koshelkiHtml(m) {
+    const k = m.koshelki || {}; const pod = m.podpiska;
+    const row = (name, v, hint) => `<div class="kosh"><span>${name}</span><b class="mono">${esc(Math.floor(+v || 0))}</b><small class="dim">${hint}</small></div>`;
+    return `<div class="koshelki">
+      ${pod && pod.aktivna ? row('Дневные', k.den, 'сгорают в конце дня · подписка до ' + esc(pod.do)) : ''}
+      ${+k.dar > 0 ? row('Подарочные', k.dar, m.probnye === 'vydany' ? 'пробные от JASA' : 'от JASA') : ''}
+      ${row('Личные', k.lichnye, 'оплаченные, не сгорают')}
+    </div>`;
+  }
+  function kupitHtml(m) {
+    const c = m.ceny_oplaty || {}; const p = c.podpiska || { tenge: 3990, dnej: 30, v_den: 45 }; const pod = m.podpiska;
+    const pak = Object.entries(c.pakety || { 500: 5990, 2000: 19990, 10000: 89990 });
+    return `<div class="card" id="popolnit"><span class="caps">Купить</span>
+      <div class="kupit-pod ${pod && pod.aktivna ? 'on' : ''}"><div><b>«Каждый день»</b><p class="small muted">${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${esc(p.dnej)} дней.</p></div>
+        <button class="btn sm accent" data-kupit="podpiska">${pod && pod.aktivna ? 'Продлить' : 'Выставить счёт'} · ${tng(p.tenge)}</button></div>
+      <span class="caps" style="display:block;margin-top:14px">Пакеты · не сгорают</span>
+      <div class="chips pakety">${pak.map(([n, t]) => `<button class="chip ${podsvet() === n || podsvet() === n.replace(/(\d)(?=(\d{3})$)/, '$1 ') ? 'on' : ''}" data-kupit="paket" data-paket="${esc(n)}">${esc(n)} кр · ${tng(t)} <small class="dim">${(t / n).toFixed(1).replace('.', ',')} ₸/кр</small></button>`).join('')}</div>
+      <div class="summa"><input id="summa" type="number" min="${esc((c.summa || {}).min || 1000)}" step="100" placeholder="Своя сумма, ₸" inputmode="numeric"><button class="btn sm quiet" data-kupit="summa">Счёт на сумму</button><small class="dim">по ${esc((c.summa || {}).tenge_za_kr || 14)} ₸ за кредит — пакеты выгоднее</small></div>
+      <p class="small dim" style="margin-top:10px">Счёт оплачивается в Kaspi, кредиты зачисляются после подтверждения. Один чек — одно зачисление.</p></div>`;
+  }
+  function schetaHtml(m) {
+    const sc = arr(m.scheta); if (!sc.length) return '';
+    const rk = m.rekvizity || {};
+    const rekv = rk.gotovo ? `<div class="rekv">${['poluchatel', 'kaspi', 'iban', 'bin'].filter((k) => rk[k]).map((k) => `<span>${({ poluchatel: 'Получатель', kaspi: 'Kaspi', iban: 'IBAN', bin: 'БИН' })[k]}: <b data-copy="${esc(rk[k])}" title="Скопировать">${esc(rk[k])}</b></span>`).join('')}</div>` : `<p class="small muted" style="margin-top:8px">${esc(rk.tekst || '')}</p>`;
+    return `<div class="card" style="margin-top:22px"><span class="caps">Счета</span>
+      ${sc.map((s) => `<div class="schet ${s.status}" id="schet-${esc(s.id)}"><div><b class="mono" data-copy="${esc(s.id)}" title="Скопировать номер">${esc(s.id)}</b><span class="st">${esc(s.status_imya)}</span><p class="small">${esc(s.podpis)}</p>${s.status === 'vystavlen' ? `<p class="small dim">назначение платежа: <b data-copy="${esc(s.naznachenie)}">${esc(s.naznachenie)}</b> · до ${esc(s.do)}</p>` : `<p class="small dim">${esc(s.ts)}${s.payment_id ? ' · чек ' + esc(s.payment_id) : ''}</p>`}</div>
+        <div class="sr"><b class="mono">${tng(s.tenge)}</b>${s.status === 'vystavlen' ? `<button class="btn sm ghost" data-otmena="${esc(s.id)}">Отменить</button>` : ''}</div></div>`).join('')}
+      ${sc.some((s) => s.status === 'vystavlen') ? rekv : ''}</div>`;
+  }
   function kabinet() {
     main.innerHTML = topbar('Кабинет') + '<div id="kab">' + KAB_SKELET + '</div>';
     if (S.me) drawKab(S.me);   // последний известный профиль сразу, свежий — следом
@@ -1200,18 +1406,30 @@
     const ist = arr(m.istoriya);
     k.innerHTML = `<div class="two">
       <div class="card"><span class="caps">Профиль</span><h3 style="margin:6px 0 4px">${esc(m.name || 'Вы')}</h3><p class="small muted">${m.username ? '@' + esc(m.username) : 'Telegram'}${m.since ? ' · с ' + esc(m.since) : ''}${TG ? ' · в Telegram' : ' · на компьютере'}</p>
-        <div style="margin-top:18px;display:flex;align-items:baseline;gap:10px"><b style="font:700 2.4rem var(--disp);letter-spacing:-.03em;color:var(--ink)">${esc(m.kredity)}</b><span class="muted">кредитов</span></div>
-        <p class="small dim">потрачено ${esc(m.spent || 0)} · пробных было ${esc(m.trial)}</p>
+        <div class="balans"><b>${esc(m.kredity)}</b><span class="muted">кредитов</span></div>
+        ${koshelkiHtml(m)}
+        <p class="small dim" style="margin-top:8px">потрачено ${esc(m.spent || 0)} · пробных было ${esc(m.trial)}</p>
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="#/sozdat">Создать</a><a class="btn sm quiet" href="#/brend">Мой бренд</a>${TG ? '' : '<button class="btn sm ghost" id="logout">Выйти</button>'}</div></div>
-      <div class="card" id="popolnit"><span class="caps">Пополнить</span><p class="small muted" style="margin:8px 0 12px">Выберите пакет — мы свяжемся в Telegram и зачислим кредиты. Сейчас пополнение заявкой в Telegram, карта и Kaspi — скоро.</p>
-        <div class="chips">${[['500', '5 990 ₸'], ['2 000', '19 990 ₸'], ['10 000', '89 990 ₸']].map(([n, c]) => `<button class="chip ${podsvet() === n ? 'on' : ''}" data-paket="${n}">${n} кр · ${c}</button>`).join('')}</div>
-        <p class="small dim" style="margin-top:10px">Цены пакетов ориентировочные.</p></div>
+      ${kupitHtml(m)}
       </div>
+      ${schetaHtml(m)}
       ${langCard()}
       <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:${h.vozvrat ? 'var(--ok)' : 'var(--accent-text)'}">${h.besplatno ? 'бесплатно' : (h.vozvrat ? '+' : '−') + esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто. Создайте первый пост.</p>'}</div>`;
     langBind();
     const lo = $('#logout'); if (lo) lo.addEventListener('click', async () => { try { await api('/api/logout', {}); } catch (e) { /* и так выйдем */ } S.session = null; store.set('session', null); S.me = null; S.stil = []; store.set('stil', []); toast('Вы вышли'); loadMe(); kabinet(); });
-    k.onclick = async (e) => { const b = e.target.closest('[data-paket]'); if (!b) return; b.disabled = true; try { await api('/api/popolnit', { paket: b.dataset.paket }); toast('Заявка принята'); } catch (er) { toast(er.message); b.disabled = false; } };   // onclick: повторная отрисовка не удваивает заявку
+    k.onclick = async (e) => {
+      const ot = e.target.closest('[data-otmena]');
+      if (ot) { ot.disabled = true; try { await api('/api/schet/otmena', { id: ot.dataset.otmena }); toast('Счёт отменён'); await loadMe(); drawKab(S.me); } catch (er) { toast(er.message); ot.disabled = false; } return; }
+      const cp = e.target.closest('[data-copy]');
+      if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copy); toast('Скопировано'); } catch (er) { toast(cp.dataset.copy); } return; }
+      const b = e.target.closest('[data-kupit]'); if (!b) return;
+      const body = { tip: b.dataset.kupit };
+      if (body.tip === 'paket') body.paket = b.dataset.paket;
+      if (body.tip === 'summa') { const v = parseInt(($('#summa') || {}).value, 10); if (!(v >= 1000)) { toast('Своя сумма — от 1 000 ₸'); return; } body.tenge = v; }
+      b.disabled = true;
+      try { const r = await api('/api/schet', body); toast('Счёт ' + r.schet.id + ' выставлен'); await loadMe(); drawKab(S.me); const sc = document.getElementById('schet-' + r.schet.id); if (sc) sc.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      catch (er) { toast(er.message); b.disabled = false; }
+    };   // onclick: повторная отрисовка не удваивает заявку
     if (podsvet()) { const pc = $('#popolnit'); if (pc) { pc.classList.add('podsvet'); if (S.podsvetSkroll) { S.podsvetSkroll = false; pc.scrollIntoView({ block: 'center', behavior: 'smooth' }); } } }
   }
   // 1 минуту · 2 минуты · 5 минут
@@ -1237,7 +1455,7 @@
   }
   // Тарифы — один список для кабинета и лендинга (site/index.html, блок «Цены»): тексты сверяет test_p1.TestTarify.
   /*TARIFY*/const TARIFY = [
-    {"n": "Lite", "p": "0 ₸", "kto": "Попробовать", "li": ["50 кредитов в день без входа", "после входа — 300 пробных разово", "≈ 1 пост с картинками в день"], "knopka": "Попробовать бесплатно"},
+    {"n": "Lite", "p": "0 ₸", "kto": "Попробовать", "li": ["50 кредитов в день без входа", "после входа — 135 пробных разово: 3 поста с картинками", "≈ 1 пост с картинками в день"], "knopka": "Попробовать бесплатно"},
     {"n": "Creator", "p": "6 990 ₸", "kto": "Блогер, малый бизнес", "li": ["600 кредитов ≈ 13 постов с картинками", "голос бренда", "3 канала · автопубликация — скоро", "без водяных знаков"], "knopka": "Выбрать", "paket": "500", "hot": true},
     {"n": "Pro", "p": "24 990 ₸", "kto": "SMM, агентство", "li": ["2 500 кредитов ≈ 55 постов с картинками", "до 10 брендов-клиентов", "команда 3 человека", "согласование и отчёты"], "knopka": "Выбрать", "paket": "2 000"},
     {"n": "Studio", "p": "59 990 ₸", "kto": "Сценаристы, студии", "li": ["6 000 кредитов", "разбор сценария командой редакторов", "герои, локации, кадры, видео", "10 участников, 5 проектов"], "knopka": "Выбрать", "paket": "10 000"}
