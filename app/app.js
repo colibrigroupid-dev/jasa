@@ -1033,7 +1033,8 @@
     const RP = { kz: 'Казахстан', asia: 'Азия', stream: 'стриминги', eu: 'фестивали', vse: 'среднее по рынкам' };
     const otbr = Object.values(j.proverka || {}).reduce((a, x) => a + (+x.otbrosheno || 0), 0);
     const chasti = Object.entries(B.chasti || {}).filter(([, v]) => v != null).map(([k, v]) => `<span class="${arr(B.potolok).includes(k) ? 'low' : ''}">${CH[k]} <b>${esc(v)}</b></span>`).join('');
-    $('#sc').innerHTML = `<div class="steps"><span class="done">1 · Сценарий</span><span class="done">2 · Четыре вопроса</span><span class="done">3 · Разбор</span><span class="on">4 · Отчёт</span><button class="chip" id="newrun" style="margin-left:auto">Новый разбор</button></div>
+    $('#sc').innerHTML = `<div class="steps"><span class="done">1 · Сценарий</span><span class="done">2 · Четыре вопроса</span><span class="done">3 · Разбор</span><span class="on">4 · Отчёт</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:-8px 0 20px"><button class="btn sm accent" id="otchet">Скачать отчёт · PDF</button><button class="chip" id="newrun">Новый разбор</button><span class="dim small">Чёрно-белый отчёт с референсами, для команды и продюсера</span></div>
       <div class="report">
         ${otbr ? `<p class="dim small rv">Проверка по тексту: ${otbr} ${otbr === 1 ? 'находка без настоящей цитаты убрана' : 'находки без настоящих цитат убраны'}.</p>` : ''}${Object.keys(j.errors || {}).length ? `<div class="warn rv"><b>Отчёт неполный:</b> ${Object.entries(j.errors).map(([k, v]) => esc((j.agents[k] && j.agents[k].name) || k) + ' — ' + esc(v)).join(' · ')}</div>` : ''}
         <div class="card score rv"><div class="ring" style="--v:${ball * 10}"><b>${ball.toFixed(1)}<small>/10</small></b><em>текст</em></div><div><span class="caps">Режим · ${esc(j.rezhim)} · ${j.kredity} кр · ${j.sec || ''} с${j.zoloto ? ' · золотой v' + esc(j.zoloto) : ''}</span>
@@ -1067,6 +1068,7 @@
     $$('.rv', $('#sc')).forEach((n, i) => (n.style.animationDelay = Math.min(i * 120, 1500) + 'ms'));
     setTimeout(() => $$('.lay .bar i').forEach((i) => (i.style.width = i.dataset.w + '%')), 300);
     $('#newrun').addEventListener('click', () => { S.job = null; store.set('job', null); renderIntake(); });
+    $('#otchet').addEventListener('click', (e) => { if (window.JASA_OTCHET) window.JASA_OTCHET.skachat(j, e.currentTarget); else toast('Обновите страницу — модуль отчёта не загрузился'); });
     $('#sc').addEventListener('click', (e) => { const b = e.target.closest('.ok button'); if (!b) return; S.accepted[b.dataset.k] = +b.dataset.v; store.set('accepted', S.accepted); $$('.ok button', b.parentElement).forEach((x) => x.classList.toggle('on', x === b)); });
   }
 
