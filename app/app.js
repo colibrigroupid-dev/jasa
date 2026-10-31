@@ -15,7 +15,7 @@
     set(k, v) { try { localStorage.setItem('jasa:' + k, JSON.stringify(v)); } catch (e) { /* приватное окно */ } },
   };
   const S = {
-    credits: store.get('credits', 300),
+    credits: store.get('credits', 0),   // до ответа сервера — последнее известное или 0, не «300»
     brend: store.get('brend', null),
     useBrend: store.get('useBrend', true),
     feed: store.get('feed', []),
@@ -77,8 +77,9 @@
     if (TG) headers['X-Tg-Init'] = TG.initData;
     else if (S.session) headers['X-Session'] = S.session;
     const r = await fetch(API_BASE + path, body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers });
-    const j = await r.json().catch(() => ({ error: 'сервер ответил не JSON' }));
-    if (!r.ok) throw new Error(j.error || ('ошибка ' + r.status));
+    if (r.status === 429) throw new Error('Слишком много запросов — подождите минуту и попробуйте снова');
+    const j = await r.json().catch(() => ({ error: 'Сервис временно недоступен, попробуйте через минуту' }));
+    if (!r.ok) throw new Error(j.error || ('Сервис временно недоступен (' + r.status + ')'));
     setTimeout(drawHead, 0);   // бренд или кредиты могли смениться: шапка догоняет
     return j;
   }
@@ -90,11 +91,14 @@
   // язык текстов выбирается один раз при первом запуске, дальше его можно сменить только в Кабинете
   const langGuess = () => { const c = String((TG && TG.initDataUnsafe && TG.initDataUnsafe.user && TG.initDataUnsafe.user.language_code) || navigator.language || 'ru').slice(0, 2).toLowerCase(); return c === 'kk' ? 'kz' : (c === 'en' ? 'en' : 'ru'); };
   S.yazyk = store.get('yazyk', null) || langGuess();
-  const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); api('/api/yazyk', { yazyk: l }).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
+  // выбор языка — первое действие нового пользователя: сервер выдаёт пробные кредиты, поэтому баланс перечитываем
+  // после /api/yazyk баланс мог вырасти на пробные: перечитать профиль и, если открыт Кабинет, перерисовать его цифры
+  function posleYazyka() { return loadMe().then(() => { if (/^#\/kabinet/.test(location.hash) && typeof kabinet === 'function') kabinet(); }); }
+  const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); api('/api/yazyk', { yazyk: l }).then(posleYazyka).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
   const priceOf = (tip) => (S.ceny.zadanie && S.ceny.zadanie[tip]) || 3;
   const priceLabel = (tip, extra) => 'до ' + (priceOf(tip) + (extra || 0)) + ' кр';
   const LINK_RE = /https?:\/\/\S*(instagram\.com|tiktok\.com|youtu|vk\.com)\S*/;
-  function loadMe() { return api('/api/me').then((m) => { S.me = m; if (m.yazyk && !store.get('yazyk', null)) { S.yazyk = m.yazyk; S.yazykChosen = true; store.set('yazyk', m.yazyk); } else if (!m.guest && !m.yazyk && store.get('yazyk', null)) { api('/api/yazyk', { yazyk: store.get('yazyk', 'ru') }).catch(() => {}); } S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
+  function loadMe() { return api('/api/me').then((m) => { S.me = m; if (m.yazyk && !store.get('yazyk', null)) { S.yazyk = m.yazyk; S.yazykChosen = true; store.set('yazyk', m.yazyk); } else if (!m.guest && !m.yazyk && store.get('yazyk', null)) { api('/api/yazyk', { yazyk: store.get('yazyk', 'ru') }).then(posleYazyka).catch(() => {}); } S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
   S.meP = loadMe();
 
   // ---------- тема ----------
