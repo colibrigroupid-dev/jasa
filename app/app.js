@@ -639,7 +639,7 @@
   function threeImgs(item) {
     const its = arr(item.imgItems);
     const logo = item.brand && item.brand.logo;
-    if (its.length) return `<div class="caps rv" style="margin-top:16px">Выберите картинку${logo ? ' · лого поставим без искажений' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}${it.svoya ? ' · по вашему описанию' : ''}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(API_BASE + it.url)}" data-logo="${esc(API_BASE + logo.url)}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : it.dorisovat ? `<div class="img dor rv" data-v="${esc(it.variant)}" data-prompt="${esc(it.prompt || '')}" data-aspect="${esc(it.aspect || '4:5')}"><div class="ph"></div><button class="btn sm accent draw" type="button">Нарисовать · 12 кр</button><div class="cap">вариант ${esc(it.variant)} · другой художник</div></div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
+    if (its.length) return `<div class="caps rv" style="margin-top:16px">Выберите картинку${logo ? ' · лого поставим без искажений' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}${it.svoya ? ' · по вашему описанию' : ''}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(API_BASE + it.url)}" data-logo="${esc(API_BASE + logo.url)}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : it.dorisovat ? `<div class="img dor rv" data-v="${esc(it.variant)}" data-kod="${esc(it.kod || '')}" data-prompt="${esc(it.prompt || '')}" data-aspect="${esc(it.aspect || '4:5')}"><div class="ph"></div><button class="btn sm accent draw" type="button">Нарисовать · 12 кр</button><div class="cap">вариант ${esc(it.variant)} · другой художник</div></div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
     if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Рисую, 1–2 минуты…</span></div>`;
     if (item.imgError) return `<div class="warn rv">Картинки: ${esc(item.imgError)}</div>`;
     return '';
@@ -850,7 +850,8 @@
     const aspect = btn.dataset.aspect || (card && card.dataset.aspect) || '1:1';
     btn.disabled = true; btn.textContent = 'Рисую…';
     try {
-      const r = await api('/api/kartinka', { prompt, aspect });
+      const kod = btn.dataset.kod || (card && card.dataset.kod) || undefined;
+      const r = await api('/api/kartinka', { prompt, aspect, kod });
       spend(r.kredity, r.ostatok);
       const img = document.createElement('img'); img.src = r.image; img.alt = '';
       (card.querySelector('.pv') || card).prepend(img); btn.remove();
