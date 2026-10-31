@@ -90,11 +90,13 @@
   const LANG_LABEL = { ru: 'Русский', kz: 'Қазақша', en: 'English' };
   // язык текстов выбирается один раз при первом запуске, дальше его можно сменить только в Кабинете
   const langGuess = () => { const c = String((TG && TG.initDataUnsafe && TG.initDataUnsafe.user && TG.initDataUnsafe.user.language_code) || navigator.language || 'ru').slice(0, 2).toLowerCase(); return c === 'kk' ? 'kz' : (c === 'en' ? 'en' : 'ru'); };
-  S.yazyk = store.get('yazyk', null) || langGuess();
+  const yazykCookie = () => { const m = /(?:^|; )jasa_yazyk=(ru|kz|en)/.exec(document.cookie || ''); return m ? m[1] : null; };
+  S.yazyk = store.get('yazyk', null) || yazykCookie() || langGuess();
+  if (yazykCookie()) S.yazykChosen = true;
   // выбор языка — первое действие нового пользователя: сервер выдаёт пробные кредиты, поэтому баланс перечитываем
   // после /api/yazyk баланс мог вырасти на пробные: перечитать профиль и, если открыт Кабинет, перерисовать его цифры
   function posleYazyka() { return loadMe().then(() => { if (/^#\/kabinet/.test(location.hash) && typeof kabinet === 'function') kabinet(); }); }
-  const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); api('/api/yazyk', { yazyk: l }).then(posleYazyka).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
+  const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); try { document.cookie = 'jasa_yazyk=' + l + '; max-age=31536000; path=/; SameSite=Lax'; } catch (e) { /* без cookie */ } api('/api/yazyk', { yazyk: l }).then(posleYazyka).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
   const priceOf = (tip) => (S.ceny.zadanie && S.ceny.zadanie[tip]) || 3;
   const priceLabel = (tip, extra) => 'до ' + (priceOf(tip) + (extra || 0)) + ' кр';
   const LINK_RE = /https?:\/\/\S*(instagram\.com|tiktok\.com|youtu|vk\.com)\S*/;
@@ -128,9 +130,9 @@
     { r: 'kanaly', i: 'i-chan', n: 'Мои каналы', s: 'Каналы', d: 'Где вы публикуетесь' },
     { r: 'trendy', i: 'i-trend', n: 'Тренды', tag: 'KZ', d: 'Что сейчас заходит' },
     { r: 'izuchit', i: 'i-lupa', n: 'Изучить', tag: 'Рилс', d: 'Разобрать чужой ролик по ссылке' },
-    { r: 'biblioteka', i: 'i-lib', n: 'Библиотека', d: 'Всё, что вы сделали, и кадры для стиля' },
+    { r: 'biblioteka', i: 'i-lib', n: 'Библиотека', s: 'Архив', d: 'Всё, что вы сделали, и кадры для стиля' },
     { r: 'multiki', i: 'i-multik', n: 'Мультики', tag: 'Урок', d: 'Мультик к уроку, шаг за шагом' },
-    { r: 'prezentacii', i: 'i-slides', n: 'Презентации', tag: 'PPTX', d: 'Защита, курсовая, питч, КП' },
+    { r: 'prezentacii', i: 'i-slides', n: 'Презентации', s: 'Слайды', tag: 'PPTX', d: 'Защита, курсовая, питч, КП' },
     { r: 'scenariy', i: 'i-film', n: 'Кино', tag: 'Studio', d: 'Разбор сценария фильма или сериала' },
     { r: 'partnery', i: 'i-share', n: 'Партнёрам', tag: '10 %', d: 'Приглашайте и получайте 10 % и 5 % с оплат' },
     { r: 'tarify', i: 'i-tarif', n: 'Тарифы', d: 'Кредиты и пакеты' },
@@ -151,7 +153,11 @@
     markNav();
   }
   const ROOT_TABS = ['sozdat', 'brend', 'kanaly', 'trendy'];
-  function markNav() { const h = (location.hash || '#/sozdat').replace('#/', '').split('?')[0]; $$('#nav a, #tabbar a').forEach((a) => a.classList.toggle('on', a.dataset.r === (routes[h] ? h : 'sozdat'))); }
+  function markNav() {
+    const h = (location.hash || '#/sozdat').replace('#/', '').split('?')[0], cur = routes[h] ? h : 'sozdat';
+    $$('#nav a, #tabbar a').forEach((a) => a.classList.toggle('on', a.dataset.r === cur));
+    const more = $('#tabbar [data-more]'); if (more) more.classList.toggle('on', !$$('#tabbar a').some((a) => a.dataset.r === cur));   // раздел из «Ещё» — подсвечен «Ещё»
+  }
   // нижний лист: на телефоне выезжает снизу, на компьютере — карточка по центру
   function bsheet(html, onClose) {
     const m = document.createElement('div'); m.className = 'bs';
@@ -194,9 +200,9 @@
     const slot = (S.brandId || S.brend) && name ? `<a class="mh-proj" id="mproj" href="#/brend"><span class="av">${esc(name.trim().charAt(0).toUpperCase())}</span><span class="n">${esc(name)}</span></a>` : `<a class="mh-proj" id="mproj" href="#/sozdat"><span class="av logo"></span><span class="n">JASA</span></a>`;
     const c = Math.floor(+S.credits || 0);
     if (headSig === slot + c) return; headSig = slot + c;
-    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''}" id="mcred" href="#/kabinet" title="Ваши кредиты">${c} кр</a><button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
+    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''}" id="mcred" href="#/kabinet" title="Ваши кредиты">${c} кр</a><button type="button" class="mh-help" id="mtheme" aria-label="Сменить тему"><svg class="ic"><use href="#i-moon"/></svg></button><button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
   }
-  document.addEventListener('click', (e) => { if (e.target.closest('#mhelp')) { const f = $('#fab'); if (f) f.click(); } });
+  document.addEventListener('click', (e) => { if (e.target.closest('#mhelp')) { const f = $('#fab'); if (f) f.click(); } if (e.target.closest('#mtheme')) $('#theme').click(); });
   // Первый вход: один экран «Выберите язык», пока не выбран — приложение не показываем. Язык влияет на тексты результатов, кнопки пока русские.
   function langAsk() {
     if (store.get('yazyk', null) || S.yazykChosen || $('#langfirst')) return;
@@ -219,6 +225,7 @@
     if (S.voiceAbort) S.voiceAbort();
     setTimeout(langAsk, 350);
     S.pollToken++;
+    main.onclick = null;
     main.innerHTML = '';
     fn();
     window.scrollTo({ top: 0 });
@@ -502,8 +509,8 @@
   }
 
   function brandPill() {
-    if (!S.brandId && !S.brend) return `<a class="pill" href="#/brend">Карта бренда не собрана →</a>`;
-    return `<button class="pill ${S.useBrend ? 'on' : ''}" id="brandpill" title="Генерация берёт всё из карты бренда"><span class="dot"></span>${esc(S.brandName || (S.brend && S.brend.name) || 'Мой бренд')}${S.useBrend ? '' : ' · выкл'}</button>`;
+    if (!S.brandId && !S.brend) return `<a class="pill" href="#/brend">Бренд не настроен →</a>`;
+    return `<button class="pill ${S.useBrend ? 'on' : ''}" id="brandpill" title="Тексты пишутся голосом вашего бренда"><span class="dot"></span>${esc(S.brandName || (S.brend && S.brend.name) || 'Мой бренд')}${S.useBrend ? '' : ' · выкл'}</button>`;
   }
 
   // лист результата
@@ -568,7 +575,7 @@
     const its = arr(item.imgItems);
     const logo = item.brand && item.brand.logo;
     if (its.length) return `<div class="caps rv" style="margin-top:16px">Выберите картинку${logo ? ' · лого поставим без искажений' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(API_BASE + it.url)}" data-logo="${esc(API_BASE + logo.url)}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
-    if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Рисую картинки, пара минут…</span></div>`;
+    if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Рисую картинки, 1–2 минуты…</span></div>`;
     if (item.imgError) return `<div class="warn rv">Картинки: ${esc(item.imgError)}</div>`;
     return '';
   }
@@ -783,24 +790,24 @@
       <div class="two">
         <div class="card">
           <div class="field"><label>Ссылка на ваш Instagram или Telegram-канал</label><input id="handle" placeholder="https://instagram.com/… или t.me/…" value="${esc((S.brend && S.brend.handle) || '')}"></div>
-          <div class="warn" style="margin:-4px 0 14px"><b>Анализ аккаунта:</b> по ссылке платформа пройдёт по всем вашим постам, темам, охватам и комментариям и соберёт ДНК автоматически. Для полного анализа и автопостинга вы дадите доступ к аккаунту через Meta — кнопка появится скоро. Пока вставьте 3–5 постов ниже.</div>
+          <div class="warn" style="margin:-4px 0 14px"><b>Анализ аккаунта:</b> по ссылке платформа пройдёт по всем вашим постам, темам, охватам и комментариям и соберёт голос бренда автоматически. Автопубликация — скоро: сначала Telegram, потом Instagram; для неё вы дадите доступ к аккаунту. Пока вставьте 3–5 постов ниже.</div>
           <div class="field"><label>Ваши посты или описание</label><textarea id="posts" placeholder="Вставьте 3–5 постов целиком или напишите: кто вы, что продаёте, кому, как любите говорить с людьми">${esc((S.brend && S.brend.source) || '')}</textarea></div>
-          <div style="display:flex;gap:8px;align-items:center"><button class="btn accent" id="mkdna">Собрать ДНК · до 6 кр</button><button class="icobtn" id="mic2" title="Рассказать голосом"><svg><use href="#i-mic"/></svg></button><span class="dim small">Instagram/Telegram подключим на следующем шаге</span></div>
+          <div style="display:flex;gap:8px;align-items:center"><button class="btn accent" id="mkdna">Собрать голос бренда · до 6 кр</button><button class="icobtn" id="mic2" title="Рассказать голосом"><svg><use href="#i-mic"/></svg></button><span class="dim small">Instagram/Telegram подключим на следующем шаге</span></div>
         </div>
-        <div class="card dna" id="dnaout">${S.brend ? dnaHtml(S.brend) : '<p class="muted">Здесь появится ДНК: голос, темы, палитра, чего не писать.</p>'}</div>
+        <div class="card dna" id="dnaout">${S.brend ? dnaHtml(S.brend) : '<p class="muted">Здесь появится голос бренда: как вы говорите, темы, палитра, чего не писать.</p>'}</div>
       </div>`;
     voice($('#mic2'), (t) => { const p = $('#posts'); p.value = (p.value ? p.value + '\n' : '') + t; });
     $('#mkdna').addEventListener('click', async () => {
       const src = $('#posts').value.trim(); if (src.length < 40) { toast('Напишите хотя бы пару предложений'); return; }
       const b = $('#mkdna'); b.disabled = true; b.textContent = 'Изучаю…';
-      $('#dnaout').innerHTML = '<div class="working"><span class="spin"></span><span>ДНК-аналитик читает ваши тексты</span></div>';
+      $('#dnaout').innerHTML = '<div class="working"><span class="spin"></span><span>Читаю ваши тексты и собираю голос бренда</span></div>';
       try {
         const r = await api('/api/ask', { tip: 'dna', tema: src });
         S.brend = Object.assign({}, r.result, { handle: $('#handle').value.trim(), source: src.slice(0, 6000) });
         store.set('brend', S.brend); spend(r.kredity, r.ostatok);
         $('#dnaout').innerHTML = dnaHtml(S.brend);
       } catch (e) { $('#dnaout').innerHTML = `<div class="warn"><b>Не получилось:</b> ${esc(e.message)}</div>`; }
-      b.disabled = false; b.textContent = 'Собрать ДНК · до 6 кр';
+      b.disabled = false; b.textContent = 'Собрать голос бренда · до 6 кр';
     });
   }
   function dnaHtml(d) {
@@ -839,7 +846,7 @@
       box.innerHTML = head + `<div class="kgrid"><div>
         <span class="caps">${esc(b.name)} · ${L.length ? L.length + ' ' + (L.length === 1 ? 'канал' : L.length < 5 ? 'канала' : 'каналов') : 'пока пусто'}</span>
         <div class="klist">${L.map((l, i) => { const [pl, adr, ...rest] = l.split(' · '); return `<div class="chan"><div class="ico">${esc((pl || '?').slice(0, 2).toUpperCase())}</div><div><b>${esc(adr || pl)}</b><small>${esc([pl].concat(rest).join(' · '))}</small></div><button class="btn sm ghost" data-del="${i}" title="Убрать">×</button></div>`; }).join('') || '<p class="dim small" style="margin:10px 0">Каналов пока нет.</p>'}</div>
-        <p class="dim small" style="margin-top:14px">Автопубликация скоро: сначала Telegram, потом Instagram.</p>
+        <p class="dim small" style="margin-top:14px">Автопубликация — скоро: сначала Telegram, потом Instagram.</p>
       </div><form class="card" id="kf" autocomplete="off"><span class="caps">Добавить канал</span>
         <div class="field" style="margin-top:12px"><label for="kp">Площадка</label><select id="kp">${PLOSHCHADKI.map((x) => `<option>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="ka">Адрес</label><input id="ka" placeholder="@moj_kanal или ссылка" required></div>
@@ -883,7 +890,7 @@
         </div>
         <span class="caps" style="display:block;margin-top:18px">Что сделать</span>
         <div class="modes" id="modes">${MODES.map((m, i) => `<button class="chip ${i === 0 ? 'on' : ''}">${m}</button>`).join('')}</div>
-        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать сценарий</button><span class="dim small">От 80 до 700 кр, зависит от длины. Займёт 5–8 минут</span></div>
+        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать сценарий</button><span class="dim small">От 80 до 700 кр, зависит от длины. Займёт 5–10 минут</span></div>
       </div></div>`;
     const ta = $('#script'); const cnt = () => { $('#cnt').textContent = ta.value ? Math.round(ta.value.split(/\s+/).length / 180 * 10) / 10 + ' стр · ' + ta.value.length + ' зн' : ''; };
     ta.addEventListener('input', cnt);
@@ -1166,9 +1173,13 @@
   // =====================================================================
   // ЛИЧНЫЙ КАБИНЕТ (вход с компьютера через Telegram)
   // =====================================================================
+  // пакет, выбранный в «Тарифах»: подсвечен, пока человек дошёл до «Пополнить» (с входом — до 5 минут)
+  const podsvet = () => (S.podsvetPaket && S.podsvetDo > Date.now() ? S.podsvetPaket : null);
+  const KAB_SKELET = '<div class="two"><div class="card skel"><i></i><i></i><i class="w60"></i></div><div class="card skel"><i></i><i class="w60"></i></div></div><div class="card skel" style="margin-top:22px"><i class="w60"></i></div>';
   function kabinet() {
-    main.innerHTML = topbar('Кабинет') + '<div id="kab"></div>';
-    loadMe().then(drawKab);
+    main.innerHTML = topbar('Кабинет') + '<div id="kab">' + KAB_SKELET + '</div>';
+    if (S.me) drawKab(S.me);   // последний известный профиль сразу, свежий — следом
+    loadMe().then((m) => { if (m || !S.me) drawKab(m); });
   }
   function drawKab(m) {
     const k = $('#kab'); if (!k) return;
@@ -1177,8 +1188,9 @@
     if (!m) { k.innerHTML = '<div class="warn">Сервер не отвечает. Попробуйте через минуту.</div>'; return; }
     if (m.guest && !TG) {
       k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите в аккаунт</h2><p class="muted" style="margin-top:10px">Без паролей, через Telegram. Посты, бренд и кредиты будут и в приложении, и на компьютере.</p></section>
+        ${podsvet() ? `<p class="skoro" style="margin:0 0 16px">Пакет ${esc(S.podsvetPaket)} кр — войдите через Telegram, и мы откроем «Пополнить» с ним.</p>` : ''}
         <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div></div>
-        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сегодня у вас ${esc(Math.floor(m.kredity))} кр, завтра снова 50. После входа дадим ${esc(m.trial)} пробных, это примерно 6 постов с картинками.</p></div></div>`;
+        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сегодня у вас ${esc(Math.floor(m.kredity))} кр. Без входа — 50 кредитов в день, после входа — ${esc(m.trial)} пробных разово, это примерно 6 постов с картинками.</p></div></div>`;
       k.insertAdjacentHTML('beforeend', langCard()); langBind();
       $('#login').addEventListener('click', startLogin);
       return;
@@ -1188,24 +1200,28 @@
       <div class="card"><span class="caps">Профиль</span><h3 style="margin:6px 0 4px">${esc(m.name || 'Вы')}</h3><p class="small muted">${m.username ? '@' + esc(m.username) : 'Telegram'}${m.since ? ' · с ' + esc(m.since) : ''}${TG ? ' · в Telegram' : ' · на компьютере'}</p>
         <div style="margin-top:18px;display:flex;align-items:baseline;gap:10px"><b style="font:700 2.4rem var(--disp);letter-spacing:-.03em;color:var(--ink)">${esc(m.kredity)}</b><span class="muted">кредитов</span></div>
         <p class="small dim">потрачено ${esc(m.spent || 0)} · пробных было ${esc(m.trial)}</p>
-        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="#/sozdat">Создать</a><a class="btn sm quiet" href="#/brend">Голос бренда</a>${TG ? '' : '<button class="btn sm ghost" id="logout">Выйти</button>'}</div></div>
-      <div class="card"><span class="caps">Пополнить</span><p class="small muted" style="margin:8px 0 12px">Выберите пакет — мы свяжемся в Telegram и зачислим кредиты. Сейчас пополнение заявкой в Telegram, карта и Kaspi — скоро.</p>
-        <div class="chips">${[['500', '5 990 ₸'], ['2 000', '19 990 ₸'], ['10 000', '89 990 ₸']].map(([n, c]) => `<button class="chip" data-paket="${n}">${n} кр · ${c}</button>`).join('')}</div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="#/sozdat">Создать</a><a class="btn sm quiet" href="#/brend">Мой бренд</a>${TG ? '' : '<button class="btn sm ghost" id="logout">Выйти</button>'}</div></div>
+      <div class="card" id="popolnit"><span class="caps">Пополнить</span><p class="small muted" style="margin:8px 0 12px">Выберите пакет — мы свяжемся в Telegram и зачислим кредиты. Сейчас пополнение заявкой в Telegram, карта и Kaspi — скоро.</p>
+        <div class="chips">${[['500', '5 990 ₸'], ['2 000', '19 990 ₸'], ['10 000', '89 990 ₸']].map(([n, c]) => `<button class="chip ${podsvet() === n ? 'on' : ''}" data-paket="${n}">${n} кр · ${c}</button>`).join('')}</div>
         <p class="small dim" style="margin-top:10px">Цены пакетов ориентировочные.</p></div>
       </div>
       ${langCard()}
-      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:${h.vozvrat ? 'var(--ok)' : 'var(--accent)'}">${h.besplatno ? 'бесплатно' : (h.vozvrat ? '+' : '−') + esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто. Создайте первый пост.</p>'}</div>`;
+      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:${h.vozvrat ? 'var(--ok)' : 'var(--accent-text)'}">${h.besplatno ? 'бесплатно' : (h.vozvrat ? '+' : '−') + esc(h.kr)}</span><span class="small">${esc(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто. Создайте первый пост.</p>'}</div>`;
     langBind();
     const lo = $('#logout'); if (lo) lo.addEventListener('click', async () => { try { await api('/api/logout', {}); } catch (e) { /* и так выйдем */ } S.session = null; store.set('session', null); S.me = null; S.stil = []; store.set('stil', []); toast('Вы вышли'); loadMe(); kabinet(); });
-    k.addEventListener('click', async (e) => { const b = e.target.closest('[data-paket]'); if (!b) return; b.disabled = true; try { await api('/api/popolnit', { paket: b.dataset.paket }); toast('Заявка принята'); } catch (er) { toast(er.message); b.disabled = false; } });
+    k.onclick = async (e) => { const b = e.target.closest('[data-paket]'); if (!b) return; b.disabled = true; try { await api('/api/popolnit', { paket: b.dataset.paket }); toast('Заявка принята'); } catch (er) { toast(er.message); b.disabled = false; } };   // onclick: повторная отрисовка не удваивает заявку
+    if (podsvet()) { const pc = $('#popolnit'); if (pc) { pc.classList.add('podsvet'); if (S.podsvetSkroll) { S.podsvetSkroll = false; pc.scrollIntoView({ block: 'center', behavior: 'smooth' }); } } }
   }
+  // 1 минуту · 2 минуты · 5 минут
+  function plural(n, one, few, many) { const a = Math.abs(n) % 100, b = a % 10; return a > 10 && a < 20 ? many : b === 1 ? one : b > 1 && b < 5 ? few : many; }
   async function startLogin() {
     const box = $('#loginbox'); const btn = $('#login'); btn.disabled = true;
     const token = S.pollToken;
     let st; try { st = await api('/api/login/start', {}); } catch (e) { toast(e.message); btn.disabled = false; return; }
     if (token !== S.pollToken || !$('#loginbox')) return;
     const minut = Math.max(1, Math.round((+st.ttl || 300) / 60));
-    box.innerHTML = `<div class="qr" id="qr"></div><div class="login-sverka"><span class="caps">Код сверки</span><b class="mono">${esc(st.sverka || '')}</b></div><p class="small muted" style="margin-top:10px">Наведите камеру телефона на код или <a href="${esc(st.url)}" target="_blank" rel="noopener">откройте бота</a>. Бот покажет такой же код сверки и спросит «Войти на компьютере?» — нажмите «Да, это я». Код действует ${minut} минут.</p><p class="small dim" id="loginst">Жду подтверждения в боте…</p>`;
+    const cifry = st.sverka ? esc(st.sverka) : '····';
+    box.innerHTML = `<div class="qr" id="qr"></div><ol class="login-shagi"><li>Наведите камеру на QR или <a href="${esc(st.url)}" target="_blank" rel="noopener">откройте бота</a></li><li>Проверьте, что в боте те же цифры: <b class="mono login-cifry">${cifry}</b></li><li>Нажмите «Да, это я»</li></ol><p class="small dim" id="loginst">Код действует ${minut} ${plural(minut, 'минуту', 'минуты', 'минут')} · жду подтверждения…</p>`;
     try { new QRCode($('#qr'), { text: st.url, width: 180, height: 180, colorDark: '#15192A', colorLight: '#FFFDF8' }); } catch (e) { $('#qr').innerHTML = `<a class="btn quiet" href="${esc(st.url)}" target="_blank" rel="noopener">Открыть бота</a>`; }
     for (let i = 0; i < 160; i++) {
       await new Promise((r) => setTimeout(r, 2000));
@@ -1217,16 +1233,23 @@
     }
     $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; btn.disabled = false;
   }
+  // Тарифы — один список для кабинета и лендинга (site/index.html, блок «Цены»): тексты сверяет test_p1.TestTarify.
+  /*TARIFY*/const TARIFY = [
+    {"n": "Lite", "p": "0 ₸", "kto": "Попробовать", "li": ["50 кредитов в день без входа", "после входа — 300 пробных разово", "≈ 1 пост с картинками в день"], "knopka": "Попробовать бесплатно"},
+    {"n": "Creator", "p": "6 990 ₸", "kto": "Блогер, малый бизнес", "li": ["600 кредитов ≈ 13 постов с картинками", "голос бренда", "3 канала · автопубликация — скоро", "без водяных знаков"], "knopka": "Выбрать", "paket": "500", "hot": true},
+    {"n": "Pro", "p": "24 990 ₸", "kto": "SMM, агентство", "li": ["2 500 кредитов ≈ 55 постов с картинками", "до 10 брендов-клиентов", "команда 3 человека", "согласование и отчёты"], "knopka": "Выбрать", "paket": "2 000"},
+    {"n": "Studio", "p": "59 990 ₸", "kto": "Сценаристы, студии", "li": ["6 000 кредитов", "разбор сценария командой редакторов", "герои, локации, кадры, видео", "10 участников, 5 проектов"], "knopka": "Выбрать", "paket": "10 000"}
+  ];/*/TARIFY*/
   function tarify() {
-    const T = [
-      ['Lite', '0 ₸', 'попробовать', ['50 кредитов в день ≈ 1 пост с картинками', 'картинки с водяным знаком', '1 канал', 'тренды — только смотреть'], 'Начать', ''],
-      ['Creator', '6 990 ₸', 'блогер, малый бизнес', ['600 кредитов ≈ 50 картинок', 'голос бренда', '3 канала · автопостинг — скоро', 'без водяных знаков', 'рилсы по кадрам — за кредиты'], 'Выбрать', 'hot'],
-      ['Pro', '24 990 ₸', 'SMM, дизайнер, агентство', ['2 500 кредитов', 'до 10 брендов-клиентов', 'команда 3 человека', 'согласование и отчёты'], 'Выбрать', ''],
-      ['Studio', '59 990 ₸', 'сценаристы, продюсеры', ['6 000 кредитов', 'разбор сценария агентами', 'герои, локации, кадры, видео', '10 участников, 5 проектов'], 'Выбрать', ''],
-    ];
-    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Сколько это стоит</h2><p class="muted" style="margin-top:10px">Работа считается в кредитах. Текст поста до 6, пост с тремя картинками до 45, картинка 2K 12, видео 5 с в 720p 131, разбор сценария 80–700. Сейчас пополнение заявкой в Telegram, карта и Kaspi — скоро. Цена на кнопке окончательная, цены тарифов ориентировочные.</p></section>
-      <div class="tiers">${T.map(([n, p, w, li, b, c]) => `<div class="tier ${c} rv"><span class="caps">${w}</span><h3>${n}</h3><div class="price">${p}<small> /мес</small></div><ul>${li.map((l) => `<li>${l}</li>`).join('')}</ul><button class="btn ${c ? 'accent' : 'quiet'}">${b}</button></div>`).join('')}</div>`;
+    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Сколько это стоит</h2><p class="muted" style="margin-top:10px">Работа считается в кредитах. Текст поста до 6, пост с тремя картинками до 45, картинка 2K 12, видео 5 с в 720p 131, разбор сценария 80–700. Сейчас пополнение заявкой в Telegram, карта и Kaspi — скоро. Цена каждого действия видна на кнопке «Сделать» до запуска.</p></section>
+      <div class="tiers">${TARIFY.map((t) => `<div class="tier ${t.hot ? 'hot' : ''} rv"><span class="caps">${esc(t.kto)}</span><h3>${esc(t.n)}</h3><div class="price">${esc(t.p)}<small> /мес</small></div><ul>${t.li.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><button type="button" class="btn ${t.hot ? 'accent' : 'quiet'}" data-tarif="${esc(t.n)}">${esc(t.knopka)}</button></div>`).join('')}</div>`;
     $$('.rv', main).forEach((n, i) => (n.style.animationDelay = i * 80 + 'ms'));
+    main.onclick = (e) => {
+      const b = e.target.closest('[data-tarif]'); if (!b) return;
+      const t = TARIFY.find((x) => x.n === b.dataset.tarif); if (!t) return;
+      if (!t.paket) { location.hash = '#/sozdat'; return; }
+      S.podsvetPaket = t.paket; S.podsvetDo = Date.now() + 300000; S.podsvetSkroll = true; location.hash = '#/kabinet';   // Кабинет → «Пополнить» с подсвеченным пакетом
+    };
   }
 
   // =====================================================================

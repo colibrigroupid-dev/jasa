@@ -30,7 +30,7 @@
     const box = $('#iz'); if (!box) return;
     box.innerHTML = `<section style="max-width:720px;margin-bottom:20px"><h2>Разобрать ролик</h2>
       <p class="muted" style="margin-top:10px">Вставьте ссылку из Instagram, TikTok, YouTube, VK или Telegram — или перетащите видео. JASA посмотрит ролик целиком: речь, текст на экране, кадры и монтаж.</p>
-      ${L.zaglushka ? '<p class="warn"><b>Пробный режим.</b> Скачивание и модель заменены заглушкой, кредиты считаются как настоящие.</p>' : ''}</section>
+      ${L.zaglushka ? '<p class="warn"><b>Демо-режим:</b> ролик не скачивается, разбор — пример; кредиты считаются как настоящие.</p>' : ''}</section>
       <form class="card iz-form" id="izf" autocomplete="off">
         <div class="iz-drop" id="izd"><input id="izu" placeholder="https://www.instagram.com/reel/…" inputmode="url">
           <label class="btn sm quiet"><input type="file" accept="video/*" hidden id="izfile">Видео файлом</label></div>

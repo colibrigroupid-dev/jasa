@@ -35,7 +35,7 @@
   // ---------- список и бриф ----------
   function list() {
     const box = $('#mk');
-    if (L.zakryto) { box.innerHTML = intro() + '<p class="warn"><b>Скоро.</b> Раздел открывается после проверки на первых уроках — напишем в Telegram, когда можно будет пробовать.</p>'; return; }
+    if (L.zakryto) { box.innerHTML = intro() + '<p class="skoro"><b>Скоро.</b> Раздел открывается после проверки на первых уроках — напишем в Telegram, когда можно будет пробовать.</p>'; return; }
     if (L.guest) {
       box.innerHTML = intro() + '<a class="btn accent" href="#/kabinet" style="margin-top:18px">Войти через Telegram</a><p class="dim small" style="margin-top:10px">Мультик собирается несколько дней по шагам — поэтому он хранится за вами.</p>';
       return;
@@ -51,7 +51,7 @@
   function intro() {
     return `<section style="max-width:720px;margin-bottom:22px"><h2>Обучающий мультик к уроку</h2>
       <p class="muted" style="margin-top:10px">Два героя-зверёнка объясняют одну мысль урока: один знает, второй спрашивает. Вы утверждаете каждый шаг — сценарий, кадры, голоса, ролики. Цена видна до запуска, дорогое видео — только после ваших «да» на картинки.</p>
-      ${L.zaglushka ? '<p class="warn"><b>Пробный режим.</b> Модели заменены заглушками: картинки, голос и ролики — тестовые, кредиты считаются как настоящие.</p>' : ''}</section>`;
+      ${L.zaglushka ? '<p class="warn"><b>Демо-режим:</b> картинки, голос и ролики — примеры, кредиты считаются как настоящие.</p>' : ''}</section>`;
   }
 
   function brifFields(b) {
@@ -256,7 +256,7 @@
       <div class="mk-kgrid"><div><span class="caps">Одежда</span><ul>${li(k.odezhda)}</ul></div><div><span class="caps">Реквизит по сцене</span><ul>${li(k.rekvizit) || '<li class="dim">нет</li>'}</ul></div>
         <div><span class="caps">Не менять</span><ul>${li(k.ne_menyat)}</ul></div><div><span class="caps">Не добавлять</span><ul>${li(k.ne_dobavlyat)}</ul></div></div>
       <div class="mk-pal">${arr(k.palitra).map((c) => `<span title="${esc(c.hex)}"><i style="background:${esc(c.hex)}"></i>${esc(c.nazvanie)}</span>`).join('')}</div>
-      <details class="mk-kan"><summary>Текст для художника (английский)</summary><textarea rows="6">${esc(k.kanon)}</textarea><div class="mk-row" style="margin-top:8px"><button class="btn sm quiet" data-ksave="${esc(g.imya)}">Сохранить текст</button><span class="small dim">Он вставляется в каждый кадр слово в слово. Предметов в руках здесь нет.</span></div></details>
+      <details class="mk-kan"><summary>Описание кадра для художника</summary><textarea rows="6">${esc(k.kanon)}</textarea><div class="mk-row" style="margin-top:8px"><button class="btn sm quiet" data-ksave="${esc(g.imya)}">Сохранить текст</button><span class="small dim">Он вставляется в каждый кадр слово в слово. Предметов в руках здесь нет.</span></div></details>
       <div class="mk-2col"><div><span class="caps">Четыре вида</span><div class="mk-img">${imgBox(pv, g.imya + ': четыре вида')}</div><button class="btn sm ${pv.url ? 'quiet' : 'accent'}" data-kris="povorot" data-im="${esc(g.imya)}">${pv.url ? 'Перерисовать' : 'Нарисовать'} · ${kr(L.ceny.kartinka)}</button></div>
         <div><span class="caps">Шесть лиц</span><div class="mk-img">${imgBox(em, g.imya + ': шесть лиц')}</div><button class="btn sm ${em.url ? 'quiet' : 'accent'}" data-kris="emocii" data-im="${esc(g.imya)}"${pv.url ? '' : ' disabled title="сначала нарисуйте четыре вида"'}>${em.url ? 'Перерисовать' : 'Нарисовать'} · ${kr(L.ceny.kartinka)}</button></div></div>
       <div class="mk-row" style="margin-top:10px"><button class="btn sm quiet" data-kmk="${esc(g.imya)}">Собрать карту заново · до ${kr(L.ceny.kartochka)}</button></div></div>`;

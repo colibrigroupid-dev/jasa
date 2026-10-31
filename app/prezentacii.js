@@ -34,7 +34,7 @@
   async function screen() {
     const main = $('#main');
     main.innerHTML = topbar('Презентации', '<a class="btn sm quiet" href="#/prezentacii">Все презентации</a>') + '<div id="pz"><div class="working"><span class="spin"></span><span>Открываю…</span></div></div>';
-    try { L = await api('/api/prezentacii'); } catch (e) { $('#pz').innerHTML = `<section style="max-width:720px"><h2>Презентации</h2><p class="warn"><b>Скоро.</b> Раздел открывается после проверки на первых защитах и питчах — напишем в Telegram.</p></section>`; return; }
+    try { L = await api('/api/prezentacii'); } catch (e) { $('#pz').innerHTML = `<section style="max-width:720px"><h2>Презентации</h2><p class="skoro"><b>Скоро.</b> Раздел открывается после проверки на первых защитах и питчах — напишем в Telegram.</p></section>`; return; }
     const pid = pidOf();
     if (!pid) { list(); return; }
     try { P = (await api('/api/prezentacii/' + pid)).proekt; } catch (e) { $('#pz').innerHTML = `<div class="warn">${esc(e.message)}</div>`; return; }
@@ -47,12 +47,12 @@
     return `<section style="max-width:760px;margin-bottom:22px"><h2>Презентация к защите или к питчу</h2>
       <p class="muted" style="margin-top:10px">Скажите голосом или напишите, что за выступление, и приложите свою работу или цифры. Команда агентов ИИ соберёт слайды, текст к выступлению под каждым слайдом и тайминг — займёт 5–10 минут, платите только за шаги, которые запустите. JASA не добавляет цифр от себя: каждую цифру и источник код сверяет с вашими материалами, сомнительное подсвечено жёлтым. Перед выступлением проверьте сами.</p>
       <p class="small dim" style="margin-top:6px">Слайды, тексты и речь готовит ИИ.</p>
-      ${L.zaglushka ? '<p class="warn"><b>Пробный режим.</b> Тексты тестовые, модели не вызываются; кредиты списываются только тестовые.</p>' : ''}</section>`;
+      ${L.zaglushka ? '<p class="warn"><b>Демо-режим:</b> тексты-примеры, кредиты не списываются.</p>' : ''}</section>`;
   }
 
   function list() {
     const box = $('#pz');
-    if (L.zakryto) { box.innerHTML = intro() + '<p class="warn"><b>Скоро.</b> Раздел открывается после проверки на первых защитах и питчах — напишем в Telegram.</p>'; return; }
+    if (L.zakryto) { box.innerHTML = intro() + '<p class="skoro"><b>Скоро.</b> Раздел открывается после проверки на первых защитах и питчах — напишем в Telegram.</p>'; return; }
     if (L.guest) { box.innerHTML = intro() + '<a class="btn accent" href="#/kabinet">Войти через Telegram</a><p class="dim small" style="margin-top:10px">Презентация собирается по шагам — поэтому она хранится за вами.</p>'; return; }
     const pre = (() => { try { const x = JSON.parse(sessionStorage.getItem('jasa:prez') || 'null'); sessionStorage.removeItem('jasa:prez'); return x; } catch (e) { return null; } })();
     box.innerHTML = intro() + (arr(L.proekty).length ? `<div class="pz-list">${L.proekty.map((x) => `<a class="card pz-pr" href="#/prezentacii?p=${esc(x.id)}"><span class="caps">${esc((L.tipy[x.tip] || {}).name || x.tip)}</span><b>${esc(x.tema)}</b><span class="small muted">${x.slajdov} слайдов · шаг: ${esc(shagName(x.shag))} · потрачено ${kr(x.potracheno)}</span><span class="dim small">${esc(x.ts)}</span></a>`).join('')}</div>` : '') +
@@ -74,7 +74,7 @@
       <div class="field"><label>Регламент</label><div class="chips" id="pzmin">${arr(L.minut).map((m) => `<button type="button" class="chip ${m === br.minut ? 'on' : ''}" data-m="${m}">${m} мин</button>`).join('')}</div></div></div>
       ${kom === 'student' ? `<details class="pz-more" ${b ? 'open' : ''}><summary>Вуз, руководитель, требования кафедры</summary><div class="pz-2">${f('vuz', 'Вуз', 'КазНУ им. аль-Фараби')}${f('kafedra', 'Кафедра / специальность', 'Экономика')}${f('fio', 'Ваше ФИО', 'Иванова А. С.')}${f('rukovoditel', 'Руководитель', 'к.э.н., доцент Петров П. П.')}</div>${f('trebovaniya', 'Требования кафедры (если есть)', 'Не больше 12 слайдов, шрифт Times New Roman, слайд с методами', true)}</details>`
         : `<div class="pz-2">${f('komu', 'Кому показываем', 'Инвестор, акселератор, закупщик сети кофеен')}${f('prosba', 'Что хотите получить', '50 млн ₸ на расширение, встреча до пятницы')}</div>${f('cifry', 'Ваши цифры — только реальные. JASA поставит на слайды только их', 'Выручка 4 млн ₸ в месяц, 1 200 клиентов, средний чек 3 300 ₸, команда 6 человек', true)}
-        ${S.brandId ? `<label class="pz-chk"><input type="checkbox" id="pzbrand" ${!b || (b.oformlenie || {}).brand_id ? 'checked' : ''}> Взять Карту бренда: голос, палитра, лого оригиналом</label>` : '<p class="small dim">Карта бренда не собрана — презентация будет в стиле JASA. <a href="#/brend">Собрать →</a></p>'}`}
+        ${S.brandId ? `<label class="pz-chk"><input type="checkbox" id="pzbrand" ${!b || (b.oformlenie || {}).brand_id ? 'checked' : ''}> Взять «Мой бренд»: голос, палитра, лого оригиналом</label>` : '<p class="small dim">Бренд не настроен — презентация будет в стиле JASA. <a href="#/brend">Настроить «Мой бренд» →</a></p>'}`}
       ${b ? '' : `<div class="field" style="margin-top:8px"><label for="pzmat">${kom === 'student' ? 'Ваша работа — файлом или текстом (лучше целиком: возьмём введение, выводы, заключение и литературу)' : 'Материалы: бизнес-план, описание, отчёт — файлом или текстом (по желанию)'}</label>
         <div class="pz-drop" id="pzdrop"><textarea id="pzmat" rows="4" placeholder="Вставьте текст или перетащите файл .docx, .pdf, .txt"></textarea><label class="btn sm quiet"><input type="file" hidden id="pzfile" accept=".docx,.pdf,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">Файл</label></div>
         <div class="small dim" id="pzfn"></div><p class="small dim">${esc(L.pravo)}</p></div>`}`;
@@ -175,7 +175,7 @@
     const m = P.materialy || {};
     box.innerHTML = `<form class="card" id="pzbe" autocomplete="off">${brifFields(P, null)}<div class="pz-row"><button class="btn" type="submit">Сохранить бриф</button><span class="small dim">Если поменяете бриф, структуру и следующие шаги нужно будет утвердить заново.</span></div></form>
       <section class="card" style="margin-top:14px"><span class="caps">Материалы</span>
-      ${m.imya ? `<p style="margin:8px 0">${m.udaleny ? 'Материалы удалены (прошло 30 дней). Слайды на месте; чтобы пересобрать — загрузите материалы снова.' : `<b>${esc(m.imya)}</b> · ${Number(m.znakov || 0).toLocaleString('ru-RU')} знаков · в модель уходит ${Number(m.v_model || 0).toLocaleString('ru-RU')}`}</p>
+      ${m.imya ? `<p style="margin:8px 0">${m.udaleny ? 'Материалы удалены (прошло 30 дней). Слайды на месте; чтобы пересобрать — загрузите материалы снова.' : `<b>${esc(m.imya)}</b> · ${Number(m.znakov || 0).toLocaleString('ru-RU')} знаков · отправляем на обработку ${Number(m.v_model || 0).toLocaleString('ru-RU')}`}</p>
         ${arr(m.zadachi).length ? `<p class="small"><b>Задачи из введения:</b> ${m.zadachi.map(esc).join('; ')}</p>` : ''}${arr(m.istochniki).length ? `<p class="small"><b>Источников в списке литературы:</b> ${m.istochniki.length}</p>` : ''}` : '<p class="small muted" style="margin:8px 0">Материалов нет — факты на слайдах будут помечены «уточните».</p>'}
       <div class="pz-drop"><textarea id="pzmat2" rows="3" placeholder="Вставьте текст или выберите файл .docx, .pdf, .txt"></textarea><label class="btn sm quiet"><input type="file" hidden id="pzfile2" accept=".docx,.pdf,.txt">Файл</label></div>
       <div class="pz-row"><button class="btn sm" type="button" id="pzmatgo">${m.imya ? 'Заменить материалы' : 'Добавить материалы'}</button><span class="small dim">${esc(L.pravo)}</span></div></section>
@@ -317,7 +317,7 @@
       ${P.komanda === 'biznes' ? `<label class="pz-chk"><input type="checkbox" id="pzii" ${o.ii_stroka !== false ? 'checked' : ''}> Строка «Подготовлено с помощью JASA (ИИ)» на последнем слайде. Метка ИИ в свойствах файла стоит всегда.</label>` : '<p class="small dim">Слайд «Использование ИИ» — многие вузы РК просят указывать ИИ. Если ваша кафедра требует иначе — поправьте или уберите слайд в структуре. Метка ИИ в свойствах файла стоит всегда.</p>'}
       <div class="pz-logo"><span class="caps">Лого</span>${logo ? `<img src="${esc(abs(logo))}" alt="лого" crossorigin="anonymous">` : '<span class="small muted">нет</span>'}
         <label class="btn sm quiet"><input type="file" hidden accept="image/png,image/jpeg,image/webp" id="pzlogo">${P.komanda === 'student' ? 'Лого вуза' : 'Своё лого'}</label>${o.logo ? '<button class="btn sm ghost" id="pzlogox">Убрать</button>' : ''}
-        <span class="small dim">Лого ставится оригиналом, в модель не уходит.</span></div></section>
+        <span class="small dim">Лого ставится оригиналом и не обрабатывается.</span></div></section>
       <section class="card" style="margin-top:14px"><span class="caps">Картинки</span><p class="small muted" style="margin:6px 0 12px">${P.komanda === 'student' ? 'Для защиты картинки обычно не нужны: схемы и графики рисует JASA сама. ' : ''}Картинка ИИ — ${L.kartinka} кр, рисуется только по вашему «да». Своё фото — бесплатно, если у вас есть право на него.</p>
       <div class="pz-imgs">${P.slajdy.map((s, i) => `<div class="pz-im" data-id="${s.id}"><div class="pz-sl">${slideHtml(s, i)}</div><b class="small">${i + 1}. ${esc(s.zagolovok || '')}</b>${s.vizual ? `<small class="muted">${esc(s.vizual)}</small>` : ''}
         ${S_KART.includes(s.maket) ? `<div class="pz-row"><button type="button" class="btn sm ${s.vizual ? 'accent' : 'quiet'}" data-ai>${s.kartinka && s.kartinka.ii ? 'Ещё вариант' : 'Картинка ИИ'} · ${L.kartinka} кр</button><label class="btn sm quiet"><input type="file" hidden accept="image/png,image/jpeg,image/webp" data-own>Своё фото</label>${s.kartinka ? '<button type="button" class="btn sm ghost" data-x>Убрать</button>' : ''}</div>`
@@ -709,7 +709,7 @@
 .pz-brif{max-width:820px}.pz-kom{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .pz-k{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface-2);text-align:left;color:var(--text)}
 .pz-k b{font-family:var(--disp);font-size:1.15rem;color:var(--ink)}.pz-k small{color:var(--muted)}.pz-k.on{border-color:var(--ink);background:var(--surface);box-shadow:var(--shadow)}
-.pz-pk{color:var(--accent);font-weight:600}.chip.on .pz-pk{color:inherit}
+.pz-pk{color:var(--accent-text);font-weight:600}.chip.on .pz-pk{color:inherit}
 .pz-mic{display:flex;gap:8px;align-items:flex-start}.pz-mic textarea,.pz-mic input{flex:1}.pz-mic .icobtn{flex:none;width:44px;height:44px}
 .pz-2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.pz-more{margin:4px 0 12px}.pz-more summary{cursor:pointer;color:var(--muted);margin-bottom:10px}
 .pz-drop{display:flex;gap:8px;align-items:flex-start;padding:6px;border-radius:var(--r-sm);border:1px dashed var(--line)}.pz-drop.over{border-color:var(--accent);background:var(--accent-soft)}.pz-drop textarea{flex:1;min-height:90px!important;border:0!important}
@@ -746,7 +746,7 @@
 .pz-badge{position:absolute;right:12px;top:12px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--warn);color:#fff;font:600 12px/22px var(--mono);font-style:normal;text-align:center}
 .pz-ed{margin-top:16px}.pz-edg{display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
 .pz-metki{margin-top:12px;font-size:var(--fs-small)}.pz-metki p{margin:0 0 6px}
-.pz-m{display:inline-block;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600;background:var(--warn-soft);color:var(--warn)}.pz-m.dlina{background:var(--surface-2);color:var(--muted)}.pz-m.ocenka{background:var(--accent-soft);color:var(--accent)}
+.pz-m{display:inline-block;padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600;background:var(--warn-soft);color:var(--warn)}.pz-m.dlina{background:var(--surface-2);color:var(--muted)}.pz-m.ocenka{background:var(--accent-soft);color:var(--accent-text)}
 .pz-kr{margin-top:18px}.pz-rub{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px 16px;margin:12px 0}
 .pz-rub>div{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:var(--fs-small)}.pz-rub b{font-family:var(--mono)}
 .pz-rub i{grid-column:1/-1;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ink) var(--v),var(--line-soft) var(--v))}.pz-rub small{grid-column:1/-1;color:var(--dim)}
