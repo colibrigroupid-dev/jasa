@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Презентация за 10 минут · JASA</title>
+<meta name="description" content="Ответьте на четыре вопроса — JASA соберёт слайды, текст выступления и вопросы, которые вам зададут. Защита диплома, питч инвестору, коммерческое предложение. PDF и PPTX.">
+<meta name="theme-color" content="#F5F1E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f0f0f" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Четыре вопроса — и у вас презентация">
+<meta property="og:description" content="Слайды, текст выступления и вопросы комиссии или инвестора. Защита диплома, питч, коммерческое предложение — по-русски и по-казахски.">
+<meta property="og:url" content="https://jasa.asia/prezentaciya/">
+<meta property="og:image" content="https://jasa.asia/og.png">
+<link rel="canonical" href="https://jasa.asia/prezentaciya/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;600;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2315192A'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23FF4D1F'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#F5F1E8;--bg-2:#EDE7DA;--surface:#FFFDF8;--field:#FFFFFF;--line:#DED7C9;--line-soft:#EAE4D7;
+  --ink:#15192A;--text:#1C2133;--muted:#5A6070;--dim:#6B7080;
+  --accent:#D93A0A;--accent-ink:#FFFFFF;--accent-soft:#FFE8DF;--ok:#0E8C66;--bad:#C0321F;
+  --body:Onest,system-ui,sans-serif;--disp:Geologica,Onest,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+  --step-0:clamp(1rem,.96rem + .2vw,1.125rem);--step-1:clamp(1.15rem,1.05rem + .5vw,1.4rem);
+  --step-3:clamp(2.2rem,1.4rem + 3.6vw,4.4rem);--r:18px;--r-sm:12px;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --shadow:0 1px 2px rgba(21,25,42,.06),0 18px 40px -20px rgba(21,25,42,.28);
+  color-scheme:light}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f0f0f;--bg-2:#161616;--surface:#1c1c1c;--field:#262626;--line:#383838;--line-soft:#2a2a2a;
+  --ink:#f2f2f2;--text:#ececec;--muted:#aaa;--dim:#8f8f8f;--accent:#FF5A2C;--accent-ink:#141414;--accent-soft:#3a2219;--ok:#27c79a;--bad:#ff7a66;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 18px 40px -20px rgba(0,0,0,.7);color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:400 var(--step-0)/1.55 var(--body);min-height:100dvh;overflow-x:hidden}
+::selection{background:var(--accent);color:#fff}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+h1,h2,h3{font-family:var(--disp);letter-spacing:-.028em;line-height:1.04;margin:0;color:var(--ink);text-wrap:balance}
+p{margin:0;text-wrap:pretty}
+.wrap{width:min(1180px,100% - 32px);margin-inline:auto}
+.caps{font:500 .78rem var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+
+header{border-bottom:1px solid var(--line-soft)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font:700 1.3rem var(--disp);letter-spacing:-.03em;color:var(--ink);text-decoration:none}
+.logo i{width:22px;height:22px;border-radius:7px;background:var(--ink);display:grid;place-items:center}
+.logo i::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.vhod{font-weight:500;color:var(--muted);text-decoration:none;padding:10px 4px}.vhod:hover{color:var(--ink)}
+
+.intro{padding:clamp(36px,6vw,80px) 0 clamp(24px,4vw,44px);max-width:900px}
+.intro h1{font-size:var(--step-3);font-weight:700;margin-top:14px}
+.intro h1 em{font-style:normal;color:var(--accent)}
+.lead{font-size:var(--step-1);line-height:1.4;color:var(--muted);margin-top:18px;max-width:46ch}
+
+.stage{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(20px,3.4vw,56px);align-items:start;padding-bottom:clamp(48px,7vw,96px)}
+
+/* ---- анкета ---- */
+.anketa{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:clamp(20px,2.6vw,36px)}
+.prog{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.prog ol{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex:1}
+.prog li{height:4px;flex:1;border-radius:2px;background:var(--line);transition:background .4s var(--ease)}
+.prog li.on{background:var(--accent)}.prog li.cur{background:var(--ink)}
+.prog span{font:500 .8rem var(--mono);color:var(--dim);white-space:nowrap}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{padding:0;margin-bottom:6px;font:600 clamp(1.45rem,1.2rem + 1.2vw,2.1rem)/1.1 var(--disp);letter-spacing:-.025em;color:var(--ink);text-wrap:balance}
+.hint{color:var(--muted);font-size:.95rem;margin:0 0 18px;max-width:46ch}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:flex;flex-direction:column;gap:3px;text-align:left;padding:14px 16px;min-height:76px;border:1.5px solid var(--line);border-radius:var(--r-sm);background:var(--field);transition:border-color .2s,transform .2s var(--ease),background .2s}
+.tile b{font:600 1rem/1.2 var(--disp);color:var(--ink);letter-spacing:-.01em}
+.tile small{color:var(--muted);font-size:.85rem;line-height:1.3}
+.tile:hover{border-color:var(--ink)}
+.tile[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.tile:active{transform:scale(.985)}
+.tiles.one{grid-template-columns:1fr}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:0 18px;border-radius:999px;border:1.5px solid var(--line);background:var(--field);font-weight:500;color:var(--text);transition:border-color .2s,background .2s}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.lbl{display:block;margin:18px 0 8px;font-weight:600;font-size:.95rem;color:var(--ink)}
+.opt{font-weight:400;color:var(--dim)}
+.field{width:100%;border:1.5px solid var(--line);border-radius:var(--r-sm);padding:13px 15px;font:inherit;color:var(--ink);background:var(--field);transition:border-color .2s}
+.field:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea.field{min-height:132px;resize:vertical;line-height:1.5}
+.mic{position:relative}
+.mic textarea{padding-right:56px}
+.mic button{position:absolute;right:8px;top:8px;width:42px;height:42px;border-radius:50%;background:var(--bg-2);display:grid;place-items:center;color:var(--ink);transition:background .2s}
+.mic button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mic button[aria-pressed=true]{background:var(--accent);color:#fff;animation:puls 1.2s infinite}
+@keyframes puls{50%{box-shadow:0 0 0 8px rgba(217,58,10,.18)}}
+.primery{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.primery button{font-size:.85rem;color:var(--muted);padding:6px 12px;border-radius:999px;background:var(--bg-2);text-align:left}
+.primery button:hover{color:var(--ink)}
+.nota{margin-top:14px;padding:12px 14px;border-radius:var(--r-sm);background:var(--bg-2);color:var(--muted);font-size:.92rem}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:26px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 26px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:600;text-decoration:none;transition:transform .2s var(--ease),filter .2s}
+.btn:hover{filter:brightness(1.07)}.btn:active{transform:scale(.97)}
+.btn[disabled]{background:var(--line);color:var(--dim);cursor:not-allowed;filter:none;transform:none}
+.btn.tihaya{background:none;color:var(--muted);padding:0 6px;min-height:44px;font-weight:500}.btn.tihaya:hover{color:var(--ink);filter:none}
+.oshibka{color:var(--bad);font-size:.92rem;margin-top:10px;min-height:1.4em}
+.svodka{list-style:none;margin:0 0 4px;padding:0;border-top:1px solid var(--line-soft)}
+.svodka li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.svodka span{grid-column:1;color:var(--dim);font:500 .74rem var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.svodka b{grid-column:1;font-weight:500;color:var(--ink);overflow-wrap:anywhere;line-height:1.35}
+.svodka button{grid-column:2;grid-row:1/3;align-self:center;color:var(--accent);font-size:.9rem;min-height:44px;padding:0 4px;text-decoration:underline;text-underline-offset:3px}
+.step[hidden]{display:none}
+.step{animation:vhod .5s var(--ease)}
+@keyframes vhod{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.gotovo{text-align:left}
+.gotovo .galka{width:54px;height:54px;border-radius:50%;background:var(--ok);display:grid;place-items:center;margin-bottom:18px}
+.gotovo .galka svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.gotovo h2{font-size:clamp(1.6rem,1.3rem + 1.4vw,2.4rem);margin-bottom:10px}
+.gotovo p{color:var(--muted);margin-bottom:8px;max-width:44ch}
+.gotovo .nav{justify-content:flex-start;flex-wrap:wrap}
+
+/* ---- живой слайд ---- */
+.preview{position:sticky;top:20px}
+.slide{position:relative;aspect-ratio:16/9;container-type:inline-size;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);background:#FFFFFF;color:#15192A;transition:background .6s var(--ease),color .6s var(--ease)}
+.slide[data-t=strogaya]{background:#FFFFFF;color:#15192A;--sa:#1F4FBF}
+.slide[data-t=bumaga]{background:#F5F1E8;color:#15192A;--sa:#D93A0A}
+.slide[data-t=grafit]{background:#15192A;color:#F5F1E8;--sa:#FF5A2C}
+.slide .polosa{position:absolute;left:0;top:0;bottom:0;width:2.2cqw;background:var(--sa,#D93A0A);transition:background .6s var(--ease)}
+.slide .metka{position:absolute;left:7cqw;top:7cqw;font:500 1.9cqw var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--sa);opacity:0;transition:opacity .5s}
+.slide .metka.on{opacity:1}
+.slide .zag{position:absolute;left:7cqw;right:9cqw;top:19cqw;font:700 5.6cqw/1.06 var(--disp);letter-spacing:-.03em;transition:opacity .35s,transform .5s var(--ease)}
+.slide .zag.pust{opacity:.26}
+.slide .zag.smena{opacity:0;transform:translateY(1.2cqw)}
+.slide .pod{position:absolute;left:7cqw;bottom:13.5cqw;font:500 2.1cqw var(--mono);letter-spacing:.03em;opacity:0;transition:opacity .5s}
+.slide .pod.on{opacity:.72}
+.slide .opory{position:absolute;left:7cqw;right:9cqw;bottom:6.5cqw;display:flex;gap:1.2cqw;flex-wrap:wrap}
+.slide .opory span{font:500 1.7cqw var(--body);padding:.7cqw 1.5cqw;border-radius:99px;border:1px solid currentColor;opacity:0;transform:translateY(1cqw);transition:opacity .5s,transform .6s var(--ease)}
+.slide .opory span.on{opacity:.8;transform:none}
+.slide .shtrih{position:absolute;right:7cqw;top:7cqw;width:12cqw;display:grid;gap:1.1cqw}
+.slide .shtrih i{display:block;height:1.1cqw;border-radius:1cqw;background:currentColor;opacity:.13}
+.slide .shtrih i:nth-child(2){width:70%}.slide .shtrih i:nth-child(3){width:45%}
+.plenka{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-top:12px}
+.plenka i{aspect-ratio:16/9;border-radius:4px;background:var(--line);opacity:0;transform:scale(.8);transition:opacity .3s,transform .4s var(--ease),background .4s}
+.plenka i.on{opacity:1;transform:none}
+.plenka i:first-child.on{background:var(--accent)}
+.itog{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;color:var(--muted);font-size:.92rem;min-height:1.5em}
+.itog b{color:var(--ink);font-weight:600}
+
+/* ---- что получите ---- */
+.chto{border-top:1px solid var(--line);padding:clamp(40px,6vw,80px) 0 clamp(48px,7vw,96px);display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(20px,3.4vw,56px)}
+.chto h2{font-size:clamp(1.7rem,1.3rem + 1.8vw,2.7rem);font-weight:700}
+.chto dl{margin:0;display:grid;gap:0}
+.chto dt{font:600 1.15rem var(--disp);color:var(--ink);padding-top:20px;border-top:1px solid var(--line-soft)}
+.chto dt:first-child{border-top:0;padding-top:0}
+.chto dd{margin:6px 0 20px;color:var(--muted);max-width:52ch}
+.chestno{grid-column:1/-1;padding:18px 20px;border-radius:var(--r);background:var(--bg-2);color:var(--text);max-width:none}
+footer{padding:26px 0 40px;border-top:1px solid var(--line-soft);color:var(--dim);font-size:.9rem}
+footer .wrap{display:flex;gap:8px 24px;flex-wrap:wrap;justify-content:space-between}
+
+@media (max-width:900px){
+  .stage,.chto{grid-template-columns:1fr}
+  .preview{position:static;order:-1}
+  .plenka{grid-template-columns:repeat(10,1fr)}
+}
+@media (max-width:520px){
+  .tiles{grid-template-columns:1fr}
+  .tile{min-height:64px}
+  .nav .btn{flex:1}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="logo" href="/"><i></i>JASA</a><a class="vhod" href="/app/#/kabinet">Войти</a></div></header>
+
+<main class="wrap">
+  <section class="intro">
+    <span class="caps">Презентации · для защиты и для питча</span>
+    <h1>Четыре вопроса — <em>и у вас презентация</em></h1>
+    <p class="lead">Расскажите, что нужно, своими словами. JASA соберёт слайды, текст выступления и ответы на вопросы, которые вам зададут. Получите PDF для показа и PPTX, чтобы править.</p>
+  </section>
+
+  <div class="stage">
+    <section class="anketa" id="anketa" aria-label="Анкета">
+      <noscript><p class="nota">Анкета работает с JavaScript. Или откройте JASA в Telegram: <a href="https://t.me/jasa_asia_bot">@jasa_asia_bot</a>.</p></noscript>
+      <div class="prog" aria-hidden="false"><ol id="prog"></ol><span id="progtxt" aria-live="polite"></span></div>
+      <div id="steps"></div>
+    </section>
+
+    <aside class="preview" aria-label="Так будет выглядеть первый слайд вашей презентации">
+      <div class="slide" id="slide" data-t="bumaga" role="img" aria-label="Пример первого слайда: меняется по мере ваших ответов">
+        <div class="polosa"></div>
+        <div class="metka" id="sMetka"></div>
+        <div class="shtrih" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="zag pust" id="sZag">Ваша презентация</div>
+        <div class="pod" id="sPod"></div>
+        <div class="opory" id="sOpory"></div>
+      </div>
+      <div class="plenka" id="plenka" aria-hidden="true"></div>
+      <div class="itog" id="itog"></div>
+    </aside>
+  </div>
+
+  <section class="chto" aria-labelledby="chtoh">
+    <h2 id="chtoh">Что вы получите</h2>
+    <dl>
+      <dt>Слайды — один слайд, одна мысль</dt>
+      <dd>Заголовки-выводы, короткие пункты, графики и схемы по вашим данным. PDF для показа и PPTX, который открывается в PowerPoint и правится.</dd>
+      <dt>Речь под каждый слайд и тайминг</dt>
+      <dd>Что сказать, чтобы уложиться в ваше время: 3, 5, 7, 10 или 15 минут. На экране видно, где вы длиннее или короче.</dd>
+      <dt>Вопросы, которые вам зададут, и ответы</dt>
+      <dd>Комиссия, инвестор или закупщик — на что обычно давят. Ответы только по вашим материалам; если их там нет, JASA так и скажет.</dd>
+    </dl>
+    <p class="chestno"><b>Как мы работаем честно.</b> Слайды, текст и речь готовит ИИ. Цифры, цитаты и источники JASA берёт только из ваших материалов и сверяет с ними. Чего у вас нет — оставляем пустое место и подсвечиваем жёлтым, а не придумываем. Перед выступлением всё равно проверьте сами.</p>
+  </section>
+</main>
+
+<footer><div class="wrap"><span>© JASA · jasa.asia · Казахстан</span><span>Презентации собираются в приложении JASA после входа через Telegram</span></div></footer>
+
+<script>
+(function () {
+  'use strict';
+  var HOST = location.hostname;
+  var PROD = /(^|\.)jasa\.asia$/.test(HOST);
+  var API = PROD ? 'https://api.jasa.asia' : 'http://127.0.0.1:8789';
+  var APP = PROD ? '/app/' : 'http://127.0.0.1:8789/app/';
+  var KEY = 'jasa:pzForm';
+
+  var TIPY = [
+    { k: 'diplom', n: 'Защита диплома', d: 'комиссия, до 15 минут', s: 'strogaya', st: true },
+    { k: 'kursovaya', n: 'Курсовая или доклад', d: 'руководитель, 5–10 минут', s: 'strogaya', st: true },
+    { k: 'pitch', n: 'Питч инвесторам', d: 'фонд, акселератор, грант', s: 'grafit' },
+    { k: 'kp', n: 'Коммерческое предложение', d: 'клиенту, закупщику', s: 'bumaga' },
+    { k: 'produkt', n: 'О компании или продукте', d: 'знакомство, презентация сервиса', s: 'bumaga' },
+    { k: 'otchet', n: 'Отчёт партнёрам', d: 'итоги, план и факт', s: 'bumaga' }
+  ];
+  var YAZ = { ru: 'по-русски', kz: 'қазақша', en: 'English' };
+  var MIN = [3, 5, 7, 10, 15];
+  var EST = [
+    { k: 'rabota', n: 'Есть работа или текст', d: 'введение, выводы, описание' },
+    { k: 'cifry', n: 'Есть цифры и факты', d: 'выручка, клиенты, сроки' },
+    { k: 'nichego', n: 'Пока ничего', d: 'начнём с темы' }
+  ];
+  var PRIMERY = {
+    st: ['Цифровизация малого бизнеса в Алматы — диплом по экономике, КазНУ', 'Курсовая по маркетингу: Instagram как канал продаж для кофеен'],
+    bz: ['Сервис доставки воды в Астане, ищем 50 млн ₸ на 4 машины', 'Коммерческое предложение для сети кофеен: сиропы и поставка']
+  };
+
+  var S = { tip: '', svoj: '', tema: '', minut: 7, minutSvoj: '', yazyk: 'ru', est: '', mat: '', ot: '', kontakt: '' };
+  try { var z = JSON.parse(localStorage.getItem(KEY) || 'null'); if (z && typeof z === 'object') for (var k in S) if (k in z) S[k] = z[k]; } catch (e) { /* без памяти тоже работает */ }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var tip = function () { return TIPY.filter(function (t) { return t.k === S.tip; })[0]; };
+  var stud = function () { var t = tip(); return !!(t && t.st); };
+  var slajdov = function () { return Math.max(5, Math.min(20, Math.round(S.minut * 60 / 40))); };
+
+  var steps = [
+    { id: 'tip', title: 'Для чего вам презентация?', hint: 'Выберите ближайший вариант. Если ваш случай особый — напишите ниже, учтём.',
+      html: function () {
+        return '<div class="tiles" role="group" aria-label="Тип презентации">' + TIPY.map(function (t) {
+          return '<button type="button" class="tile" data-tip="' + t.k + '" aria-pressed="' + (S.tip === t.k) + '"><b>' + t.n + '</b><small>' + t.d + '</small></button>';
+        }).join('') + '</div><label class="lbl" for="svoj">Своё, словами <span class="opt">— по желанию</span></label><input class="field" id="svoj" maxlength="160" placeholder="например: проект в колледже" value="' + esc(S.svoj) + '">';
+      },
+      ok: function () { return !!S.tip; }, err: 'Выберите, для чего презентация' },
+    { id: 'tema', title: 'О чём она? Расскажите своими словами', hint: 'Достаточно двух-трёх предложений: тема, где и для кого выступаете. Можно сказать голосом.',
+      html: function () {
+        var p = PRIMERY[stud() ? 'st' : 'bz'];
+        return '<div class="mic"><textarea class="field" id="tema" maxlength="600" aria-label="О чём презентация" placeholder="' + esc(p[0]) + '">' + esc(S.tema) + '</textarea>' +
+          '<button type="button" id="mic" aria-pressed="false" aria-label="Сказать голосом" hidden><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3M9 21h6"/></svg></button></div>' +
+          '<div class="primery" aria-label="Примеры">' + p.map(function (x, i) { return '<button type="button" data-p="' + i + '">' + esc(x) + '</button>'; }).join('') + '</div>';
+      },
+      ok: function () { return S.tema.trim().length >= 8; }, err: 'Напишите хотя бы одно предложение — тему и для кого' },
+    { id: 'vremya', title: 'Сколько вы выступаете и на каком языке?', hintf: function () { return stud() ? 'На защите обычно 7–10 минут. Если регламента нет — возьмите 7.' : 'Для питча чаще всего 5 минут. Для коммерческого предложения — 5–7.'; },
+      html: function () {
+        return '<span class="lbl" style="margin-top:0" id="lmin">Время выступления</span><div class="chips" role="group" aria-labelledby="lmin">' + MIN.map(function (m) {
+          return '<button type="button" class="chip" data-min="' + m + '" aria-pressed="' + (S.minut === m && !S.minutSvoj) + '">' + m + ' мин</button>';
+        }).join('') + '</div>' +
+          '<label class="lbl" for="minsvoj">Своё время <span class="opt">— в минутах, по желанию</span></label><input class="field" id="minsvoj" inputmode="numeric" maxlength="2" style="max-width:140px" placeholder="например 12" value="' + esc(S.minutSvoj) + '">' +
+          '<span class="lbl" id="lyaz">Язык презентации</span><div class="chips" role="group" aria-labelledby="lyaz">' + Object.keys(YAZ).map(function (y) {
+            return '<button type="button" class="chip" data-yaz="' + y + '" aria-pressed="' + (S.yazyk === y) + '">' + YAZ[y] + '</button>';
+          }).join('') + '</div>';
+      },
+      ok: function () { return true; } },
+    { id: 'est', title: 'Что у вас уже есть?', hint: 'От этого зависит, насколько точными будут слайды. Чем больше своего — тем меньше мы додумываем.',
+      html: function () {
+        var polya = { rabota: ['Вставьте главное из работы', 'введение, цели и задачи, выводы, список литературы. Файл целиком можно приложить на следующем шаге в приложении'],
+          cifry: ['Впишите ваши цифры и факты', 'выручка, число клиентов, сроки, команда — что есть'] }[S.est];
+        return '<div class="tiles one" role="group" aria-label="Что у вас есть">' + EST.map(function (e) {
+          return '<button type="button" class="tile" data-est="' + e.k + '" aria-pressed="' + (S.est === e.k) + '"><b>' + e.n + '</b><small>' + e.d + '</small></button>';
+        }).join('') + '</div>' +
+          (polya ? '<label class="lbl" for="mat">' + polya[0] + ' <span class="opt">— ' + polya[1] + '</span></label><textarea class="field" id="mat" maxlength="6000">' + esc(S.mat) + '</textarea>'
+            : S.est === 'nichego' ? '<p class="nota">Ничего страшного: слайды будут по вашей теме, а места, где нужны ваши данные, останутся пустыми и подсвеченными. Мы ничего не выдумаем.</p>' : '');
+      },
+      ok: function () { return !!S.est; }, err: 'Выберите, что у вас уже есть' },
+    { id: 'itog', title: 'Последний штрих — от себя', hint: 'Проверьте ответы и добавьте всё, что важно: стиль, пожелания, чего не упоминать, кому показываете.',
+      html: function () {
+        var t = tip() || {};
+        return '<ul class="svodka">' +
+          row('Для чего', t.n + (S.svoj ? ' · ' + S.svoj : ''), 0) + row('О чём', S.tema, 1) +
+          row('Время и язык', (S.minutSvoj ? S.minutSvoj : S.minut) + ' мин · ' + YAZ[S.yazyk], 2) + row('Есть', (EST.filter(function (e) { return e.k === S.est; })[0] || {}).n + (S.mat ? ' · ' + S.mat.length + ' зн.' : ''), 3) + '</ul>' +
+          '<label class="lbl" for="ot">От себя: что ещё важно? <span class="opt">— по желанию</span></label><textarea class="field" id="ot" maxlength="1500" style="min-height:104px" placeholder="например: без анимаций, строгий стиль; показываю декану; не упоминать конкурентов">' + esc(S.ot) + '</textarea>' +
+          '<label class="lbl" for="kont">Куда написать про вашу презентацию? <span class="opt">— Telegram @ник или телефон, по желанию</span></label><input class="field" id="kont" maxlength="80" autocomplete="off" placeholder="@ник или +7 …" value="' + esc(S.kontakt) + '">' +
+          '<p class="hint" style="margin:8px 0 0">Контакт нужен только чтобы написать вам по этой презентации.</p>';
+      },
+      ok: function () { return true; }, last: true }
+  ];
+  function row(a, b, i) { return '<li><span>' + a + '</span><b>' + esc(b) + '</b><button type="button" data-edit="' + i + '" aria-label="Изменить: ' + a + '">изменить</button></li>'; }
+
+  var cur = 0, otpravleno = false;
+  var stepsEl = $('#steps'), progEl = $('#prog'), progTxt = $('#progtxt');
+
+  function renderProg() {
+    progEl.innerHTML = steps.map(function (s, i) { return '<li class="' + (i < cur ? 'on' : i === cur ? 'cur' : '') + '"></li>'; }).join('');
+    progTxt.textContent = otpravleno ? 'готово' : cur < 4 ? 'вопрос ' + (cur + 1) + ' из 4' : 'последний штрих';
+  }
+
+  function render(fokus) {
+    var s = steps[cur];
+    stepsEl.innerHTML = '<div class="step" id="st"><fieldset><legend id="lg" tabindex="-1">' + s.title + '</legend><p class="hint">' + (s.hintf ? s.hintf() : s.hint) + '</p>' + s.html() +
+      '<p class="oshibka" id="osh" role="alert"></p>' +
+      '<div class="nav">' + (cur > 0 ? '<button type="button" class="btn tihaya" id="nazad">← Назад</button>' : '<span></span>') +
+      '<button type="button" class="btn" id="dalee">' + (s.last ? 'Собрать мою презентацию' : 'Дальше →') + '</button></div></fieldset></div>';
+    renderProg(); povesit(); obnovitSlide();
+    if (fokus) { var lg = $('#lg'); if (lg) lg.focus({ preventScroll: false }); }
+  }
+
+  function povesit() {
+    var s = steps[cur];
+    each('[data-tip]', function (b) { b.onclick = function () { S.tip = b.getAttribute('data-tip'); var t = tip(); if (!S.minutSvoj) S.minut = t.st ? 7 : 5; save(); each('[data-tip]', function (x) { x.setAttribute('aria-pressed', x === b); }); obnovitSlide(); }; });
+    var sv = $('#svoj'); if (sv) sv.oninput = function () { S.svoj = sv.value; save(); };
+    var te = $('#tema'); if (te) { te.oninput = function () { S.tema = te.value; save(); obnovitSlide(); }; mikrofon(te); }
+    each('[data-p]', function (b) { b.onclick = function () { var p = PRIMERY[stud() ? 'st' : 'bz'][+b.getAttribute('data-p')]; S.tema = p; $('#tema').value = p; save(); obnovitSlide(); $('#tema').focus(); }; });
+    each('[data-min]', function (b) { b.onclick = function () { S.minut = +b.getAttribute('data-min'); S.minutSvoj = ''; var m = $('#minsvoj'); if (m) m.value = ''; save(); each('[data-min]', function (x) { x.setAttribute('aria-pressed', x === b); }); obnovitSlide(); }; });
+    var ms = $('#minsvoj'); if (ms) ms.oninput = function () { ms.value = ms.value.replace(/\D/g, ''); S.minutSvoj = ms.value; var n = +ms.value; if (n >= 1 && n <= 30) S.minut = n; save(); each('[data-min]', function (x) { x.setAttribute('aria-pressed', !ms.value && +x.getAttribute('data-min') === S.minut); }); obnovitSlide(); };
+    each('[data-yaz]', function (b) { b.onclick = function () { S.yazyk = b.getAttribute('data-yaz'); save(); each('[data-yaz]', function (x) { x.setAttribute('aria-pressed', x === b); }); obnovitSlide(); }; });
+    each('[data-est]', function (b) { b.onclick = function () { S.est = b.getAttribute('data-est'); save(); render(false); var m = $('#mat'); if (m) m.focus(); }; });
+    var ma = $('#mat'); if (ma) ma.oninput = function () { S.mat = ma.value; save(); };
+    var ot = $('#ot'); if (ot) ot.oninput = function () { S.ot = ot.value; save(); };
+    var ko = $('#kont'); if (ko) ko.oninput = function () { S.kontakt = ko.value; save(); };
+    each('[data-edit]', function (b) { b.onclick = function () { cur = +b.getAttribute('data-edit'); render(true); }; });
+    var nz = $('#nazad'); if (nz) nz.onclick = function () { cur = Math.max(0, cur - 1); render(true); };
+    $('#dalee').onclick = function () {
+      if (!s.ok()) { $('#osh').textContent = s.err; var f = $('.tile,.field'); if (f) f.focus(); return; }
+      if (s.last) { otpravit(); return; }
+      cur++; render(true);
+    };
+  }
+  function each(sel, fn) { Array.prototype.forEach.call(document.querySelectorAll(sel), fn); }
+
+  /* голос: встроенное распознавание браузера (бесплатно); где его нет — кнопки просто нет */
+  function mikrofon(te) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition, b = $('#mic');
+    if (!SR || !b) return;
+    b.hidden = false; var rec = null;
+    b.onclick = function () {
+      if (rec) { rec.stop(); return; }
+      rec = new SR(); rec.lang = S.yazyk === 'kz' ? 'kk-KZ' : S.yazyk === 'en' ? 'en-US' : 'ru-RU'; rec.interimResults = false; rec.continuous = true;
+      rec.onresult = function (e) { var t = ''; for (var i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript; te.value = (te.value ? te.value + ' ' : '') + t.trim(); S.tema = te.value.slice(0, 600); save(); obnovitSlide(); };
+      rec.onend = function () { rec = null; b.setAttribute('aria-pressed', 'false'); };
+      rec.onerror = function () { rec = null; b.setAttribute('aria-pressed', 'false'); };
+      b.setAttribute('aria-pressed', 'true'); try { rec.start(); } catch (e) { rec = null; b.setAttribute('aria-pressed', 'false'); }
+    };
+  }
+
+  /* живой слайд: собирается по мере ответов */
+  var zagTimer = 0, prevZag = null;
+  function obnovitSlide() {
+    var t = tip(), sl = $('#slide'), zag = $('#sZag');
+    sl.setAttribute('data-t', t ? t.s : 'bumaga');
+    var m = $('#sMetka'); m.textContent = t ? t.n : ''; m.classList.toggle('on', !!t);
+    var tx = S.tema.trim() ? S.tema.trim().split(/[.\n!?]/)[0].slice(0, 84) + (S.tema.trim().length > 84 ? '…' : '') : '';
+    var want = tx || 'Ваша презентация';
+    if (want !== prevZag) {
+      clearTimeout(zagTimer); zag.classList.add('smena');
+      zagTimer = setTimeout(function () { zag.textContent = want; zag.classList.toggle('pust', !tx); zag.classList.remove('smena'); }, 140);
+      prevZag = want;
+    }
+    var vremyaVybrano = cur >= 2 || otpravleno;
+    var pod = $('#sPod'); pod.textContent = (S.minut + ' мин · ' + YAZ[S.yazyk]); pod.classList.toggle('on', vremyaVybrano);
+    var op = $('#sOpory'), est = S.est;
+    var tekst = est === 'rabota' ? ['по вашей работе', 'ваши источники'] : est === 'cifry' ? ['ваши цифры', 'без выдуманного'] : est === 'nichego' ? ['по теме', 'пусто там, где нужны ваши данные'] : [];
+    op.innerHTML = tekst.map(function (x) { return '<span>' + x + '</span>'; }).join('');
+    setTimeout(function () { each('#sOpory span', function (x) { x.classList.add('on'); }); }, 30);
+    var n = slajdov(), pl = $('#plenka');
+    if (pl.children.length !== n) pl.innerHTML = new Array(n + 1).join('<i></i>');
+    each('#plenka i', function (x, i) { setTimeout(function () { x.classList.toggle('on', vremyaVybrano); }, vremyaVybrano ? i * 22 : 0); });
+    $('#itog').innerHTML = vremyaVybrano ? '<span>≈ <b>' + n + ' слайдов</b></span><span>речь на <b>' + S.minut + ' мин</b></span><span>вопросы ' + (stud() ? 'комиссии' : 'инвестора и клиента') + '</span>' : '';
+  }
+
+  /* отправка: заявка в JASA (контакт, чтобы написать) и переход в приложение, где анкета превращается в презентацию */
+  function b64u(o) {
+    var b = new TextEncoder().encode(JSON.stringify(o)), s = ''; for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function ssylka() {
+    var o = { t: S.tip, m: S.tema.trim().slice(0, 600), n: S.minut, y: S.yazyk, e: S.est, c: S.mat.trim().slice(0, 1500), o: S.ot.trim().slice(0, 700), s: S.svoj.trim().slice(0, 160) };
+    return APP + '#/prezentacii?a=' + b64u(o);
+  }
+  function otpravit() {
+    var btn = $('#dalee'), osh = $('#osh'); btn.disabled = true; btn.textContent = 'Отправляю…'; osh.textContent = '';
+    var kont = S.kontakt.trim();
+    var telo = { anketa: { tip: S.tip, tema: S.tema.trim(), minut: S.minut, yazyk: S.yazyk, est: S.est, materialy: S.mat.trim(), svoj_tip: S.svoj.trim(), ot_sebya: S.ot.trim(), kontakt: kont } };
+    var ctl = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ctl) ctl.abort(); }, 12000);
+    fetch(API + '/api/prezentacii/zayavka', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(telo), signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'ошибка ' + r.status); return j; }); })
+      .then(function (j) { clearTimeout(to); gotovo(j.otkryto, !!kont, true); })
+      .catch(function (e) {
+        clearTimeout(to);
+        if (e && e.name !== 'TypeError' && e.name !== 'AbortError') { btn.disabled = false; btn.textContent = 'Собрать мою презентацию'; osh.textContent = e.message; return; }
+        gotovo(null, !!kont, false);   // связи нет — анкета всё равно уедет в приложение в ссылке
+      });
+  }
+  function gotovo(otkryto, estKontakt, sohraneno) {
+    otpravleno = true; cur = 4; renderProg(); obnovitSlide();
+    var tekst = otkryto === false
+      ? '<p>Презентации откроются для всех в ближайшие дни. Ваша анкета у нас' + (estKontakt ? ' — как только раздел заработает, мы вам напишем.' : '. Вы не оставили контакт, поэтому загляните сюда позже или откройте JASA в Telegram.') + '</p>'
+      : '<p>Осталось войти через Telegram — это пять секунд. Сразу после входа презентация начнёт собираться сама: план слайдов, тексты, речь. Заново ничего заполнять не нужно.</p>';
+    stepsEl.innerHTML = '<div class="step gotovo" id="st"><div class="galka" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div><h2 id="lg" tabindex="-1">' +
+      (sohraneno ? 'Анкета принята' : 'Анкета готова') + '</h2>' + tekst +
+      (sohraneno ? '' : '<p>Не получилось сохранить заявку на нашей стороне, но анкета не потеряется: она передаётся вместе с переходом.</p>') +
+      '<div class="nav"><a class="btn" id="vpered" href="' + esc(ssylka()) + '">' + (otkryto === false ? 'Открыть JASA' : 'Войти и получить презентацию →') + '</a>' +
+      '<button type="button" class="btn tihaya" id="snova">Заполнить заново</button></div></div>';
+    $('#snova').onclick = function () { S = { tip: '', svoj: '', tema: '', minut: 7, minutSvoj: '', yazyk: 'ru', est: '', mat: '', ot: '', kontakt: '' }; save(); otpravleno = false; cur = 0; prevZag = null; render(true); };
+    var lg = $('#lg'); if (lg) lg.focus();
+  }
+
+  render(false);
+})();
+</script>
+</body>
+</html>

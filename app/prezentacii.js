@@ -31,7 +31,36 @@
     return (c.rezhim === 'paket' ? c.kr + ' кр · пакет: тексты, Критик, правки, речь' : 'до ' + c.kr + ' кр') + ' · хватит на ' + n;
   }
 
+  // ---------- анкета с jasa.asia/prezentaciya/: приходит в адресе, ждёт входа и превращается в презентацию ----------
+  const b64u = (x) => new TextDecoder().decode(Uint8Array.from(atob(x.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
+  function zabratAnketu() {
+    const m = (location.hash.split('?')[1] || '').match(/(?:^|&)a=([A-Za-z0-9_-]{4,6000})/); if (!m) return;
+    try { const o = JSON.parse(b64u(m[1])); if (o && L_TIPY.includes(o.t) && String(o.m || '').length > 4) store.set('pzAnketa', Object.assign({}, o, { ts: Date.now() })); } catch (e) { /* битая ссылка — просто откроем раздел */ }
+    history.replaceState(null, '', '#/prezentacii');
+  }
+  const L_TIPY = ['diplom', 'kursovaya', 'pitch', 'kp', 'produkt', 'otchet'];
+  const anketa = () => { const a = store.get('pzAnketa', null); return a && Date.now() - (a.ts || 0) < 3 * 86400e3 ? a : null; };
+  const EST = { rabota: 'работа или текст', cifry: 'цифры', nichego: 'пока ничего' };
+  function anketaKarta(a, zagolovok, tekst, knopka) {
+    return `<section class="card pz-ank"><span class="caps">${esc(zagolovok)}</span><h3>${esc((L.tipy[a.t] || {}).name || '')}${a.n ? ' · ' + a.n + ' мин' : ''}</h3><p class="pz-ank-t">«${esc(String(a.m).slice(0, 220))}»</p>
+      <p class="small muted">${esc(tekst)}</p>${knopka || ''}<button class="btn sm ghost" id="pzankx" type="button">Удалить анкету</button></section>`;
+  }
+  function anketaKnopki() { const x = $('#pzankx'); if (x) x.onclick = () => { store.set('pzAnketa', null); screen(); }; }
+
+  async function prinyatAnketu(a) {
+    $('#pz').innerHTML = `<div class="working"><span class="spin"></span><span>Принимаю вашу анкету…</span></div>`;
+    try {
+      const dop = [a.o, a.s].filter(Boolean).join('\n').slice(0, 2000);
+      const dlinnyj = a.c && String(a.c).length >= 200;
+      let pr = (await api('/api/prezentacii/sozdat', { tip: a.t, tema: a.m, minut: a.n || 7, yazyk: a.y || 'ru', dop, cifry: a.e === 'cifry' ? String(a.c || '').slice(0, 4000) : '', brand_id: (a.t === 'pitch' || a.t === 'kp' || a.t === 'produkt' || a.t === 'otchet') && S.brandId ? S.brandId : null })).proekt;
+      if (a.e === 'rabota' && dlinnyj) pr = (await api('/api/prezentacii/material', { pid: pr.id, tekst: String(a.c) })).proekt;
+      store.set('pzAnketa', null); store.set('pzAuto', pr.id);
+      location.hash = '#/prezentacii?p=' + pr.id;
+    } catch (e) { toast(e.message); store.set('pzAnketa', null); screen(); }
+  }
+
   async function screen() {
+    zabratAnketu();
     const main = $('#main');
     main.innerHTML = topbar('Презентации', '<a class="btn sm quiet" href="#/prezentacii">Все презентации</a>') + '<div id="pz"><div class="working"><span class="spin"></span><span>Открываю…</span></div></div>';
     try { L = await api('/api/prezentacii'); } catch (e) { $('#pz').innerHTML = `<section style="max-width:720px"><h2>Презентации</h2><p class="skoro"><b>Скоро.</b> Раздел открывается после проверки на первых защитах и питчах — напишем в Telegram.</p></section>`; return; }
@@ -39,6 +68,7 @@
     if (!pid) { list(); return; }
     try { P = (await api('/api/prezentacii/' + pid)).proekt; } catch (e) { $('#pz').innerHTML = `<div class="warn">${esc(e.message)}</div>`; return; }
     cur = cur && P.id === (screen._pid || '') ? cur : (P.shag || 'brif'); screen._pid = P.id;
+    if (store.get('pzAuto', null) === P.id && !P.slajdy.length) { store.set('pzAuto', null); cur = 'struktura'; draw(); run('struktura', {}, (P.komanda === 'student' ? 'Методист' : 'Стратег') + ' собирает план слайдов по вашей анкете… 20–40 секунд'); return; }
     draw();
   }
 
@@ -52,8 +82,10 @@
 
   function list() {
     const box = $('#pz');
-    if (L.zakryto) { box.innerHTML = intro() + '<p class="skoro"><b>Скоро.</b> Раздел открывается после проверки на первых защитах и питчах — напишем в Telegram.</p>'; return; }
-    if (L.guest) { box.innerHTML = intro() + '<a class="btn accent" href="#/kabinet">Войти через Telegram</a><p class="dim small" style="margin-top:10px">Презентация собирается по шагам — поэтому она хранится за вами.</p>'; return; }
+    const A = anketa();
+    if (L.zakryto) { box.innerHTML = intro() + (A ? anketaKarta(A, 'Ваша анкета сохранена', 'Раздел откроется в ближайшие дни. Анкета у нас — если вы оставили контакт на сайте, мы напишем, когда презентацию можно собирать.') : '') + '<p class="skoro"><b>Скоро.</b> Раздел открывается после проверки на первых защитах и питчах — напишем в Telegram.</p>'; anketaKnopki(); return; }
+    if (L.guest) { box.innerHTML = intro() + (A ? anketaKarta(A, 'Ваша анкета сохранена', 'Осталось войти через Telegram — это 5 секунд. Сразу после входа презентация начнёт собираться, ничего заполнять заново не нужно.', '<a class="btn accent" href="#/kabinet">Войти через Telegram</a>') : '<a class="btn accent" href="#/kabinet">Войти через Telegram</a><p class="dim small" style="margin-top:10px">Презентация собирается по шагам — поэтому она хранится за вами.</p>'); anketaKnopki(); return; }
+    if (A) { prinyatAnketu(A); return; }
     const pre = (() => { try { const x = JSON.parse(sessionStorage.getItem('jasa:prez') || 'null'); sessionStorage.removeItem('jasa:prez'); return x; } catch (e) { return null; } })();
     box.innerHTML = intro() + (arr(L.proekty).length ? `<div class="pz-list">${L.proekty.map((x) => `<a class="card pz-pr" href="#/prezentacii?p=${esc(x.id)}"><span class="caps">${esc((L.tipy[x.tip] || {}).name || x.tip)}</span><b>${esc(x.tema)}</b><span class="small muted">${x.slajdov} слайдов · шаг: ${esc(shagName(x.shag))} · потрачено ${kr(x.potracheno)}</span><span class="dim small">${esc(x.ts)}</span></a>`).join('')}</div>` : '') +
       `<form class="card pz-brif" id="pzb" autocomplete="off"><span class="caps">Новая презентация</span><h3 style="margin:6px 0 16px">Для кого и о чём</h3>${brifFields(null, pre)}
@@ -130,10 +162,29 @@
     const meta = { brif: L.tipy[P.tip].name, struktura: P.slajdy.length ? P.slajdy.length + ' слайдов' : '', teksty: P.proverka ? (P.proverka.metok ? P.proverka.metok + ' меток' : 'чисто') : '',
       rech: P.tajming.rech_sek ? mmss(P.tajming.rech_sek) + ' из ' + mmss(P.tajming.reglament_sek) : utv.rech === 'bez_rechi' ? 'без речи' : '', oformlenie: L.temy[P.oformlenie.tema] || '', sborka: 'PPTX · PDF' };
     box.innerHTML = `<div class="pz-head"><span class="caps">${esc(L.komandy[P.komanda])} · ${esc(L.tipy[P.tip].name)}${P.paket && P.paket.cena ? ' · пакет ' + P.paket.cena + ' кр' + (P.paket.oplachen ? ' оплачен' : '') : ''}</span><h2>${esc(P.brif.tema)}</h2><p class="small muted">Потрачено ${kr(P.potracheno || 0)} · вся презентация (без картинок) — ${P.paket && P.paket.cena ? P.paket.cena + ' кр' : 'до ' + P.smeta + ' кр'}${L.zaglushka ? ' · <b>заглушки</b>' : ''}</p></div>
+      ${vedu()}
       <div class="pz-grid"><nav class="pz-steps">${L.shagi.map((s, i) => `<a href="#" data-sh="${s.kod}" class="${s.kod === cur ? 'on' : ''} ${sost(s.kod)} ${dostup(s.kod) ? '' : 'lock'}"><i>${sost(s.kod) ? '✓' : i + 1}</i><span>${esc(s.name)}<small>${esc(meta[s.kod] || '')}</small></span></a>`).join('')}</nav>
       <div class="pz-panel" id="pzp"></div></div>`;
+    const vb = $('#pzvedu'); if (vb) vb.onclick = () => { const v = sled(); cur = v.sh; draw(); const el = $(v.sel); if (el && !el.disabled) el.click(); };
     $$('[data-sh]', box).forEach((a) => { a.onclick = (e) => { e.preventDefault(); if (a.classList.contains('lock')) { toast(!utv.struktura ? 'Сначала утвердите структуру' : 'Сначала утвердите тексты'); return; } cur = a.dataset.sh; draw(); }; });
     ({ brif: pBrif, struktura: pStruktura, teksty: pTeksty, rech: pRech, oformlenie: pOformlenie, sborka: pSborka })[cur]($('#pzp'));
+  }
+  // Что делать сейчас — одно действие. Считается из состояния проекта, а не из открытого шага: человек может ходить по шагам, подсказка не собьётся.
+  function sled() {
+    const u = P.utv || {}, teksty = P.slajdy.some((s) => s.tekst_sig), rech = P.slajdy.some((s) => s.rech);
+    const ok = (c) => !c ? '' : c.rezhim === 'besplatno' ? 'бесплатно' : c.rezhim === 'v_pakete' ? 'входит в пакет' : c.rezhim === 'paket' ? c.kr + ' кр · пакет' : 'до ' + c.kr + ' кр';   // коротко: подробности — на самих шагах
+    if (!P.slajdy.length) return { n: 1, sh: 'struktura', t: 'Соберём план слайдов', d: 'Это бесплатно: JASA предложит, какие слайды нужны и сколько времени на каждый.', b: 'Собрать план · ' + ok(P.ceny.struktura), sel: '#pzs' };
+    if (!u.struktura) return { n: 1, sh: 'struktura', t: 'Посмотрите план слайдов', d: 'Можно переставить, переименовать, удалить. Когда всё верно — утвердите.', b: 'Утвердить план', sel: '#pzutv' };
+    if (!teksty) return { n: 2, sh: 'teksty', t: 'Теперь напишем тексты слайдов', d: 'Цифры и источники берём только из ваших материалов. Потом Критик оценит глазами ' + (P.komanda === 'student' ? 'комиссии' : 'инвестора') + '. Займёт 1–2 минуты.', b: 'Написать тексты · ' + ok(P.ceny.teksty), sel: '#pzt' };
+    if (!u.teksty) return { n: 2, sh: 'teksty', t: 'Проверьте тексты и жёлтые метки', d: 'Жёлтое — то, чего нет в ваших материалах: впишите свои данные или замените. Потом утвердите.', b: 'Утвердить тексты', sel: '#pzutv' };
+    if (!rech && !u.rech) return { n: 3, sh: 'rech', t: 'Осталась речь: что говорить под каждым слайдом', d: 'Плюс вопросы, которые зададут, с готовыми ответами. Можно пропустить.', b: 'Написать речь · ' + ok(P.ceny.rech), sel: '#pzr' };
+    if (!u.rech) return { n: 3, sh: 'rech', t: 'Прочитайте речь и утвердите', d: 'Хронометраж справа: уложитесь ли вы в регламент.', b: 'Утвердить речь', sel: '#pzutv' };
+    if (!u.oformlenie) return { n: 4, sh: 'oformlenie', t: 'Выберите оформление', d: 'Тема, шрифты, лого. Картинки по желанию — рисуются только по вашему «да».', b: 'Утвердить оформление', sel: '#pzutv' };
+    return { n: 5, sh: 'sborka', t: 'Готово — скачайте презентацию', d: 'PDF — для показа, он выглядит везде одинаково. PPTX — чтобы править.', b: 'Скачать PDF', sel: '[data-out=pdf]', gotovo: true };
+  }
+  function vedu() {
+    const v = sled();
+    return `<div class="pz-vedu ${v.gotovo ? 'ok' : ''}"><div><span class="caps">${v.gotovo ? 'Готово' : 'Ведём вас · шаг ' + v.n + ' из 5'}</span><b>${esc(v.t)}</b><small>${v.d}</small></div><button class="btn accent" id="pzvedu" type="button">${v.b}</button></div>`;
   }
   const mmss = (s) => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
 
@@ -715,6 +766,10 @@
 .pz-drop{display:flex;gap:8px;align-items:flex-start;padding:6px;border-radius:var(--r-sm);border:1px dashed var(--line)}.pz-drop.over{border-color:var(--accent);background:var(--accent-soft)}.pz-drop textarea{flex:1;min-height:90px!important;border:0!important}
 .pz-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .pz-chk{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:var(--fs-small)}.pz-chk input{width:auto!important;margin-top:3px}
+.pz-vedu{display:flex;gap:16px 24px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:16px 20px;margin-bottom:18px;border-radius:var(--r);background:var(--ink);color:var(--ink-fg)}
+.pz-vedu .caps{color:inherit;opacity:.65}.pz-vedu b{display:block;margin:4px 0 2px;font:600 clamp(1.05rem,1rem + .5vw,1.3rem)/1.2 var(--disp)}.pz-vedu small{display:block;max-width:60ch;opacity:.85;line-height:1.4}
+.pz-vedu.ok{background:var(--ok);color:#fff}.pz-vedu.ok .btn{background:#fff;color:var(--ink)}
+.pz-ank{max-width:640px;margin-bottom:16px}.pz-ank h3{margin:6px 0 8px}.pz-ank-t{margin:0 0 10px;font:500 1.05rem/1.4 var(--disp);color:var(--ink)}.pz-ank .btn{margin:10px 8px 0 0}
 .pz-head{margin-bottom:18px}.pz-head h2{margin:6px 0}
 .pz-grid{display:grid;grid-template-columns:210px 1fr;gap:18px;align-items:start}
 .pz-steps{display:flex;flex-direction:column;gap:4px;position:sticky;top:16px}
