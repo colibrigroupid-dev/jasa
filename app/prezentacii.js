@@ -367,8 +367,8 @@
   // РАСКЛАДКА: слайд → элементы в дюймах. Один расчёт для превью, PDF и PPTX.
   // =====================================================================
   const TEMY = {
-    bumaga: { bg: 'F5F1E8', ink: '15192A', muted: '5E6474', accent: 'FF4D1F', soft: 'EDE7DA', card: 'FFFDF8', on: 'FFFFFF', head: 'Geologica', body: 'Onest', pHead: 'Arial', pBody: 'Arial' },
-    grafit: { bg: '141518', ink: 'F2F2F2', muted: 'A3A3A3', accent: 'FF5A2C', soft: '24262B', card: '1C1D21', on: '141518', head: 'Geologica', body: 'Onest', pHead: 'Arial', pBody: 'Arial' },
+    bumaga: { bg: 'F5F1E8', ink: '15192A', muted: '5E6474', accent: 'E8420F', soft: 'EDE7DA', card: 'FFFDF8', on: 'FFFFFF', head: 'Geologica', body: 'Onest', pHead: 'Arial', pBody: 'Arial' },
+    grafit: { bg: '141518', ink: 'F2F2F2', muted: 'A3A3A3', accent: 'E8420F', soft: '24262B', card: '1C1D21', on: '141518', head: 'Geologica', body: 'Onest', pHead: 'Arial', pBody: 'Arial' },
     strogaya: { bg: 'FFFFFF', ink: '15192A', muted: '4E5566', accent: '1F4FBF', soft: 'EEF2FA', card: 'F6F8FC', on: 'FFFFFF', head: 'Onest', body: 'Onest', pHead: 'Georgia', pBody: 'Arial' },
   };
   function temaOf(k) {

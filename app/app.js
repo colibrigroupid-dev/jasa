@@ -595,7 +595,7 @@
     </div><div class="phone rv"><div class="scr"><div class="h">${esc((r.cover && r.cover.text) || r.title || '')}</div><div class="s">${esc(r.duration || '')} с · 9:16</div></div></div></div>`;
   }
   function renderAfisha(r, item) {
-    const V = (r.variants || []).map((v, i) => { const p = arr(v.palette).map((c) => col(c, '#15192A')); if (!p.length) p.push('#15192A', '#FF4D1F'); return `<div class="var rv"><div class="pv" style="background:linear-gradient(160deg,${p[0]},${p[1] || p[0]})">${v.url ? `<img src="${esc(v.url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">` : ''}<div class="hl">${esc(r.headline)}</div><div><div class="sb">${esc(r.sub)}</div><div class="sb" style="margin-top:6px;opacity:.7">${esc(r.details || '')}</div></div></div><div class="nm"><b>${esc(v.name)}</b>${esc(v.composition)}<div class="sw">${p.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div style="margin-top:10px">${v.url ? '' : `<button class="btn sm accent draw" data-prompt="${esc(v.prompt)}" data-aspect="4:5">Нарисовать фон · 12 кр</button>`}</div></div></div>`; }).join('');
+    const V = (r.variants || []).map((v, i) => { const p = arr(v.palette).map((c) => col(c, '#15192A')); if (!p.length) p.push('#15192A', '#E8420F'); return `<div class="var rv"><div class="pv" style="background:linear-gradient(160deg,${p[0]},${p[1] || p[0]})">${v.url ? `<img src="${esc(v.url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">` : ''}<div class="hl">${esc(r.headline)}</div><div><div class="sb">${esc(r.sub)}</div><div class="sb" style="margin-top:6px;opacity:.7">${esc(r.details || '')}</div></div></div><div class="nm"><b>${esc(v.name)}</b>${esc(v.composition)}<div class="sw">${p.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div style="margin-top:10px">${v.url ? '' : `<button class="btn sm accent draw" data-prompt="${esc(v.prompt)}" data-aspect="4:5">Нарисовать фон · 12 кр</button>`}</div></div></div>`; }).join('');
     return `<div class="variants">${V}</div>${threeImgs(item)}<dl class="kv rv"><dt>Форматы</dt><dd>${(r.formats || []).map(esc).join(' · ')}</dd>${r.kz_headline ? `<dt>Қазақша</dt><dd>${esc(r.kz_headline)}</dd>` : ''}</dl>${warnBlock(r.warnings)}${actionsBlock()}`;
   }
   function renderKarusel(r, item) {
@@ -757,10 +757,10 @@
   // =====================================================================
   const TRENDS = [
     { t: '«Что было бы, если…» в твоей нише', fire: 'рилс', g: 'linear-gradient(160deg,#15192A,#3B4A8C)', p: 'Один вопрос на экране, ответ раскрывается за 15 секунд. Заходит у экспертов и магазинов.', tip: 'rils', q: 'Рилс «что было бы, если бы ты сделал это раньше» для моей ниши' },
-    { t: 'POV: ты пришёл в Алматы первый раз', fire: 'рилс', g: 'linear-gradient(160deg,#FF4D1F,#FFB38A)', p: 'Съёмка от первого лица, 3 локации, субтитры по слову. Кафе, салоны, туры.', tip: 'rils', q: 'POV-рилс: первый раз у нас, три момента, которые удивляют' },
+    { t: 'POV: ты пришёл в Алматы первый раз', fire: 'рилс', g: 'linear-gradient(160deg,#E8420F,#FFB38A)', p: 'Съёмка от первого лица, 3 локации, субтитры по слову. Кафе, салоны, туры.', tip: 'rils', q: 'POV-рилс: первый раз у нас, три момента, которые удивляют' },
     { t: 'Цены «тогда и сейчас» на Kaspi', fire: 'карусель', g: 'linear-gradient(160deg,#0E6B55,#19B98B)', p: 'Карусель с честным сравнением. Доверие растёт, когда показываешь цифры.', tip: 'karusel', q: 'Карусель «тогда и сейчас»: что изменилось в ценах и качестве за год' },
     { t: 'День из жизни за 20 секунд', fire: 'рилс', g: 'linear-gradient(160deg,#5B3A8C,#15192A)', p: 'Без лица, руки и процесс. Мастера, пекарни, швейные, автосервисы.', tip: 'rils', q: 'Рилс «день из жизни» без лица: руки, процесс, результат, 20 секунд' },
-    { t: 'Ответ на хейт с юмором', fire: 'рилс', g: 'linear-gradient(160deg,#B8231A,#FF4D1F)', p: 'Комментарий на экран — и спокойный ответ с фактами.', tip: 'rils', q: 'Рилс-ответ на типичный негативный комментарий в моей нише, с фактами и юмором' },
+    { t: 'Ответ на хейт с юмором', fire: 'рилс', g: 'linear-gradient(160deg,#B8231A,#E8420F)', p: 'Комментарий на экран — и спокойный ответ с фактами.', tip: 'rils', q: 'Рилс-ответ на типичный негативный комментарий в моей нише, с фактами и юмором' },
     { t: 'Афиша-календарь на ноябрь', fire: 'сезон', g: 'linear-gradient(160deg,#C98B1F,#F2B705)', p: 'Один пост со всеми событиями месяца — такие сохраняют.', tip: 'afisha', q: 'Афиша-календарь событий на ноябрь для моего бизнеса' },
   ];
   function trendy() {
@@ -1185,7 +1185,7 @@
         <div style="margin-top:18px;display:flex;align-items:baseline;gap:10px"><b style="font:700 2.4rem var(--disp);letter-spacing:-.03em;color:var(--ink)">${esc(m.kredity)}</b><span class="muted">кредитов</span></div>
         <p class="small dim">потрачено ${esc(m.spent || 0)} · пробных было ${esc(m.trial)}</p>
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="#/sozdat">Создать</a><a class="btn sm quiet" href="#/brend">Голос бренда</a>${TG ? '' : '<button class="btn sm ghost" id="logout">Выйти</button>'}</div></div>
-      <div class="card"><span class="caps">Пополнить</span><p class="small muted" style="margin:8px 0 12px">Выберите пакет. Мы свяжемся в Telegram и зачислим кредиты. Kaspi и карта скоро.</p>
+      <div class="card"><span class="caps">Пополнить</span><p class="small muted" style="margin:8px 0 12px">Выберите пакет — мы свяжемся в Telegram и зачислим кредиты. Сейчас пополнение заявкой в Telegram, карта и Kaspi — скоро.</p>
         <div class="chips">${[['500', '5 990 ₸'], ['2 000', '19 990 ₸'], ['10 000', '89 990 ₸']].map(([n, c]) => `<button class="chip" data-paket="${n}">${n} кр · ${c}</button>`).join('')}</div>
         <p class="small dim" style="margin-top:10px">Цены пакетов ориентировочные.</p></div>
       </div>
@@ -1197,26 +1197,30 @@
   }
   async function startLogin() {
     const box = $('#loginbox'); const btn = $('#login'); btn.disabled = true;
-    let st; try { st = await api('/api/login/start', {}); } catch (e) { toast(e.message); btn.disabled = false; return; }
-    box.innerHTML = `<div class="qr" id="qr"></div><p class="small muted" style="margin-top:10px">Наведите камеру телефона на код или <a href="${esc(st.url)}" target="_blank" rel="noopener">откройте бота</a> и нажмите Start. Код действует 15 минут.</p><p class="small dim" id="loginst">Жду подтверждения…</p>`;
-    try { new QRCode($('#qr'), { text: st.url, width: 180, height: 180, colorDark: '#15192A', colorLight: '#FFFDF8' }); } catch (e) { $('#qr').innerHTML = `<a class="btn quiet" href="${esc(st.url)}" target="_blank" rel="noopener">Открыть бота</a>`; }
     const token = S.pollToken;
-    for (let i = 0; i < 450; i++) {
+    let st; try { st = await api('/api/login/start', {}); } catch (e) { toast(e.message); btn.disabled = false; return; }
+    if (token !== S.pollToken || !$('#loginbox')) return;
+    const minut = Math.max(1, Math.round((+st.ttl || 300) / 60));
+    box.innerHTML = `<div class="qr" id="qr"></div><div class="login-sverka"><span class="caps">Код сверки</span><b class="mono">${esc(st.sverka || '')}</b></div><p class="small muted" style="margin-top:10px">Наведите камеру телефона на код или <a href="${esc(st.url)}" target="_blank" rel="noopener">откройте бота</a>. Бот покажет такой же код сверки и спросит «Войти на компьютере?» — нажмите «Да, это я». Код действует ${minut} минут.</p><p class="small dim" id="loginst">Жду подтверждения в боте…</p>`;
+    try { new QRCode($('#qr'), { text: st.url, width: 180, height: 180, colorDark: '#15192A', colorLight: '#FFFDF8' }); } catch (e) { $('#qr').innerHTML = `<a class="btn quiet" href="${esc(st.url)}" target="_blank" rel="noopener">Открыть бота</a>`; }
+    for (let i = 0; i < 160; i++) {
       await new Promise((r) => setTimeout(r, 2000));
-      if (token !== S.pollToken) return;
+      if (token !== S.pollToken || !$('#loginst')) return;
       let r; try { r = await api('/api/login/status?code=' + st.code); } catch (e) { continue; }
       if (r.state === 'ok') { S.session = r.token; store.set('session', r.token); toast('Вход выполнен' + (r.name ? ', ' + r.name : '')); await loadMe(); kabinet(); return; }
       if (r.state === 'expired') { $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; btn.disabled = false; return; }
+      if (r.state === 'otkaz') { $('#loginst').textContent = 'Вход отклонён в боте. Если это были не вы — ничего делать не нужно.'; btn.disabled = false; return; }
     }
+    $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; btn.disabled = false;
   }
   function tarify() {
     const T = [
       ['Lite', '0 ₸', 'попробовать', ['50 кредитов в день ≈ 1 пост с картинками', 'картинки с водяным знаком', '1 канал', 'тренды — только смотреть'], 'Начать', ''],
-      ['Creator', '6 990 ₸', 'блогер, малый бизнес', ['600 кредитов ≈ 50 картинок', 'ДНК бренда', '3 канала, автопостинг', 'без водяных знаков', 'рилсы по кадрам — за кредиты'], 'Выбрать', 'hot'],
-      ['Pro', '24 990 ₸', 'SMM, дизайнер, агентство', ['2 500 кредитов', 'до 10 брендов-клиентов', 'команда 3 человека', 'согласование и отчёты', 'приоритетная очередь'], 'Выбрать', ''],
-      ['Studio', '59 990 ₸', 'сценаристы, продюсеры', ['6 000 кредитов', 'разбор сценария', 'герои, локации, кадры, видео', '10 участников, 5 проектов', 'шлюз в студийный конвейер'], 'Выбрать', ''],
+      ['Creator', '6 990 ₸', 'блогер, малый бизнес', ['600 кредитов ≈ 50 картинок', 'голос бренда', '3 канала · автопостинг — скоро', 'без водяных знаков', 'рилсы по кадрам — за кредиты'], 'Выбрать', 'hot'],
+      ['Pro', '24 990 ₸', 'SMM, дизайнер, агентство', ['2 500 кредитов', 'до 10 брендов-клиентов', 'команда 3 человека', 'согласование и отчёты'], 'Выбрать', ''],
+      ['Studio', '59 990 ₸', 'сценаристы, продюсеры', ['6 000 кредитов', 'разбор сценария агентами', 'герои, локации, кадры, видео', '10 участников, 5 проектов'], 'Выбрать', ''],
     ];
-    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Сколько это стоит</h2><p class="muted" style="margin-top:10px">Работа считается в кредитах. Текст поста до 6, пост с тремя картинками до 45, картинка 2K 12, видео 5 с в 720p 131, разбор сценария 80–700. Пополнение по заявке в Telegram, Kaspi и карта скоро. Цена на кнопке окончательная, цены тарифов ориентировочные.</p></section>
+    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Сколько это стоит</h2><p class="muted" style="margin-top:10px">Работа считается в кредитах. Текст поста до 6, пост с тремя картинками до 45, картинка 2K 12, видео 5 с в 720p 131, разбор сценария 80–700. Сейчас пополнение заявкой в Telegram, карта и Kaspi — скоро. Цена на кнопке окончательная, цены тарифов ориентировочные.</p></section>
       <div class="tiers">${T.map(([n, p, w, li, b, c]) => `<div class="tier ${c} rv"><span class="caps">${w}</span><h3>${n}</h3><div class="price">${p}<small> /мес</small></div><ul>${li.map((l) => `<li>${l}</li>`).join('')}</ul><button class="btn ${c ? 'accent' : 'quiet'}">${b}</button></div>`).join('')}</div>`;
     $$('.rv', main).forEach((n, i) => (n.style.animationDelay = i * 80 + 'ms'));
   }

@@ -392,7 +392,7 @@
     shadowText(g, String(t).toLowerCase(), CW * (k + 1) / (n + 1), CH - 86); return c;
   }
   function digit(d) {
-    const c = cnv(); const g = c.getContext('2d'); g.fillStyle = 'rgba(255,77,31,.92)'; g.beginPath(); g.arc(CW - 130, 130, 64, 0, Math.PI * 2); g.fill();
+    const c = cnv(); const g = c.getContext('2d'); g.fillStyle = 'rgba(232,66,15,.92)'; g.beginPath(); g.arc(CW - 130, 130, 64, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#fff'; g.font = `700 64px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(d), CW - 130, 134); return c;
   }
   function finalCard() {
