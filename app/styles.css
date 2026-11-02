@@ -1033,3 +1033,37 @@ input[type=file]::file-selector-button:hover{background:var(--surface);border-co
 /* ---------- 02.11 · пакет 4 (свежий взгляд Грока) ---------- */
 .hero .demo img{cursor:pointer}
 .mob .mh-cr.gost{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
+
+/* ---- процессы 02.11: цена видна всегда, простые слова, одна главная кнопка ---- */
+.chip .cp{margin-left:6px;font:600 11px var(--mono);opacity:.72;font-variant-numeric:tabular-nums}
+.chip.on .cp{opacity:.85}
+.mh-cr small{font:500 11px var(--sans,inherit);margin-left:5px;opacity:.75}
+.mh-in{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;font-weight:600;color:var(--accent-text);text-decoration:none;white-space:nowrap}
+.lf-sub{margin:-6px 0 18px;color:var(--muted);font-size:var(--fs-small)}
+.lf-btns button{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:12px 18px}
+.lf-btns button small{font:400 12px var(--sans,inherit);color:var(--muted);letter-spacing:0}
+.lf-btns button:hover small,.lf-btns button:active small{color:inherit;opacity:.8}
+.sheet .wait-hint{margin:6px 0 0}
+.hero .demo .demo-hint{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);white-space:nowrap;font-size:12px;color:var(--dim);background:var(--surface);padding:4px 10px;border-radius:999px;border:1px solid var(--line-soft);z-index:4}
+.mob .hero .demo{flex-wrap:wrap;position:relative;padding-bottom:28px}
+.mob .hero .demo .demo-hint{bottom:0}
+.final-act .btn.accent:not(.sm){min-height:48px;padding:0 20px}
+.final-more{margin-top:8px}
+.final-more summary{cursor:pointer;color:var(--muted);font-size:var(--fs-small);padding:6px 0;list-style:none;display:inline-flex;align-items:center;gap:6px}
+.final-more summary::-webkit-details-marker{display:none}
+.final-more summary::after{content:"";width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px)}
+.final-more[open] summary::after{transform:rotate(-135deg) translateY(-1px)}
+.final-more .final-act{margin-top:6px}
+.bs-more{margin:4px 0 10px}
+.bs-more summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 2px;color:var(--ink);font-weight:600}
+.bs-more summary::-webkit-details-marker{display:none}
+.bs-more summary::before{content:"";width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);flex:none;transition:transform .15s}
+.bs-more[open] summary::before{transform:rotate(45deg)}
+.bs-more[open] summary{margin-bottom:8px}
+.bs-inp{width:100%;font:inherit;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--field,var(--surface));color:var(--ink);margin:4px 0 14px}
+.iz-k.iz-more{background:transparent;border-style:dashed}
+@media (max-width:399px){.mh-cr small{display:none}.mh-in{padding:0 8px}}
+/* процессы 02.11 (сессия-тестировщик): переопределения строк выше — только здесь, в конце, после хвостов дизайна */
+.composer:not(.has) .cmp-go{display:inline-flex;opacity:.62;box-shadow:none}
+.composer.has-feed:not(:focus-within):not(.has) .cmp-go{display:none}
+.mob .composer.has-feed:not(:focus-within):not(.has) #kart3{display:none}

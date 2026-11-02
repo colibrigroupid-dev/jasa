@@ -42,8 +42,8 @@
         <div class="ring sm" style="--v:${b.percent}"><b>${b.percent}<small>%</small></b></div>
         <div style="min-width:0"><div class="bsel"><select id="bsel">${D.brands.map((x) => `<option value="${esc(x.id)}" ${x.id === b.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
           <button class="chip" id="bnew">+ Бренд</button>${arr(D.shablony).includes('welluma') && !D.brands.some((x) => x.name === 'Welluma') ? '<button class="chip" id="btpl">Карта Welluma</button>' : ''}</div>
-          <p class="small muted" style="margin-top:6px">${b.percent < 30 ? 'Основа есть — посты уже пишутся от вашего имени. Дальше по желанию: каждая папка делает их точнее.' : 'Заполнено на ' + b.percent + ' %. Всё отсюда JASA берёт сама — в боте и на сайте.'} ${S.useBrend ? '' : '<b>Сейчас выключено на «Создать».</b>'}</p></div>
-        <label class="btoggle"><input type="checkbox" id="buse" ${S.useBrend ? 'checked' : ''}> использовать в генерации</label>
+          <p class="small muted" style="margin-top:6px">${b.percent < 30 ? 'Основа есть — посты уже пишутся от вашего имени. Дальше по желанию: каждая папка делает их точнее.' : 'Заполнено на ' + b.percent + ' %. Всё отсюда JASA берёт сама — в боте и на сайте.'} ${S.useBrend ? '' : '<b>Сейчас выключено: посты пишутся без вашего стиля.</b>'}</p></div>
+        <label class="btoggle"><input type="checkbox" id="buse" ${S.useBrend ? 'checked' : ''}> писать в моём стиле</label>
       </div>
       <div class="bgrid">
         <nav class="bnav">${D.schema.map((s) => navItem(b, s.kod, s.name)).join('')}
@@ -55,7 +55,7 @@
     $('#bsel').onchange = async (e) => { await api('/api/brend/aktivnyj', { bid: e.target.value }); await load(); draw(); };
     $('#bnew').onclick = newBrand; const t = $('#btpl'); if (t) t.onclick = () => template('welluma');
     $('#buse').onchange = (e) => { S.useBrend = e.target.checked; store.set('useBrend', S.useBrend); draw(); };
-    $('#bfold').onclick = async () => { const name = prompt('Название папки (например: «Отзывы клиентов», «Сезонные акции»)'); if (!name) return; try { const r = await api('/api/brend/papka', { bid: b.id, name }); await load(); cur = r.papka.kod; draw(); } catch (e) { toast(e.message); } };
+    $('#bfold').onclick = async () => { const name = await J.prompt('Название папки (например: «Отзывы клиентов», «Сезонные акции»)'); if (!name) return; try { const r = await api('/api/brend/papka', { bid: b.id, name }); await load(); cur = r.papka.kod; draw(); } catch (e) { toast(e.message); } };
     $$('.bnav a').forEach((a) => { a.onclick = (e) => { e.preventDefault(); cur = a.dataset.kod; draw(); }; });
     editor(b); assistant(b);
   }
@@ -69,14 +69,14 @@
 
   function editor(b) {
     const s = sch(cur); const d = sec(b, cur); const ed = $('#bed');
-    ed.innerHTML = `<span class="caps">Папка · берёт: ${esc(s.agent)}</span><h3 style="margin:6px 0 6px">${esc(s.name)}</h3><p class="small muted">${esc(s.opis)}</p>
+    ed.innerHTML = `<span class="caps">Папка · используют: ${esc(String(s.agent || '').replace(/промптер/gi, 'художник'))}</span><h3 style="margin:6px 0 6px">${esc(s.name)}</h3><p class="small muted">${esc(s.opis)}</p>
       <div class="bfields">${s.fields.map((f) => `<div class="field"><label for="f_${esc(f.key)}">${esc(f.label)}</label><textarea id="f_${esc(f.key)}" data-key="${esc(f.key)}" rows="${cur === 'primery' ? 9 : 2}" placeholder="${esc(f.hint || '')}">${esc((d.fields || {})[f.key] || '')}</textarea></div>`).join('')}</div>
       ${s.files ? `<div class="bfiles"><div class="caps" style="margin:6px 0 8px">Файлы · ${arr(d.files).length}</div><div class="bthumbs">${arr(d.files).map((f) => `<div class="bthumb ${cur === 'logo' ? 'checker' : ''}"><img src="${esc(API_BASE + f.url)}" alt="${esc(f.name)}" loading="lazy" crossorigin="anonymous"><button class="bx" data-fid="${esc(f.id)}" title="Удалить">×</button><small>${esc(f.name || '')}</small></div>`).join('')}
         <label class="bthumb badd"><input type="file" accept="image/png,image/jpeg,image/webp" multiple hidden id="bfile"><span>+ Загрузить</span><small>${cur === 'logo' ? 'PNG с прозрачным фоном, края обрежем сами' : 'PNG, JPEG, WEBP до 9 МБ'}</small></label></div></div>` : ''}
       <div class="dim small" style="margin-top:12px" id="bsaved">Сохраняется само, когда вы выходите из поля.</div>`;
     $$('textarea', ed).forEach((ta) => ta.addEventListener('change', () => saveField(b, ta)));
     const fi = $('#bfile'); if (fi) fi.onchange = () => upload(b, Array.from(fi.files || []));
-    $$('.bx', ed).forEach((x) => { x.onclick = async (e) => { e.stopPropagation(); if (!confirm('Удалить файл из карты?')) return; try { await api('/api/brend/fajl-udalit', { bid: b.id, kod: cur, fid: x.dataset.fid }); await load(); draw(); } catch (er) { toast(er.message); } }; });
+    $$('.bx', ed).forEach((x) => { x.onclick = async (e) => { e.stopPropagation(); if (!(await J.confirm('Удалить файл из карты?'))) return; try { await api('/api/brend/fajl-udalit', { bid: b.id, kod: cur, fid: x.dataset.fid }); await load(); draw(); } catch (er) { toast(er.message); } }; });
     $$('.bthumb img', ed).forEach((im) => { im.onclick = () => lightbox(im.src, im.alt); });
   }
 
@@ -110,7 +110,7 @@
     if (!files.length) return;
     const kod = cur;   // пользователь может переключить папку, пока файлы грузятся
     if (D.guest) { toast('Файлы — после входа через Telegram (раздел «Кабинет»)'); return; }
-    if (kod === 'lica' && !confirm('Люди на фото согласны, что их лицо используют для картинок бренда? Фото детей сюда не загружаем.')) return;
+    if (kod === 'lica' && !(await J.confirm('Люди на фото согласны, что их лицо используют для картинок бренда? Фото детей сюда не загружаем.'))) return;
     toast('Загружаю ' + files.length + '…');
     for (const f of files.slice(0, 8)) {
       try { await api('/api/brend/fajl', { bid: b.id, kod, fajl: await prepare(f, kod) }); } catch (e) { toast(f.name + ': ' + e.message); }
@@ -189,7 +189,7 @@
   }
 
   async function newBrand() {
-    const name = prompt('Как называется бренд или блог?'); if (!name) return;
+    const name = await J.prompt('Как называется бренд или блог?'); if (!name) return;
     try { await api('/api/brend/sozdat', { name }); await load(); cur = 'golos'; draw(); } catch (e) { toast(e.message); }
   }
   async function template(kod) {

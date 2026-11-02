@@ -50,7 +50,7 @@
     try { if (window.QRCode) new window.QRCode($('#ptqr'), { text: bot, width: 148, height: 148, correctLevel: window.QRCode.CorrectLevel.M }); } catch (e) { /* QR не обязателен */ }
     $('#ptc').onclick = () => { const i = $('#ptl'); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(bot) : Promise.reject()).then(() => toast('Ссылка скопирована')).catch(() => { document.execCommand('copy'); toast('Ссылка скопирована'); }); };
     $('#ptk').onclick = async () => { try { const r = await api('/api/partner/v-kredity', {}); toast('+' + r.kredity + ' кр на баланс'); if (J.loadMe) J.loadMe(); screen(); } catch (e) { toast(e.message); } };
-    $('#ptv').onclick = async () => { const rek = prompt('Куда платить: Kaspi-номер или реквизиты (выплата — вручную, по договору)'); if (!rek) return; try { const r = await api('/api/partner/vyplata', { rekvizity: rek }); toast('Заявка на ' + tg(r.tenge) + ' принята'); screen(); } catch (e) { toast(e.message); } };
+    $('#ptv').onclick = async () => { const rek = await J.prompt('Куда платить: Kaspi-номер или реквизиты (выплата — вручную, по договору)'); if (!rek) return; try { const r = await api('/api/partner/vyplata', { rekvizity: rek }); toast('Заявка на ' + tg(r.tenge) + ' принята'); screen(); } catch (e) { toast(e.message); } };
   }
 
   // Код приглашения: из Mini App (start_param), из ссылки сайта (?ref=) или сохранённый на лендинге — закрепляем после входа

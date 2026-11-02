@@ -35,16 +35,17 @@
         <div class="iz-drop" id="izd"><input id="izu" placeholder="https://www.instagram.com/reel/…" inputmode="url">
           <label class="btn sm quiet"><input type="file" accept="video/*" hidden id="izfile">Видео файлом</label></div>
         <div class="small dim" id="izfn"></div>
-        <div class="iz-knopki">${arr(L.knopki).map((k) => `<button type="button" class="iz-k ${vybor.includes(k.kod) ? 'on' : ''}" data-k="${k.kod}"><b>${esc(k.name)}</b><small>${esc(k.opis)}</small><em>${kr(k.kredity)}</em></button>`).join('')}</div>
+        <div class="iz-knopki">${arr(L.knopki).map((k, i) => `<button type="button" class="iz-k ${vybor.includes(k.kod) ? 'on' : ''} ${i >= 4 && !vybor.includes(k.kod) && !store.get('izAll', false) ? 'hide' : ''}" data-k="${k.kod}"><b>${esc(k.name)}</b><small>${esc(k.opis)}</small><em>${kr(k.kredity)}</em></button>`).join('')}${arr(L.knopki).length > 4 && !store.get('izAll', false) ? `<button type="button" class="iz-k iz-more" id="izmore"><b>Ещё ${arr(L.knopki).length - 4}</b><small>перевод, в мои примеры, скачать свой ролик</small></button>` : ''}</div>
         <label class="iz-moj ${vybor.includes('skachat') ? '' : 'hide'}" id="izmoj"><input type="checkbox" id="izmojc"> Это мой ролик или у меня есть право на него — только тогда его можно скачать</label>
         <div class="iz-row"><button type="button" class="chip" id="izvse">Всё сразу · ${kr(L.vse)}${tg(L.vse)} · выгоднее на ${L.vse_bez - L.vse} кр</button>
           <button class="btn accent" type="submit" id="izgo">Разобрать · ${kr(cena())}${tg(cena())}</button></div>
-        <p class="small dim" style="margin-top:10px">Разбираем чужой ролик для изучения, автор и ссылка сохраняются в разборе. Публиковать чужой ролик или его кадры — только с разрешения автора. «Такой же ролик про мой бизнес» берёт приём и структуру, а не текст, кадры и музыку. Разбор делает ИИ.</p>
+        <p class="small dim" style="margin-top:10px">Чужой ролик — только для разбора, не для публикации; автор и ссылка сохраняются. «Такой же ролик про мой бизнес» берёт приём и структуру, а не текст, кадры и музыку. Разбор делает ИИ, обычно 20–60 секунд.</p>
       </form>
       <div id="izres"></div>
       ${arr(L.razbory).length ? `<h3 style="margin:28px 0 12px">Ваши разборы</h3><div class="iz-list">${L.razbory.map((r, i) => `<a href="#" class="card iz-old" data-i="${i}"><b>${esc(short(r.istochnik))}</b><span class="small muted">${esc(r.ts)} · ${esc(arr(r.chto).map(name).join(', '))}</span></a>`).join('')}</div>` : ''}`;
-    $$('.iz-k', box).forEach((b) => { b.onclick = () => { const k = b.dataset.k; vybor = vybor.includes(k) ? vybor.filter((x) => x !== k) : vybor.concat(k); store.set('izVybor', vybor); b.classList.toggle('on'); $('#izmoj').classList.toggle('hide', !vybor.includes('skachat')); upd(); }; });
-    $('#izvse').onclick = () => { vybor = Array.from(new Set(vybor.concat(VSE()))); store.set('izVybor', vybor); $$('.iz-k', box).forEach((b) => b.classList.toggle('on', vybor.includes(b.dataset.k))); upd(); };
+    $$('.iz-k[data-k]', box).forEach((b) => { b.onclick = () => { const k = b.dataset.k; vybor = vybor.includes(k) ? vybor.filter((x) => x !== k) : vybor.concat(k); store.set('izVybor', vybor); b.classList.toggle('on'); $('#izmoj').classList.toggle('hide', !vybor.includes('skachat')); upd(); }; });
+    const more = $('#izmore'); if (more) more.onclick = () => { store.set('izAll', true); $$('.iz-k.hide', box).forEach((b) => b.classList.remove('hide')); more.remove(); };
+    $('#izvse').onclick = () => { vybor = Array.from(new Set(vybor.concat(VSE()))); store.set('izVybor', vybor); store.set('izAll', true); const m2 = $('#izmore'); if (m2) m2.remove(); $$('.iz-k[data-k]', box).forEach((b) => { b.classList.remove('hide'); b.classList.toggle('on', vybor.includes(b.dataset.k)); }); upd(); };
     $('#izfile').onchange = (e) => { setFile(e.target.files[0]); };
     const dz = $('#izd');
     dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('over'); });

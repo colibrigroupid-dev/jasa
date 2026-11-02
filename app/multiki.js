@@ -80,7 +80,7 @@
   }
 
   function bindBrif(f, pid) {
-    const sm = () => { const s = L.ceny.smeta[$('#mkd .chip.on', f).dataset.v]; const el = $('#mksm', f); if (el && s) el.textContent = `Весь мультик ≈ ${kr(s.itogo['720p'])} в 720p (≈ ${kr(s.itogo['480p'])} в 480p), пересъёмки — по цене плана. Бесплатный аниматик — до видео.`; };
+    const sm = () => { const s = L.ceny.smeta[$('#mkd .chip.on', f).dataset.v]; const el = $('#mksm', f); if (el && s) el.textContent = `Мультик такой длины ≈ ${kr(s.itogo['720p'])} в 720p (≈ ${kr(s.itogo['480p'])} в 480p); точную цену покажем перед каждым платным шагом. Сначала — бесплатный черновик картинками с голосом, видео — только если понравилось.`; };
     ['#mky', '#mkd', '#mkz'].forEach((id) => $(id, f).addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (!c) return; $$(id + ' .chip', f).forEach((x) => x.classList.toggle('on', x === c)); sm(); }));
     $('#mkga', f).onclick = () => { if ($$('.mk-g', f).length >= 3) return; $('#mkg', f).insertAdjacentHTML('beforeend', geroyRow({})); };
     sm();
@@ -160,7 +160,7 @@
   function pBrif(pan) {
     pan.innerHTML = head('Бриф', 'Изменения брифа снимут утверждение сценария и всех шагов после него.') + `<form id="mkb2">${brifFields(P.brif)}<div class="mk-row"><button class="btn" type="submit">Сохранить бриф</button><a class="btn quiet" href="#" id="mkdel">Удалить мультик</a></div></form>`;
     bindBrif($('#mkb2'), P.id);
-    $('#mkdel').onclick = async (e) => { e.preventDefault(); if (!confirm('Удалить мультик целиком? Потраченные кредиты не вернутся.')) return; try { await api('/api/multiki/udalit', { pid: P.id }); location.hash = '#/multiki'; } catch (er) { toast(er.message); } };
+    $('#mkdel').onclick = async (e) => { e.preventDefault(); if (!(await J.confirm('Удалить мультик целиком? Потраченные кредиты не вернутся.'))) return; try { await api('/api/multiki/udalit', { pid: P.id }); location.hash = '#/multiki'; } catch (er) { toast(er.message); } };
   }
 
   function pScen(pan) {
@@ -191,7 +191,7 @@
       try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'scenarij', plany: pl })).proekt; drawProekt(); } catch (er) { toast(er.message); }
     }));
     const n = $('#mknos'); if (n) n.onchange = async () => { try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'scenarij', nositel_ok: n.checked })).proekt; drawProekt(); } catch (er) { toast(er.message); } };
-    $('#mkre').onclick = () => { if (confirm('Написать сценарий заново? Ваши правки пропадут.')) run($('#mkre'), '/api/multiki/scenarij', {}, 'Пишу и проверяю факты…'); };
+    $('#mkre').onclick = () => { J.confirm('Написать сценарий заново? Ваши правки пропадут.').then((ok) => { if (ok) run($('#mkre'), '/api/multiki/scenarij', {}, 'Пишу и проверяю факты…'); }); };
     const pro = $('#mkpro'); if (pro) pro.onclick = () => run(pro, '/api/multiki/proverit', {}, 'Методист читает…');
     $$('[data-vern]', pan).forEach((b) => { b.onclick = async () => { try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'scenarij', vernut: +b.dataset.vern })).proekt; drawProekt(); toast('План ' + b.dataset.vern + ' — как у сценариста'); } catch (e) { toast(e.message); } }; });
   }
@@ -215,7 +215,7 @@
       const n = +el.closest('.mk-plan').dataset.n;
       try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'raskadrovka', plany: [{ n, [el.dataset.k]: el.value }] })).proekt; drawProekt(); } catch (er) { toast(er.message); }
     }));
-    $('#mkre').onclick = () => { if (confirm('Пересобрать раскадровку по утверждённому сценарию? Правки планов пропадут.')) run($('#mkre'), '/api/multiki/raskadrovka', {}, 'Раскладываю…'); };
+    $('#mkre').onclick = () => { J.confirm('Пересобрать раскадровку по утверждённому сценарию? Правки планов пропадут.').then((ok) => { if (ok) run($('#mkre'), '/api/multiki/raskadrovka', {}, 'Раскладываю…'); }); };
   }
 
   function imgBox(x, alt) {
@@ -238,7 +238,7 @@
       ${L.ceny.kartochka ? `<section class="mk-kartas"><span class="caps">Карта героя</span><p class="small muted" style="margin:6px 0 14px">Один раз точно описываем героя: одежду, цвета, что нельзя менять. Дальше он одинаковый во всех кадрах. Карта по желанию, но с ней герои не путаются.</p>${P.brif.geroi.map(kartaGeroya).join('')}</section>` : ''}
       <div class="mk-row" style="margin-top:18px">${P.ok.geroi ? '' : utvBtn('geroi', 'Утвердить героев и локацию')}</div>`;
     bindCommon(pan);
-    $$('[data-kmk]', pan).forEach((b) => { b.onclick = () => { const g = P.brif.geroi.find((x) => x.imya === b.dataset.kmk); if (g && g.kartochka && !confirm('Правки текста пропадут, картинки героя устареют. Собрать карту заново?')) return; run(b, '/api/multiki/kartochka', { imya: b.dataset.kmk }, 'Собираю карту…'); }; });
+    $$('[data-kmk]', pan).forEach((b) => { b.onclick = async () => { const g = P.brif.geroi.find((x) => x.imya === b.dataset.kmk); if (g && g.kartochka && !(await J.confirm('Правки текста пропадут, картинки героя устареют. Собрать карту заново?'))) return; run(b, '/api/multiki/kartochka', { imya: b.dataset.kmk }, 'Собираю карту…'); }; });
     $$('[data-kris]', pan).forEach((b) => { b.onclick = () => run(b, '/api/multiki/geroi', { chto: b.dataset.kris, imya: b.dataset.im }, 'Отправляю художнику…'); });
     $$('[data-ksave]', pan).forEach((b) => { b.onclick = async () => { const ta = $('textarea', b.closest('details')); try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'geroi', geroi: [{ imya: b.dataset.ksave, kartochka: { kanon: ta.value } }] })).proekt; toast('Карта сохранена'); drawProekt(); } catch (e) { toast(e.message); } }; });
     $$('[data-g]', pan).forEach((t) => t.addEventListener('change', async () => { try { P = (await api('/api/multiki/pravka', { pid: P.id, shag: 'geroi', geroi: [{ imya: t.dataset.g, vneshnost: t.value }] })).proekt; } catch (e) { toast(e.message); } }));
@@ -265,7 +265,7 @@
 
   async function upload(inp) {
     const file = inp.files[0]; if (!file) return;
-    if (!confirm('Это рисунок, а не фото людей или детей? Фото через генераторы не пропускаем.')) { inp.value = ''; return; }
+    if (!(await J.confirm('Это рисунок, а не фото людей или детей? Фото через генераторы не пропускаем.'))) { inp.value = ''; return; }
     try {
       const im = await loadImg(URL.createObjectURL(file)); const c = document.createElement('canvas'); const k = Math.min(1, 2048 / Math.max(im.naturalWidth, im.naturalHeight));
       c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
@@ -317,9 +317,9 @@
     const cena = net.reduce((s, p) => s + p.cena_video[res], 0);
     const an = it('animatik', 0);
     pan.innerHTML = head('Ролики', 'Каждый видео-план снимается от утверждённого стоп-кадра, губы — под голос. Снимайте по одному, если хотите сначала проверить качество. Неудача — кредиты возвращаются.') + okBadge('video') +
-      `<div class="mk-anim"><div><b>Аниматик · бесплатно</b><p class="small muted">Весь мультик из стоп-кадров с голосом, подписями и заданиями — посмотрите по времени до съёмки. Можно показать и так, без видео.</p></div>
-        ${an.status === 'idet' ? '<div class="working"><span class="spin"></span><span>Собираю…</span></div>' : an.status === 'oshibka' ? `<p class="warn">${esc(an.error || '')}</p>` : an.url ? `<video controls preload="metadata" src="${esc(API_BASE + an.url)}"></video><a class="btn sm quiet" href="${esc(API_BASE + an.url)}" download="animatik.mp4">Скачать аниматик</a>` : ''}
-        <button class="btn sm" id="mkan" ${an.status === 'idet' ? 'disabled' : ''}>${an.url ? 'Собрать заново' : 'Собрать аниматик'}</button></div>` +
+      `<div class="mk-anim"><div><b>Черновик с голосом · бесплатно</b><p class="small muted">Весь мультик из стоп-кадров с голосом, подписями и заданиями — посмотрите по времени до съёмки. Можно показать и так, без видео.</p></div>
+        ${an.status === 'idet' ? '<div class="working"><span class="spin"></span><span>Собираю…</span></div>' : an.status === 'oshibka' ? `<p class="warn">${esc(an.error || '')}</p>` : an.url ? `<video controls preload="metadata" src="${esc(API_BASE + an.url)}"></video><a class="btn sm quiet" href="${esc(API_BASE + an.url)}" download="chernovik.mp4">Скачать черновик</a>` : ''}
+        <button class="btn sm" id="mkan" ${an.status === 'idet' ? 'disabled' : ''}>${an.url ? 'Собрать заново' : 'Собрать черновик'}</button></div>` +
       `<div class="field"><label>Качество</label><div class="chips" id="mkres">${[['720p', '720p · для проектора в классе'], ['480p', '480p · проба одного плана']].map(([v, t]) => `<button class="chip ${res === v ? 'on' : ''}" data-v="${v}">${t}</button>`).join('')}</div></div>
       ${net.length ? `<div class="mk-row" style="margin-bottom:14px"><button class="btn accent" id="mkall">Снять ${net.length === vp.length ? 'все' : 'остальные'} (${net.length}) · ${kr(cena)}</button><span class="small muted">≈ 2–6 минут на план</span></div>` : ''}
       <div class="mk-cards">${vp.map((p) => { const x = it('video', p.n); const k = it('kadr', p.n); return `<div class="mk-c"><div class="mk-img">${x.status === 'idet' ? `<img src="${esc(API_BASE + k.url)}" alt="" style="opacity:.45"><div class="mk-over"><span class="spin"></span> снимаю…</div>` : x.status === 'oshibka' ? `<div class="mk-ph-img err"><span class="small">Не получилось: ${esc(x.error || '')}. Кредиты вернулись.</span></div>` : x.url ? `<video controls preload="metadata" src="${esc(API_BASE + x.url)}" poster="${esc(API_BASE + k.url)}"></video>${x.ustarel ? '<span class="mk-old">устарел</span>' : ''}` : `<img src="${esc(API_BASE + k.url)}" alt="План ${p.n}" data-lb>`}</div>
@@ -329,8 +329,8 @@
     bindCommon(pan);
     $('#mkres').addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (!c) return; store.set('mkres', c.dataset.v); panel(); });
     $('#mkan').onclick = async () => { const b = $('#mkan'); b.disabled = true; try { const body = await render(); run(b, '/api/multiki/sborka', Object.assign(body, { rezhim: 'animatik' }), 'Собираю…'); } catch (e) { toast(e.message); b.disabled = false; } };
-    const all = $('#mkall'); if (all) all.onclick = () => { if (confirm(`Снять ${net.length} план(ов) в ${res} за ${kr(cena)}? Кредиты удерживаются сразу, за неудачные вернутся.`)) run(all, '/api/multiki/video', { n: 'vse', res }, 'Отправляю на съёмку…'); };
-    $$('button[data-v]', pan).forEach((b) => { b.onclick = () => { const p = vp.find((x) => x.n === +b.dataset.v); if (confirm(`Снять план ${p.n} в ${res} за ${kr(p.cena_video[res])}?`)) run(b, '/api/multiki/video', { n: p.n, res }, 'Отправляю…'); }; });
+    const all = $('#mkall'); if (all) all.onclick = () => { J.confirm(`Снять ${net.length} план(ов) в ${res} за ${kr(cena)}? Кредиты удерживаются сразу, за неудачные вернутся.`).then((ok) => { if (ok) run(all, '/api/multiki/video', { n: 'vse', res }, 'Отправляю на съёмку…'); }); };
+    $$('button[data-v]', pan).forEach((b) => { b.onclick = () => { const p = vp.find((x) => x.n === +b.dataset.v); J.confirm(`Снять план ${p.n} в ${res} за ${kr(p.cena_video[res])}?`).then((ok) => { if (ok) run(b, '/api/multiki/video', { n: p.n, res }, 'Отправляю…'); }); }; });
   }
 
   function pSborka(pan) {

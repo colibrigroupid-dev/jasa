@@ -98,6 +98,8 @@
   .jo-host{position:absolute;left:-14000px;top:0;width:${W}px;z-index:-1}
   .jo-page{width:${W}px;height:${H}px;background:#fff;color:#111;position:relative;overflow:hidden;font-family:Onest,'Noto Sans',Arial,sans-serif;font-size:12.5px;line-height:1.55;box-sizing:border-box;padding:0 64px;margin-bottom:24px}
   .jo-page *{box-sizing:border-box}
+  .jo-page h1,.jo-page h2,.jo-page h3,.jo-page p,.jo-page li,.jo-page dt,.jo-page dd,.jo-page small,.jo-page b,.jo-page span,.jo-page em{color:inherit;max-width:none;text-wrap:initial}
+  .jo-page .jo-dim,.jo-page .jo-cap,.jo-page .jo-hd span:last-child,.jo-page .jo-ft,.jo-page .jo-sec small{color:#666}
   .jo-hd{position:absolute;left:64px;right:64px;top:34px;display:flex;justify-content:space-between;gap:20px;font:500 8.5px/1 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:#111;padding-bottom:9px;border-bottom:1px solid #111}
   .jo-hd span:last-child{color:#666;max-width:330px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .jo-body{position:absolute;left:64px;right:64px;top:78px;bottom:74px;overflow:hidden}

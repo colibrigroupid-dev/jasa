@@ -28,7 +28,7 @@
     if (!c) return '';
     if (c.rezhim === 'besplatno' || c.rezhim === 'v_pakete') return c.nadpis;
     const n = c.kr > 0 ? Math.floor((S.credits || 0) / c.kr) : 0;
-    return (c.rezhim === 'paket' ? c.kr + ' кр · пакет: тексты, Критик, правки, речь' : 'до ' + c.kr + ' кр') + ' · хватит на ' + n;
+    return (c.rezhim === 'paket' ? c.kr + ' кр · пакет: тексты слайдов, проверка глазами комиссии, правки, речь' : 'до ' + c.kr + ' кр') + ' · хватит на ' + n;
   }
 
   // ---------- анкета с jasa.asia/prezentaciya/: приходит в адресе, ждёт входа и превращается в презентацию ----------
@@ -174,7 +174,7 @@
     const u = P.utv || {}, teksty = P.slajdy.some((s) => s.tekst_sig), rech = P.slajdy.some((s) => s.rech);
     const ok = (c) => !c ? '' : c.rezhim === 'besplatno' ? 'бесплатно' : c.rezhim === 'v_pakete' ? 'входит в пакет' : c.rezhim === 'paket' ? c.kr + ' кр · пакет' : 'до ' + c.kr + ' кр';   // коротко: подробности — на самих шагах
     if (!P.slajdy.length) return { n: 1, sh: 'struktura', t: 'Соберём план слайдов', d: 'Это бесплатно: JASA предложит, какие слайды нужны и сколько времени на каждый.', b: 'Собрать план · ' + ok(P.ceny.struktura), sel: '#pzs' };
-    if (!u.struktura) return { n: 1, sh: 'struktura', t: 'Посмотрите план слайдов', d: 'Можно переставить, переименовать, удалить. Когда всё верно — утвердите.', b: 'Утвердить план', sel: '#pzutv' };
+    if (!u.struktura) return { n: 1, sh: 'struktura', t: 'Посмотрите план слайдов', d: 'Можно переставить, переименовать, удалить. Когда всё верно — утвердите.', b: 'Утвердить структуру', sel: '#pzutv' };
     if (!teksty) return { n: 2, sh: 'teksty', t: 'Теперь напишем тексты слайдов', d: 'Цифры и источники берём только из ваших материалов. Потом Критик оценит глазами ' + (P.komanda === 'student' ? 'комиссии' : 'инвестора') + '. Займёт 1–2 минуты.', b: 'Написать тексты · ' + ok(P.ceny.teksty), sel: '#pzt' };
     if (!u.teksty) return { n: 2, sh: 'teksty', t: 'Проверьте тексты и жёлтые метки', d: 'Жёлтое — то, чего нет в ваших материалах: впишите свои данные или замените. Потом утвердите.', b: 'Утвердить тексты', sel: '#pzutv' };
     if (!rech && !u.rech) return { n: 3, sh: 'rech', t: 'Осталась речь: что говорить под каждым слайдом', d: 'Плюс вопросы, которые зададут, с готовыми ответами. Можно пропустить.', b: 'Написать речь · ' + ok(P.ceny.rech), sel: '#pzr' };
@@ -184,7 +184,7 @@
   }
   function vedu() {
     const v = sled();
-    return `<div class="pz-vedu ${v.gotovo ? 'ok' : ''}"><div><span class="caps">${v.gotovo ? 'Готово' : 'Ведём вас · шаг ' + v.n + ' из 5'}</span><b>${esc(v.t)}</b><small>${v.d}</small></div><button class="btn accent" id="pzvedu" type="button">${v.b}</button></div>`;
+    return `<div class="pz-vedu ${v.gotovo ? 'ok' : ''}"><div><span class="caps">${v.gotovo ? 'Готово' : 'Ведём вас · шаг ' + (v.n + 1) + ' из 6'}</span><b>${esc(v.t)}</b><small>${v.d}</small></div><button class="btn accent" id="pzvedu" type="button">${v.b}</button></div>`;
   }
   const mmss = (s) => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
 
@@ -242,7 +242,7 @@
     };
     let f2 = null; $('#pzfile2').onchange = (e) => { f2 = e.target.files[0]; if (f2) $('#pzmat2').placeholder = 'Файл: ' + f2.name; };
     $('#pzmatgo').onclick = async () => { const t = $('#pzmat2').value.trim(); if (!f2 && !t) { toast('Вставьте текст или выберите файл'); return; } run('material', f2 ? { fajl: { b64: await toB64(f2), imya: f2.name } } : { tekst: t }, 'Читаю материалы…'); };
-    $('#pzs').onclick = () => { if (P.slajdy.length && !confirm('Собрать структуру заново? Тексты и речь текущих слайдов уйдут, оплаченные картинки останутся в «прошлых».')) return; cur = 'struktura'; run('struktura', {}, 'Собираю структуру… 20–40 секунд'); };
+    $('#pzs').onclick = async () => { if (P.slajdy.length && !(await J.confirm('Собрать структуру заново? Тексты и речь текущих слайдов уйдут, оплаченные картинки останутся в «прошлых».'))) return; cur = 'struktura'; run('struktura', {}, 'Собираю структуру… 20–40 секунд'); };
   }
 
   // ---------- шаг 1 · структура ----------
@@ -271,7 +271,7 @@
     $('#pzsave').onclick = () => pravka({ chto: 'struktura', slajdy: rows() });
     const u = $('#pzutv'); if (u) u.onclick = async () => { const moj = P.id; if (!$('#pzsave').hidden && !(await run('pravka', { chto: 'struktura', slajdy: rows() }, 'Сохраняю…'))) return; if (pidOf() !== moj) return; run('utverdit', { shag: 'struktura' }, 'Утверждаю…'); };
     const t = $('#pzt'); if (t) t.onclick = () => { cur = 'teksty'; if (P.slajdy.some((s) => s.tekst_sig)) draw(); else run('teksty', {}, (P.komanda === 'student' ? 'Научный редактор пишет тексты, Критик оценивает глазами комиссии' : 'Аналитик считает цифры, Копирайтер пишет, Критик оценивает глазами инвестора') + '… 1–2 минуты'); };
-    $('#pzre').onclick = () => { if (P.slajdy.some((s) => s.tekst_sig) && !confirm('Собрать заново? Тексты и речь текущих слайдов уйдут.')) return; run('struktura', {}, 'Собираю структуру… 20–40 секунд'); };
+    $('#pzre').onclick = async () => { if (P.slajdy.some((s) => s.tekst_sig) && !(await J.confirm('Собрать заново? Тексты и речь текущих слайдов уйдут.'))) return; run('struktura', {}, 'Собираю структуру… 20–40 секунд'); };
   }
 
   // ---------- шаг 2 · тексты + Критик ----------
@@ -290,10 +290,10 @@
     if (otkryt) editor($('#pzed'), P.slajdy.find((s) => s.id === otkryt));
     $$('[data-pr]', box).forEach((b) => { b.onclick = () => pravka({ chto: 'kritik', n: +b.dataset.n, status: b.dataset.pr }); });
     const vn = $('#pzvn'); if (vn) vn.onclick = () => run('pravki', { prinyato: arr(k.pravki).filter((x) => x.status === 'prinyata').map((x) => x.n) }, 'Правщик вносит принятое…');
-    const u = $('#pzutv'); if (u) u.onclick = () => { if (pr.metok && !confirm('На слайдах ' + pr.metok + ' жёлтых меток. Утвердить всё равно? Перед выгрузкой список будет ещё раз.')) return; run('utverdit', { shag: 'teksty' }, 'Утверждаю…', () => { cur = 'rech'; }); };
+    const u = $('#pzutv'); if (u) u.onclick = async () => { if (pr.metok && !(await J.confirm('На слайдах ' + pr.metok + ' жёлтых меток. Утвердить всё равно? Перед выгрузкой список будет ещё раз.'))) return; run('utverdit', { shag: 'teksty' }, 'Утверждаю…', () => { cur = 'rech'; }); };
     const nx = $('#pznext'); if (nx) nx.onclick = () => { cur = 'rech'; draw(); };
     $('#pzkr').onclick = () => run('kritik', {}, 'Критик оценивает глазами зала…');
-    $('#pzre').onclick = () => { if (!confirm('Написать тексты заново? Ваши ручные правки слайдов уйдут.')) return; run('teksty', {}, 'Команда пишет тексты заново… 1–2 минуты'); };
+    $('#pzre').onclick = async () => { if (!(await J.confirm('Написать тексты заново? Ваши ручные правки слайдов уйдут.'))) return; run('teksty', {}, 'Команда пишет тексты заново… 1–2 минуты'); };
   }
 
   function kritikHtml(k) {
@@ -378,15 +378,15 @@
     $$('[data-tema]', box).forEach((b) => { b.onclick = () => pravka({ chto: 'oformlenie', oformlenie: { tema: b.dataset.tema } }); });
     $('#pzfont').onchange = (e) => pravka({ chto: 'oformlenie', oformlenie: { shrifty: e.target.checked ? 'firmennye' : 'bezopasnye' } });
     const ii = $('#pzii'); if (ii) ii.onchange = (e) => pravka({ chto: 'oformlenie', oformlenie: { ii_stroka: e.target.checked } });
-    $('#pzlogo').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; if (!confirm('У вас есть право использовать это лого? Без прав лого не ставим — презентация будет без него.')) return; run('svoya', { sid: 'logo', b64: await toB64(f), pravo: true }, 'Загружаю лого…'); };
+    $('#pzlogo').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; if (!(await J.confirm('У вас есть право использовать это лого? Без прав лого не ставим — презентация будет без него.'))) return; run('svoya', { sid: 'logo', b64: await toB64(f), pravo: true }, 'Загружаю лого…'); };
     const lx = $('#pzlogox'); if (lx) lx.onclick = () => pravka({ chto: 'oformlenie', oformlenie: { logo_ubrat: true } });
     let vybr = null;
     $$('.pz-old img', box).forEach((im) => { im.onclick = () => { vybr = im.dataset.file; $$('.pz-old img').forEach((x) => x.classList.toggle('on', x === im)); toast('Теперь нажмите «Вернуть» у нужного слайда'); $$('.pz-im').forEach((r) => { const row = $('.pz-row', r); if (row && !$('[data-back]', r)) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn sm'; b.dataset.back = 1; b.textContent = 'Вернуть'; b.onclick = () => pravka({ chto: 'kartinka_vernut', sid: r.dataset.id, file: vybr }); row.appendChild(b); } }); }; });
     $$('.pz-im', box).forEach((r) => {
       const id = r.dataset.id;
       if (!$('[data-ai]', r)) return;
-      $('[data-ai]', r).onclick = () => { if (!confirm('Нарисовать картинку к слайду за ' + L.kartinka + ' кр?')) return; run('kartinka', { sid: id }, 'Рисую картинку… 20–60 секунд'); };
-      $('[data-own]', r).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; if (!confirm('У вас есть право использовать это фото? Без прав фото не ставим.')) return; run('svoya', { sid: id, b64: await toB64(f), pravo: true }, 'Загружаю…'); };
+      $('[data-ai]', r).onclick = async () => { if (!(await J.confirm('Нарисовать картинку к слайду за ' + L.kartinka + ' кр?'))) return; run('kartinka', { sid: id }, 'Рисую картинку… 20–60 секунд'); };
+      $('[data-own]', r).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; if (!(await J.confirm('У вас есть право использовать это фото? Без прав фото не ставим.'))) return; run('svoya', { sid: id, b64: await toB64(f), pravo: true }, 'Загружаю…'); };
       const x = $('[data-x]', r); if (x) x.onclick = () => pravka({ chto: 'kartinka_ubrat', sid: id });
     });
     const u = $('#pzutv'); if (u) u.onclick = () => run('utverdit', { shag: 'oformlenie' }, 'Утверждаю…', () => { cur = 'sborka'; });
@@ -617,8 +617,8 @@
   async function vygruzka(kak, btn) {
     if (kak === 'copy') { const t = P.slajdy.map((s, i) => `${i + 1}. ${s.zagolovok}\n${(s.rech || {}).tekst || ''}`).join('\n\n'); navigator.clipboard && navigator.clipboard.writeText(t).then(() => toast('Речь скопирована')); return; }
     const pusto = P.slajdy.reduce((a, s) => a + arr(s.metki).filter((m) => m.tip === 'pusto').length, 0);
-    if (pusto && !confirm('Незаполненных мест «[…]» на слайдах и в речи: ' + pusto + '. Выгрузить черновиком? На таких слайдах будет пометка «ЧЕРНОВИК».')) return;
-    if (P.brif.yazyk === 'kz' && !P.oformlenie.kz_provereno && !confirm('Казахский текст написан ИИ и не проверен носителем языка. Всё равно выгрузить?')) return;
+    if (pusto && !(await J.confirm('Незаполненных мест «[…]» на слайдах и в речи: ' + pusto + '. Выгрузить черновиком? На таких слайдах будет пометка «ЧЕРНОВИК».'))) return;
+    if (P.brif.yazyk === 'kz' && !P.oformlenie.kz_provereno && !(await J.confirm('Казахский текст написан ИИ и не проверен носителем языка. Всё равно выгрузить?'))) return;
     cernovik = !!pusto; expo = P.id;
     const o = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Собираю…';
     try {
@@ -784,10 +784,11 @@
 .pz-lead{font-family:var(--disp);font-size:1.15rem;color:var(--ink);margin:0 0 12px}
 .pz-red{color:var(--bad)}.pz-green{color:var(--ok)}
 .pz-srow{display:grid;grid-template-columns:28px minmax(0,1fr) 140px 64px 92px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line-soft)}
-.pz-srow input,.pz-srow select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;background:var(--field);color:var(--ink)}
+.pz-srow input,.pz-srow select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;background-color:var(--field);color:var(--ink)}
+.pz-srow select{background-repeat:no-repeat;background-position:right 10px center;background-size:16px}
 .pz-srow .pz-zachem{margin-top:4px;font-size:13px;color:var(--muted);border-style:dashed}.pz-shead{border:0;padding-bottom:0}
 .pz-ctl{display:flex;gap:4px}.pz-ctl button{width:28px;height:28px;border-radius:8px;background:var(--surface-2);color:var(--muted)}.pz-ctl button:hover{color:var(--ink)}
-.pz-sel{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;background:var(--field);color:var(--ink)}
+.pz-sel{background-color:var(--field);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;color:var(--ink)}
 .pz-sl{position:relative;aspect-ratio:16/9;width:100%;container-type:inline-size;border-radius:8px;overflow:hidden;box-shadow:0 0 0 1px var(--line-soft)}
 .pz-sl.big{border-radius:var(--r-sm);box-shadow:var(--shadow)}
 .pz-c{position:absolute;inset:0;overflow:hidden}.pz-c>i,.pz-c>div{position:absolute;display:block}
