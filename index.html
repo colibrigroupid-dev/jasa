@@ -174,9 +174,11 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .tier ul{flex:1}.tier .btn{margin-top:8px;white-space:normal;text-align:center}.tier.hot .btn{background:var(--ink);color:#fff}
 /* faq */
 details{border-top:1px solid var(--line);padding:18px 0}details summary{cursor:pointer;font:600 1.1rem var(--disp);color:var(--ink);list-style:none;display:flex;justify-content:space-between;gap:16px}
-details summary::after{content:"+";color:var(--accent);font-weight:400}details[open] summary::after{content:"–"}details p{margin-top:10px;color:var(--muted)}
+details summary::after{content:"+";color:var(--accent);font-weight:400;flex:none}details[open] summary::after{content:"–"}details p{margin-top:10px;color:var(--text)}details summary:hover{color:var(--accent-text)}
 /* финал */
-.final{text-align:left}.final .box{background:var(--surface);border-radius:26px;box-shadow:var(--shadow);border:1px solid var(--line-soft);padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:1.2fr .8fr;gap:32px;align-items:center}
+.final{text-align:left;padding-top:clamp(40px,6vw,72px)}.final .box{position:relative;overflow:hidden;background:var(--night);color:var(--night-text);border-radius:26px;border:1px solid var(--night-line);padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:1.2fr .8fr;gap:32px;align-items:center}
+.final .box::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(600px 300px at 0% 0%,var(--glow-2),transparent 62%),radial-gradient(520px 320px at 100% 120%,var(--glow-1),transparent 62%)}
+.final .box>*{position:relative}.final h2{color:var(--night-text)}.final .lead{color:var(--night-muted)}.final .btn.quiet{background:rgba(255,255,255,.08);color:var(--night-text);border:1px solid rgba(255,255,255,.12)}.final .btn.accent{background:var(--night-accent)}
 footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem;color:var(--dim)}footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .sticky{display:none}
 .js .rv{opacity:0;transform:translateY(20px);transition:opacity .7s var(--ease),transform .7s var(--ease)}.js .rv.in{opacity:1;transform:none}
@@ -188,7 +190,7 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 </style>
 </head>
 <body>
-<header><div class="wrap"><a class="logo" href="#"><i></i>JASA</a><nav aria-label="Разделы"><a href="#kak">Как работает</a><a href="#chto">Что получаете</a><a href="#eshche">Презентации и кино</a><a href="#ceny">Цены</a></nav><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site" style="padding:10px 20px">Войти</a></div></header>
+<header class="night"><div class="wrap"><a class="logo" href="#"><i></i>JASA</a><nav aria-label="Разделы"><a href="#kak">Как работает</a><a href="#chto">Что получаете</a><a href="#eshche">Презентации и кино</a><a href="#ceny">Цены</a></nav><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site" style="padding:10px 20px">Войти</a></div></header>
 
 <main>
 <section class="hero"><div class="wrap grid">
