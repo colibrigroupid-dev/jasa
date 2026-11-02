@@ -204,8 +204,9 @@
     const name = S.brandName || (S.brend && S.brend.name) || '';
     const slot = (S.brandId || S.brend) && name ? `<a class="mh-proj" id="mproj" href="#/brend"><span class="av">${esc(name.trim().charAt(0).toUpperCase())}</span><span class="n">${esc(name)}</span></a>` : `<a class="mh-proj" id="mproj" href="#/sozdat"><span class="av logo"></span><span class="n">JASA</span></a>`;
     const c = Math.floor(+S.credits || 0);
-    if (headSig === slot + c) return; headSig = slot + c;
-    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''}" id="mcred" href="#/kabinet" title="Ваши кредиты">${c} кр</a><button type="button" class="mh-help" id="mtheme" aria-label="Сменить тему"><svg class="ic"><use href="#i-moon"/></svg></button><button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
+    if (headSig === slot + c + (S.me && S.me.guest ? 'g' : '')) return; headSig = slot + c + (S.me && S.me.guest ? 'g' : '');
+    const guest = S.me && S.me.guest;
+    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Войти через Telegram · сегодня ' + c + ' кр' : 'Ваши кредиты'}">${guest ? 'Войти · ' : ''}${c} кр</a><button type="button" class="mh-help" id="mtheme" aria-label="Сменить тему"><svg class="ic"><use href="#i-moon"/></svg></button><button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
   }
   document.addEventListener('click', (e) => { if (e.target.closest('#mhelp')) { const f = $('#fab'); if (f) f.click(); } if (e.target.closest('#mtheme')) $('#theme').click(); });
   // Первый вход: один экран «Выберите язык», пока не выбран — приложение не показываем. Язык влияет на тексты результатов, кнопки пока русские.
@@ -260,7 +261,7 @@
     main.innerHTML = topbar('Создать', S.made || S.brandId ? brandPill() : '', 'only-desk') + `
       <section class="hero ${first ? 'first' : 'compact'}">
         <h1>${first ? 'Что <em>сделать</em>?' : 'Что ещё <em>сделать</em>?'}</h1>
-        ${first ? '<p>Скажите или напишите. Получите текст и картинку — или сразу три варианта.</p><div class="demo" aria-hidden="true"><img src="demo-1.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-2.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-3.jpg" width="640" height="800" alt="" decoding="async"></div>' : ''}
+        ${first ? '<p>Скажите или напишите. Получите текст и картинку — или сразу три варианта.</p><div class="demo" title="Нажмите — подставим пример"><img src="demo-1.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-2.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-3.jpg" width="640" height="800" alt="" decoding="async"></div>' : ''}
         <div class="examples" id="examples">${first ? '<span class="caps">Попробуйте</span>' : ''}${(first ? EXAMPLES : []).map(([t, l, e]) => `<button type="button" data-tip="${t}" data-text="${esc(e)}"><span>${esc(l)}</span>${ico('i-chevr')}</button>`).join('')}<button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}"><span>Готовые идеи</span><em>${S.recepty.length || ''}</em>${ico('i-chevr')}</button></div>
       </section>
       <section class="recwrap ${recOpen ? '' : 'hide'}" id="recwrap"><div class="rechead"><span class="caps">Заполните пару полей, остальное сделаем сами</span><span class="dim small">цена до запуска</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
@@ -268,7 +269,7 @@
       <div class="composer ${first ? '' : 'has-feed'}" id="composer">
         <div class="box">
           ${stilPill()}${kartPill()}
-          <textarea id="ask" rows="1" placeholder="${first ? 'Опишите задачу' : 'Что дальше?'}" enterkeyhint="send"></textarea>
+          <textarea id="ask" rows="1" placeholder="${first ? 'Скажите или напишите, что нужно' : 'Что дальше?'}" enterkeyhint="send"></textarea>
           <div class="cmp-warn" id="cwarn">${ico('i-warn')}<span id="cwarntx"></span></div>
           <div class="cmp-act">
             <button type="button" class="cmp-mode" id="mode" aria-haspopup="dialog">${ico('i-sliders')}<span id="modetx">${TIPS[S.tip]}</span></button>
@@ -313,6 +314,7 @@
     const kp = $('#kartpill'); if (kp) kp.addEventListener('click', () => { S.kartOpis = ''; store.set('kartOpis', ''); kp.remove(); toast('Картинку решит промптер'); });
     // примеры только подставляют текст: кредиты списываются кнопкой «Сделать»
     $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button[data-text]'); if (!b) return; hap('light'); setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); });
+    $$('.hero .demo img').forEach((im, i) => im.addEventListener('click', () => { const ex = EXAMPLES[i]; if (!ex) return; hap('light'); setTip(ex[0]); ta.value = ex[2]; grow(); ta.focus(); }));   // кадр на первом экране — тоже пример
     const go = () => { const { n } = priceNow(); if (ta.value.trim() && n < 1) { hap('error'); sessionStorage.setItem('jasa:draft', JSON.stringify({ tip: S.tip, text: ta.value })); location.hash = '#/kabinet'; return; } hap('medium'); send(); };
     $('#go').addEventListener('click', go);
     $('#mode').addEventListener('click', () => { hap('light'); settings(); });
