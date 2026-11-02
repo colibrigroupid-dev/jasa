@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
+Disallow: /partneram/
 Sitemap: https://jasa.asia/sitemap.xml
