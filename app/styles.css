@@ -1067,3 +1067,9 @@ input[type=file]::file-selector-button:hover{background:var(--surface);border-co
 .composer:not(.has) .cmp-go{display:inline-flex;opacity:.62;box-shadow:none}
 .composer.has-feed:not(:focus-within):not(.has) .cmp-go{display:none}
 .mob .composer.has-feed:not(:focus-within):not(.has) #kart3{display:none}
+.report abbr.pref{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;font:600 .86em var(--mono,monospace);color:var(--accent-text);white-space:nowrap}
+.report abbr.pref:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.report .obl{margin-bottom:16px}.report .obl img{display:block;width:100%;max-height:380px;object-fit:cover;border-radius:18px;margin-bottom:6px}
+.report .obl-ask{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:16px 18px;margin-bottom:16px;border:1px dashed var(--line);border-radius:18px;background:var(--surface)}
+.report .obl-ask p{margin:4px 0 0;max-width:46ch}
+.report ~ .otch-btns,.otch-btns{display:flex;gap:14px 18px;flex-wrap:wrap;align-items:flex-start;margin:-8px 0 20px}.otch-btns>div{display:flex;flex-direction:column;gap:5px;align-items:flex-start}.otch-btns .small{max-width:30ch}

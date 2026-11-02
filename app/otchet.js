@@ -17,65 +17,16 @@
   const loaded = {};
   function lib(k) { return loaded[k] || (loaded[k] = new Promise((res, rej) => { const s = document.createElement('script'); s.src = LIBS[k][0]; s.integrity = LIBS[k][1]; s.crossOrigin = 'anonymous'; s.onload = res; s.onerror = () => { loaded[k] = null; rej(new Error('библиотека не загрузилась — проверьте интернет')); }; document.head.appendChild(s); })); }
 
-  const t = (x) => esc(x == null ? '' : String(x));
+  const { blokName, dotfix, slej } = J;   // общие помощники из app.js (метка сцены, чистка «..», склейка предложений)
+  const t = (x) => esc(dotfix(x));
+  const scM = (x) => { const l = blokName(x); return l ? esc(/^\d/.test(l) ? 'Сц. ' + l : l) : ''; };     // для узкого столбца строк (уже экранировано)
+  const scB = (x) => { const l = blokName(x); return l ? '<br>' + esc(/^\d/.test(l) ? 'сц. ' + l : l) : ''; };
   const objs = (a) => arr(a).filter((o) => o && typeof o === 'object');   // ответы модели: null и строки вместо объектов не роняют сборку
   const num = (x) => { const n = parseFloat(x); return isFinite(n) ? n : null; };
   const f1 = (x) => { const n = num(x); return n == null ? '—' : (Math.round(n * 10) / 10).toFixed(1); };
   const data = () => new Date().toLocaleDateString('ru-RU');
 
-  // ---------------------------------------------------------------------
-  // Кадры фильмов-референсов: Википедия (ru, потом en) → ч/б 4:3 с зерном
-  // ---------------------------------------------------------------------
-  function sTajmautom(u, ms) {
-    const c = new AbortController(); const tm = setTimeout(() => c.abort(), ms);
-    return fetch(u, { signal: c.signal }).then((r) => { clearTimeout(tm); if (!r.ok) throw new Error('нет ответа'); return r.json(); });
-  }
-  async function kadrUrl(nazvanie, god) {
-    const s = String(nazvanie || '');
-    const ru = s.replace(/\([^)]*\)/g, ' ').replace(/[«»"]/g, ' ').split(/[:/]/)[0].replace(/\s+/g, ' ').trim();
-    const en = ((s.match(/\(([^)]+)\)/) || [])[1] || '').replace(/[«»"]/g, '').trim();
-    const yr = (String(god || '').match(/\d{4}/) || [])[0] || '';
-    const popytki = [];
-    if (/[а-яё]/i.test(ru)) popytki.push(['ru', ru + ' ' + yr + ' фильм', /фильм|сериал|мультфильм|аниме|ролик|кампани|телепередач|шоу|программ/i]);
-    popytki.push(['en', (en || ru) + ' ' + yr + ' film', /film|series|television|show|campaign|advert|animated|documentary|programme|program/i]);
-    for (const [lang, q, re] of popytki) {
-      try {
-        const u = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q.trim())}&gsrlimit=6&prop=pageimages%7Cdescription&piprop=thumbnail&pithumbsize=720&pilicense=any&format=json&origin=*`;
-        const d = await sTajmautom(u, 7000);
-        const pages = Object.values((d.query || {}).pages || {}).sort((a, b) => a.index - b.index)
-          .filter((p) => p.thumbnail && re.test((p.description || '') + ' ' + p.title) && !/актёр|актриса|режиссёр|actor|actress|director|писател|writer/i.test(p.description || ''));
-        const best = (yr && pages.find((p) => ((p.description || '') + p.title).includes(yr))) || pages[0];
-        if (best) return best.thumbnail.source;
-      } catch (e) { /* следующая попытка */ }
-    }
-    return null;
-  }
-  function kartinka(src) {
-    return new Promise((res, rej) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => rej(new Error('кадр не загрузился')); im.src = src; setTimeout(() => rej(new Error('долго')), 9000); });
-  }
-  async function chbKadr(src) {   // обрезка до 4:3 (портретный постер — ближе к верху), ч/б с контрастом и лёгким зерном
-    const im = await kartinka(src);
-    const cw = 800, ch = 600; const c = document.createElement('canvas'); c.width = cw; c.height = ch;
-    const g = c.getContext('2d');
-    const k = Math.max(cw / im.naturalWidth, ch / im.naturalHeight);
-    const w = im.naturalWidth * k, h = im.naturalHeight * k;
-    g.drawImage(im, (cw - w) / 2, h > ch ? -(h - ch) * 0.22 : (ch - h) / 2, w, h);
-    const d = g.getImageData(0, 0, cw, ch); const p = d.data;
-    for (let i = 0; i < p.length; i += 4) {
-      let y = 0.2126 * p[i] + 0.7152 * p[i + 1] + 0.0722 * p[i + 2];
-      y = (y - 128) * 1.18 + 128 + (Math.random() - 0.5) * 14;
-      y = y < 0 ? 0 : y > 255 ? 255 : y;
-      p[i] = p[i + 1] = p[i + 2] = y;
-    }
-    g.putImageData(d, 0, 0);
-    // виньетка — как в объективе
-    const v = g.createRadialGradient(cw / 2, ch / 2, ch * 0.35, cw / 2, ch / 2, ch * 0.85);
-    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.45)');
-    g.fillStyle = v; g.fillRect(0, 0, cw, ch);
-    return c.toDataURL('image/jpeg', 0.86);
-  }
-
-  // декор рисуем сами на canvas: так html2canvas не зависит от градиентов и SVG
+  // Кадры фильмов-референсов из Википедии убраны 02.11.2026: постеры там загружены как несвободные файлы, а в РК и РФ нет fair use. Референсы — типографские карточки.
   function perforaciya(w, h, fon, dyrka) {
     const c = document.createElement('canvas'); c.width = w * 2; c.height = h * 2; const g = c.getContext('2d'); g.scale(2, 2);
     g.fillStyle = fon; g.fillRect(0, 0, w, h); g.fillStyle = dyrka;
@@ -143,6 +94,10 @@
   .jo-fix .jo-sc{border:1.5px solid #111;text-align:center;padding:6px 0 7px;height:max-content}
   .jo-fix .jo-sc small{display:block;font:500 7.5px/1 'JetBrains Mono',monospace;letter-spacing:.16em;color:#666}
   .jo-fix .jo-sc b{font:700 20px/1.1 Geologica,sans-serif}
+  .jo-fix.jo-nosc{grid-template-columns:1fr}
+  .jo-fix.jo-fix-txt{grid-template-columns:92px 1fr}
+  .jo-fix .jo-sc.jo-txt{padding:6px 5px 7px}
+  .jo-fix .jo-sc.jo-txt b{display:block;font:600 10.5px/1.3 Geologica,sans-serif;word-break:break-word}
   .jo-fix h4{margin:0 0 4px;font:600 13.5px/1.35 Geologica,sans-serif}
   .jo-fix h4 em{font:500 8px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;font-style:normal;border:1px solid #111;padding:2px 5px;margin-left:6px;vertical-align:2px}
   .jo-fix p{margin:0 0 5px;font-size:12px}
@@ -188,7 +143,8 @@
   .jo-cover .jo-sg>div{padding:10px 14px 12px;border-right:1.5px solid #111;border-bottom:1.5px solid #111}
   .jo-cover .jo-sg>div:nth-child(3n){border-right:0}
   .jo-cover .jo-sg small{display:block;font:500 7.5px/1 'JetBrains Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#666;margin-bottom:6px}
-  .jo-cover .jo-sg b{font:600 14px/1.25 Geologica,sans-serif;display:block;overflow:hidden;max-height:36px}
+  .jo-cover .jo-sg b{font:600 14px/1.25 Geologica,sans-serif;display:block;overflow:hidden;max-height:56px}
+  .jo-cover .jo-sg .jo-long b{font-size:12.5px}
   .jo-cover .jo-sg .jo-ball b{font-size:26px}
   .jo-cover .jo-cf{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font:500 9px/1 'JetBrains Mono',monospace;letter-spacing:.2em;text-transform:uppercase}
   .jo-cover .jo-cf b{font-size:12px;letter-spacing:.16em}`;
@@ -243,8 +199,8 @@
     // 04 Правки
     if (arr(sr.pravki).length) {
       sec('Топ правок', 'каждую — отдельным решением');
-      objs(sr.pravki).forEach((p) => out.push({ html: `<div class="jo-fix"><div class="jo-sc"><small>СЦЕНА</small><b>${sc(p.scena)}</b></div><div><h4>${t(p.chto)}${p.vazhnost ? `<em>${t(p.vazhnost)}</em>` : ''}</h4>${p.zachem ? `<p>${t(p.zachem)}</p>` : ''}${p.effekt ? `<div class="jo-ef">${t(p.effekt)}${p.konflikt && p.konflikt !== 'нет' ? ' · ' + (p.konflikt === 'не проверено' ? 'конфликт не проверен' : 'задевает ' + t(p.konflikt)) + ' — вопрос автору' : ''}</div>` : ''}</div></div>` }));
-      if (arr(sr.protivorechiya).length) { b(`<span class="jo-cap" style="margin-top:10px">Где помощники не согласны</span>`); objs(sr.protivorechiya).forEach((c) => b(`<p class="jo-p"><b>${t(c.kto)}</b> — ${t(c.sut)}<br><span class="jo-dim">Решение: ${t(c.reshenie)}. ${t(c.pochemu)}</span></p>`)); }
+      objs(sr.pravki).forEach((p) => { const lab = blokName(p.scena); out.push({ html: `<div class="jo-fix ${lab ? (/^\d/.test(lab) ? '' : 'jo-fix-txt') : 'jo-nosc'}">${lab ? `<div class="jo-sc ${/^\d/.test(lab) ? '' : 'jo-txt'}"><small>${/^\d/.test(lab) ? 'СЦЕНА' : 'БЛОК'}</small><b>${t(lab)}</b></div>` : ''}<div><h4>${t(p.chto)}${p.vazhnost ? `<em>${t(p.vazhnost)}</em>` : ''}</h4>${p.zachem ? `<p>${t(p.zachem)}</p>` : ''}${p.effekt ? `<div class="jo-ef">${t(p.effekt)}${p.konflikt && p.konflikt !== 'нет' ? ' · ' + (p.konflikt === 'не проверено' ? 'конфликт не проверен' : 'задевает ' + t(p.konflikt)) + ' — вопрос автору' : ''}</div>` : ''}</div></div>` }); });
+      if (arr(sr.protivorechiya).length) { b(`<span class="jo-cap" style="margin-top:10px">Где помощники не согласны</span>`); objs(sr.protivorechiya).forEach((c) => b(`<p class="jo-p"><b>${t(c.kto)}</b> — ${t(c.sut)}<br><span class="jo-dim">Решение: ${t(slej(c.reshenie, c.pochemu))}</span></p>`)); }
       if (arr(sr.voprosy_avtoru).length) { b(`<span class="jo-cap" style="margin-top:10px">Вопросы автору</span>`, true); arr(sr.voprosy_avtoru).forEach((q) => out.push({ html: `<div class="jo-black" style="margin-bottom:2px;padding:10px 18px"><p class="jo-p" style="margin:0">— ${t(q)}</p></div>` })); }
     }
 
@@ -258,7 +214,6 @@
       for (let i = 0; i < refs.length; i += 2) {
         out.push({ html: `<div class="jo-b jo-refs">${refs.slice(i, i + 2).map((r, k) => { const im = kadry[i + k]; return `<div class="jo-ref"><div class="jo-fr"><img class="jo-perf" src="${perf}">${im ? `<img class="jo-im" src="${im}">` : `<div class="jo-net">${t(String(r.nazvanie || '').replace(/\([^)]*\)/g, ''))}</div>`}<img class="jo-perf" src="${perf}"></div><h4>${t(r.nazvanie)}</h4><small>${[r.god, r.strana].filter(Boolean).map(t).join(' · ')}</small>${r.chem_pohozh ? `<p>${t(r.chem_pohozh)}</p>` : ''}${r.kak_proshel ? `<p class="jo-dim">${t(r.kak_proshel)}</p>` : ''}</div>`; }).join('')}</div>` });
       }
-      if (kadry.some(Boolean)) b(`<p class="jo-p jo-dim" style="font-size:9.5px">Кадры и постеры — из открытых статей Википедии, для ориентира. Права на изображения — у правообладателей фильмов.</p>`);
     }
 
     // 06 Рынки
@@ -282,7 +237,7 @@
 
     // 08 Ошибки логики
     const osh = objs(R.logik && R.logik.oshibki);
-    if (osh.length) { sec('Карта ошибок', 'логика и причинность'); osh.forEach((o) => out.push({ html: `<div class="jo-row"><span class="jo-m">Сц. ${sc(o.scena)}</span><div><p><b>${t(o.tip)}${o.sereznost ? ' · ' + t(o.sereznost) : ''}</b></p><p>${t(o.sut)}</p>${arr(o.kak).length ? `<p class="jo-dim">→ ${arr(o.kak).map(t).join(' / ')}</p>` : ''}</div></div>` })); }
+    if (osh.length) { sec('Карта ошибок', 'логика и причинность'); osh.forEach((o) => out.push({ html: `<div class="jo-row"><span class="jo-m">${scM(o.scena)}</span><div><p><b>${t(o.tip)}${o.sereznost ? ' · ' + t(o.sereznost) : ''}</b></p><p>${t(o.sut)}</p>${arr(o.kak).length ? `<p class="jo-dim">→ ${arr(o.kak).map(t).join(' / ')}</p>` : ''}</div></div>` })); }
 
     // 09 Герои
     const geroi = objs(R.personazhnik && R.personazhnik.geroi);
@@ -297,11 +252,11 @@
     if (A || Sc) {
       sec('Структура и сцены');
       if (A && A.hronometrazh) b(`<p class="jo-p">${t(A.hronometrazh)}</p>`);
-      objs(A && A.zatyanuto).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">Затянуто<br>сц. ${sc(z.scena)}</span><div><p>${t(z.pochemu)}</p><p class="jo-dim">→ ${t(z.predlozhenie)}</p></div></div>` }));
-      objs(A && A.skomkano).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">Скомкано<br>сц. ${sc(z.scena)}</span><div><p>${t(z.pochemu)}</p><p class="jo-dim">→ ${t(z.predlozhenie)}</p></div></div>` }));
+      objs(A && A.zatyanuto).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">Затянуто${scB(z.scena)}</span><div><p>${t(z.pochemu)}</p><p class="jo-dim">→ ${t(z.predlozhenie)}</p></div></div>` }));
+      objs(A && A.skomkano).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">Скомкано${scB(z.scena)}</span><div><p>${t(z.pochemu)}</p><p class="jo-dim">→ ${t(z.predlozhenie)}</p></div></div>` }));
       if (Sc && Sc.itog) b(`<p class="jo-p" style="margin-top:10px">${t(Sc.itog)}</p>`);
-      objs(Sc && Sc.bez_povorota).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">Без поворота<br>сц. ${sc(z.scena)}</span><div><p>${t(z.pochemu)}</p><p class="jo-dim">→ ${t(z.predlozhenie)}</p></div></div>` }));
-      objs(Sc && Sc.vhod_vyhod).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">Сц. ${sc(z.scena)}</span><div><p>${t(z.sovet)}</p></div></div>` }));
+      objs(Sc && Sc.bez_povorota).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">Без поворота${scB(z.scena)}</span><div><p>${t(z.pochemu)}</p><p class="jo-dim">→ ${t(z.predlozhenie)}</p></div></div>` }));
+      objs(Sc && Sc.vhod_vyhod).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">${scM(z.scena)}</span><div><p>${t(z.sovet)}</p></div></div>` }));
     }
 
     // 11 Речь
@@ -309,7 +264,7 @@
     if (Y && (Y.dvuyazychie || arr(Y.zamechaniya).length)) {
       sec('Речь', 'русский и казахский');
       if (Y.dvuyazychie) b(`<p class="jo-p">${t(Y.dvuyazychie)}</p>`);
-      objs(Y.zamechaniya).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">Сц. ${sc(z.scena)}</span><div><p><b>${t(z.chto)}</b>${z.replika ? ': «' + t(z.replika) + '»' : ''}</p>${z.kak ? `<p class="jo-dim">→ ${t(z.kak)}</p>` : ''}</div></div>` }));
+      objs(Y.zamechaniya).forEach((z) => out.push({ html: `<div class="jo-row"><span class="jo-m">${scM(z.scena)}</span><div><p><b>${t(z.chto)}</b>${z.replika ? ': «' + t(z.replika) + '»' : ''}</p>${z.kak ? `<p class="jo-dim">→ ${t(z.kak)}</p>` : ''}</div></div>` }));
     }
 
     // 12 Риски
@@ -317,8 +272,8 @@
     if (St && (St.reyting || arr(St.riski).length || arr(St.fakty).length)) {
       sec('Риски и рейтинг');
       if (St.reyting) b(`<div class="jo-black"><span class="jo-cap">Возрастной рейтинг</span><b style="font:700 18px/1.3 Geologica,sans-serif">${t(St.reyting)}</b></div>`);
-      objs(St.riski).forEach((r) => out.push({ html: `<div class="jo-row"><span class="jo-m">Сц. ${sc(r.scena)}</span><div><p>${t(r.risk)}</p>${r.smyagchit ? `<p class="jo-dim">→ ${t(r.smyagchit)}</p>` : ''}</div></div>` }));
-      if (arr(St.fakty).length) { b(`<span class="jo-cap" style="margin-top:10px">Факты и советы · проверка</span>`); objs(St.fakty).forEach((f) => out.push({ html: `<div class="jo-row"><span class="jo-m">Сц. ${sc(f.scena)}</span><div><p>«${t(f.citata)}»</p><p><b>${t(f.status)}</b> <span class="jo-dim">${t(f.kommentarij)}</span></p></div></div>` })); }
+      objs(St.riski).forEach((r) => out.push({ html: `<div class="jo-row"><span class="jo-m">${scM(r.scena)}</span><div><p>${t(r.risk)}</p>${r.smyagchit ? `<p class="jo-dim">→ ${t(r.smyagchit)}</p>` : ''}</div></div>` }));
+      if (arr(St.fakty).length) { b(`<span class="jo-cap" style="margin-top:10px">Факты и советы · проверка</span>`); objs(St.fakty).forEach((f) => out.push({ html: `<div class="jo-row"><span class="jo-m">${scM(f.scena)}</span><div><p>«${t(f.citata)}»</p><p><b>${t(f.status)}</b> <span class="jo-dim">${t(f.kommentarij)}</span></p></div></div>` })); }
     }
 
     // 13 А что если
@@ -339,6 +294,15 @@
       if (sr.rezhim_otvet) b(`<p class="jo-p jo-dim" style="margin-top:8px">${t(sr.rezhim_otvet)}</p>`);
     }
 
+    // 16 Реестр замечаний: расшифровка P1…Pn из текста правок
+    const nomer = (x) => parseInt(String(x.id).replace(/\D+/g, ''), 10) || 0;
+    const reg = objs(j.problemy).filter((x) => x.id).sort((a, c) => nomer(a) - nomer(c));
+    if (reg.length) {
+      sec('Реестр замечаний', 'расшифровка P' + nomer(reg[0]) + '–P' + nomer(reg[reg.length - 1]));
+      b(`<p class="jo-p jo-dim">В правках и планах встречаются номера вида P15 — это замечания отдельных помощников. Здесь суть каждого.</p>`, true);
+      tablica('44px 118px 1fr', ['№', 'Кто', 'Суть'], reg.map((x) => ({ cells: [`<b>${t(x.id)}</b>`, t((j.agents && j.agents[x.kto] && j.agents[x.kto].name) || x.kto), `${scM(x.scena) ? '<b>' + scM(x.scena) + '</b> · ' : ''}${t(String(x.sut || '').slice(0, 320))}${String(x.sut || '').length > 320 ? '…' : ''}`] })));
+    }
+
     // финал и подпись
     out.push({ html: `<div><div class="jo-fin">ЗАТЕМНЕНИЕ.</div><div class="jo-sign" data-link="${SAJT}"><div><b>JASA</b><p>Разбор сценария командой помощников: структура, герои, диалоги, рынок и риски. Без вашего «да» ничего не меняется.</p></div><span class="jo-url">jasa.asia →</span></div></div>` });
     return out;
@@ -347,15 +311,19 @@
   function oblozhka(j) {
     const ch = j.chitatel || {}; const zh = (j.results || {}).zhanrist || {};
     const p = j.pasport || {};
-    let zhanr = String(zh.zhanr || '').split(/[(,;:]/)[0].trim(); if (zhanr.length > 60) zhanr = zhanr.slice(0, 58).replace(/\s+\S*$/, '') + '…';
-    const yach = [['Жанр', zhanr || '—'], ['Сцен', ch.scen || '—'], ['Хронометраж', ch.minut ? '≈ ' + ch.minut + ' мин' : '—'],
+    let zhanr = String(zh.zhanr || '').replace(/\s*\([^)]*\)\s*$/, '').trim(); if (zhanr.length > 70) zhanr = zhanr.slice(0, 68).replace(/\s+\S*$/, '') + '…';
+    const sceny = +ch.scen || 0; const A = (j.results || {}).arhitektor || {};
+    // у синопсиса «1 страница = 1 минута» неверно: берём оценку Архитектора («около 15 минут», «≈ 1 ч 30 мин», «90–100 минут»)
+    const tA = String(A.hronometrazh || ''); const mCh = tA.match(/(?:около|≈|~)?\s*(\d+)\s*ч(?:ас\w*)?\s*(\d+)?\s*мин/i); const mA = tA.match(/(?:около|≈|~)?\s*(\d+(?:[.,]\d+)?(?:\s*[–-]\s*\d+)?)\s*мин/i);
+    const hron = mCh ? '≈ ' + ((+mCh[1]) * 60 + (+mCh[2] || 0)) + ' мин (оценка архитектора)' : mA ? '≈ ' + mA[1].replace('.', ',') + ' мин (оценка архитектора)' : (sceny && ch.minut ? '≈ ' + ch.minut + ' мин' : '—');
+    const yach = [['Жанр', zhanr || '—'], sceny ? ['Сцен', sceny] : ['Формат', 'синопсис, без разметки сцен'], ['Хронометраж', hron],
       ['Режим', j.rezhim || '—'], ['Дата', data()], ['Балл текста', f1(ballOf(j)) + ' / 10']];
     return `<div class="jo-page jo-cover"><img class="jo-perf-top" src="${perforaciya(W, 26, '#0b0b0b', '#fff')}">
       <div class="jo-in"><div class="jo-tag"><span>JASA · Script coverage</span><span>№ ${t(String(j.id || '').slice(0, 6).toUpperCase())}</span></div>
       <h1>Разбор<br>сценария</h1>
       ${p.o_chem ? `<p class="jo-log">«${t(p.o_chem)}»</p>` : ''}
       ${p.avtor_prava ? `<p class="jo-log" style="font-size:12px;color:#999;margin-top:12px">${t(p.avtor_prava)}</p>` : ''}
-      <div class="jo-slate"><img src="${hlopushka(W - 128, 34)}"><div class="jo-sg">${yach.map(([k, v], i) => `<div class="${i === 5 ? 'jo-ball' : ''}"><small>${t(k)}</small><b>${t(v)}</b></div>`).join('')}</div>
+      <div class="jo-slate"><img src="${hlopushka(W - 128, 34)}"><div class="jo-sg">${yach.map(([k, v], i) => `<div class="${i === 5 ? 'jo-ball' : ''} ${String(v).length > 30 ? 'jo-long' : ''}"><small>${t(k)}</small><b>${t(v)}</b></div>`).join('')}</div>
       <div class="jo-cf" data-link="${SAJT}"><span>Создано с помощью ИИ · для автора</span><b>jasa.asia</b></div></div></div>
       <img class="jo-perf-bot" src="${perforaciya(W, 26, '#0b0b0b', '#fff')}"></div>`;
   }
@@ -413,14 +381,64 @@
     toast('Отчёт скачан: ' + name);
   }
 
+  // ---- невидимый текстовый слой: PDF остаётся картинкой, но текст ищется и копируется ----
+  const SHRIFT_URL = 'Onest-Regular.ttf';   // кириллица, лицензия OFL; нет файла — слой пропускается молча
+  async function podklyuchitShrift(doc) {
+    try {
+      const r = await fetch(SHRIFT_URL, { cache: 'force-cache' }); if (!r.ok) return false;
+      const buf = new Uint8Array(await r.arrayBuffer());
+      const sig = String.fromCharCode(buf[0], buf[1], buf[2], buf[3]);
+      if (!(sig === '\u0000\u0001\u0000\u0000' || sig === 'true' || sig === 'OTTO')) return false;   // не шрифт (например, index.html с кодом 200)
+      let bin = ''; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+      doc.addFileToVFS('Onest-Regular.ttf', btoa(bin)); doc.addFont('Onest-Regular.ttf', 'OnestJ', 'normal'); doc.setFont('OnestJ'); return true;
+    } catch (e) { return false; }
+  }
+  function nevidimyjTekst(doc, page, k) {
+    try {
+      const B = page.getBoundingClientRect();   // после рендера: если страницу сдвинули прокруткой, слой едет вместе с ней
+      const clips = new Map();
+      const clipOf = (el) => {   // область, которую реально видно: страница ∩ предки с overflow; скрытые элементы — null
+        if (clips.has(el)) return clips.get(el);
+        let c = { l: B.left, t: B.top, r: B.right, b: B.bottom };
+        for (let a = el; a && a !== page.parentElement; a = a.parentElement) {
+          const cs = getComputedStyle(a);
+          if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) { c = null; break; }
+          if (a !== page && (cs.overflow !== 'visible' || cs.overflowX !== 'visible' || cs.overflowY !== 'visible')) { const q = a.getBoundingClientRect(); c = { l: Math.max(c.l, q.left), t: Math.max(c.t, q.top), r: Math.min(c.r, q.right), b: Math.min(c.b, q.bottom) }; }
+        }
+        clips.set(el, c); return c;
+      };
+      const walker = document.createTreeWalker(page, NodeFilter.SHOW_TEXT); const rg = document.createRange(); const lines = [];
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        let tx = n.nodeValue; const el = n.parentElement; if (!tx || !tx.trim() || !el || /^(STYLE|SCRIPT)$/.test(el.tagName)) continue;
+        const c = clipOf(el); if (!c) continue;
+        const up = /uppercase/.test(getComputedStyle(el).textTransform || '');
+        const re = /\S+/g; let m, cur = null;
+        while ((m = re.exec(tx))) {
+          rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length); const r = rg.getClientRects()[0]; if (!r || r.width < 1) continue;
+          const cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2; if (cx < c.l || cx > c.r || cy < c.t || cy > c.b) continue;   // обрезано overflow или за краем
+          const w = up ? m[0].toUpperCase() : m[0];
+          if (cur && Math.abs(r.top - cur.top) < 3 && r.left >= cur.right - 1) { cur.text += ' ' + w; cur.right = r.right; cur.bottom = Math.max(cur.bottom, r.bottom); }
+          else { cur = { text: w, left: r.left, right: r.right, top: r.top, bottom: r.bottom }; lines.push(cur); }
+        }
+      }
+      lines.forEach((l) => {
+        try {
+          const w = (l.right - l.left) * k; if (w < 2) return;
+          doc.setFontSize(10); const w10 = doc.getTextWidth(l.text); if (!w10) return;
+          const fs = Math.max(3, Math.min(40, 10 * w / w10));
+          doc.setFontSize(fs); doc.text(l.text, (l.left - B.left) * k, (l.bottom - B.top) * k - fs * 0.2, { renderingMode: 'invisible' });
+        } catch (e) { /* символ, которого нет в шрифте, портит одну строку, а не страницу */ }
+      });
+    } catch (e) { console.warn('отчёт: текстовый слой не добавлен', e); }
+  }
+
   let idet = false;
   async function sobrat(j, onShag) {
     const shag = onShag || (() => {});
     shag('Готовлю шрифты…');
     await Promise.all([lib('pdf'), lib('h2c'), shrifty()]);
     const refs = arr(j.results && j.results.zhanrist && j.results.zhanrist.referensy);
-    shag('Ищу кадры референсов…');
-    const kadry = await Promise.all(refs.map((r) => kadrUrl(r.nazvanie, r.god).then((u) => (u ? chbKadr(u) : null)).catch(() => null)));
+    const kadry = refs.map(() => null);   // 02.11: чужие постеры из Википедии больше не берём — типографские карточки
 
     const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
     const host = document.createElement('div'); host.className = 'jo-host'; document.body.appendChild(host);
@@ -436,23 +454,47 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4', compress: true });
       const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), k = pw / W;
+      const tekstSlojOk = await podklyuchitShrift(doc);
       doc.setProperties({ title: 'Разбор сценария · JASA', subject: 'Создано с помощью ИИ · JASA · jasa.asia · ' + data(), author: 'JASA · jasa.asia', creator: 'JASA · jasa.asia', keywords: 'JASA, разбор сценария, jasa.asia' });
       for (let i = 0; i < pages.length; i++) {
         shag('Страница ' + (i + 1) + ' из ' + pages.length + '…');
         const p = pages[i]; const B = p.getBoundingClientRect();
-        const cnv = await window.html2canvas(p, { scale: 1.75, backgroundColor: '#ffffff', useCORS: true, logging: false, width: W, height: H, scrollX: 0, scrollY: 0, windowWidth: W });
+        const cnv = await window.html2canvas(p, { scale: 1.6, backgroundColor: '#ffffff', useCORS: true, logging: false, width: W, height: H, scrollX: 0, scrollY: 0, windowWidth: W });
         if (i) doc.addPage();
-        doc.addImage(cnv.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, pw, ph, undefined, 'FAST');
-        p.querySelectorAll('[data-link]').forEach((el) => { const r = el.getBoundingClientRect(); doc.link((r.left - B.left) * k, (r.top - B.top) * k, r.width * k, r.height * k, { url: el.dataset.link }); });
+        doc.addImage(cnv.toDataURL('image/jpeg', 0.74), 'JPEG', 0, 0, pw, ph, undefined, 'FAST');
+        if (tekstSlojOk) nevidimyjTekst(doc, p, k);
+        const B2 = p.getBoundingClientRect(); p.querySelectorAll('[data-link]').forEach((el) => { const r = el.getBoundingClientRect(); doc.link((r.left - B2.left) * k, (r.top - B2.top) * k, r.width * k, r.height * k, { url: el.dataset.link }); });
       }
       return doc.output('blob');
     } finally { host.remove(); st.remove(); }
   }
 
-  async function skachat(j, btn) {
+  // Сначала просим сервер напечатать отчёт по образцу (HTML → Chrome, текст векторный, обложка по смыслу сценария).
+  // Нет Chrome на этом сервере или сбой — false, и отчёт собирается здесь, в браузере, как раньше.
+  async function izServera(j, name, btn, opts) {
+    if (btn) btn.innerHTML = '<span class="spin"></span> Печатаю отчёт на сервере…';
+    const r = await api('/api/scenariy/otchet', Object.assign({ id: j.id, imya: name }, opts && opts.standart ? { standart: true } : {}));
+    if (!r || !r.ok || !r.url) return false;
+    const tw = window.Telegram && window.Telegram.WebApp;
+    if (TG && tw) {
+      if (typeof tw.downloadFile === 'function') tw.downloadFile({ url: abs(r.url), file_name: r.imya || name }, (ok) => { if (!ok) toast('Скачивание отменено'); });
+      else { tw.openLink(abs(r.url)); toast('Открываю файл в браузере — ссылка действует 1 час'); }
+      return true;
+    }
+    const resp = await fetch(abs(r.url)); if (!resp.ok) return false;
+    const blob = await resp.blob(); if (!blob.size) return false;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = r.imya || name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    toast('Отчёт скачан: ' + (r.imya || name));
+    return true;
+  }
+
+  async function skachat(j, btn, opts) {
     if (idet) { toast('Отчёт уже собирается — подождите несколько секунд'); return; } if (!j || !j.done) { toast('Отчёт ещё собирается'); return; }
     idet = true; const o = btn ? btn.innerHTML : ''; if (btn) btn.disabled = true;
     try {
+      let serverom = false;
+      try { serverom = await izServera(j, imyaFajla(j), btn, opts); } catch (e) { console.warn('отчёт: сервер не напечатал, собираю в браузере', e); }
+      if (serverom) { idet = false; if (btn) { btn.disabled = false; btn.innerHTML = o; } return; }
       const blob = await sobrat(j, (s) => { if (btn) btn.innerHTML = '<span class="spin"></span> ' + esc(s); });
       await otdat(blob, imyaFajla(j), j);
       if (razlozhit.obrezano) toast('Отчёт скачан, но на ' + razlozhit.obrezano + ' стр. часть очень длинного текста не поместилась — полный текст есть на экране');
