@@ -1026,3 +1026,6 @@ input[type=file]::file-selector-button:hover{background:var(--surface);border-co
 .fab svg{width:20px;height:20px}
 /* кнопка-ссылка с полем выбора языка и переключатели — одинаковая высота */
 #kab .bs-seg button{min-height:44px}
+/* первый вход «Выберите язык» — на той же тёплой сцене со свечением, не на плоской заливке */
+.lf{background:color-mix(in srgb,var(--bg) 70%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.lf-btns button{box-shadow:var(--shadow)}
