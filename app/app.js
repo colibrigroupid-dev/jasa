@@ -1399,7 +1399,7 @@
       k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите в аккаунт</h2><p class="muted" style="margin-top:10px">Без паролей, через Telegram. Посты, бренд и кредиты будут и в приложении, и на компьютере.</p></section>
         ${podsvet() ? `<p class="skoro" style="margin:0 0 16px">Пакет ${esc(S.podsvetPaket)} кр — войдите через Telegram, и мы откроем «Пополнить» с ним.</p>` : ''}
         <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div></div>
-        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сегодня у вас ${esc(Math.floor(m.kredity))} кр. Без входа — 50 кредитов в день, после входа — ${esc(m.trial)} пробных разово, это примерно 6 постов с картинками.</p></div></div>`;
+        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сегодня у вас ${esc(Math.floor(m.kredity))} кр. Без входа — 50 кредитов в день, после входа — ${esc(m.trial)} пробных разово: три поста с тремя картинками или шесть с одной.</p></div></div>`;
       k.insertAdjacentHTML('beforeend', langCard()); langBind();
       $('#login').addEventListener('click', startLogin);
       return;
