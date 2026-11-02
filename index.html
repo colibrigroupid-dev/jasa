@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JASA — скажи, что нужно</title>
 <meta name="description" content="JASA — помощник для контента и кино из Казахстана: посты, рилсы, афиши и ведение каналов одним запросом, разбор сценария командой редакторов. Тексты по-русски, по-казахски и по-английски, оплата в тенге.">
-<meta name="theme-color" content="#F5F1E8">
+<meta name="theme-color" content="#12151E">
 <meta property="og:title" content="JASA — скажи, что нужно">
 <meta property="og:description" content="Пост, рилс, афиша и сценарий — одним запросом. Казахстан, RU/KZ/EN, тенге.">
 <meta property="og:url" content="https://jasa.asia/">
@@ -18,35 +18,46 @@
 <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;600;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2315192A'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23E8420F'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#F5F1E8;--bg-2:#EDE7DA;--surface:#FFFDF8;--surface-2:#F8F4EC;--line:#DED7C9;--line-soft:#EAE4D7;--ink:#15192A;--text:#1C2133;--muted:#5E6474;--dim:#6B7080;--accent:#E8420F;--accent-ink:#111111;--accent-text:#B33208;--accent-soft:#FFE8DF;--ok:#19B98B;
+:root{--bg:#F4EFE4;--bg-2:#ECE6D8;--surface:#FFFDF8;--surface-2:#F6F1E6;--line:#DCD4C4;--line-soft:#E9E3D5;--ink:#15192A;--text:#1F2435;--muted:#575D6E;--dim:#5A5F6E;--accent:#E8420F;--accent-ink:#111111;--accent-text:#B33208;--accent-soft:#FFE6DA;--ok:#149A74;
+/* ночная сцена «ночной Алматы» — те же значения, что у тёмной темы приложения (app/styles.css) */
+--night:#12151E;--night-2:#1B2029;--night-3:#232937;--night-line:#293142;--night-text:#F5F1E8;--night-muted:#A6AAB9;--night-accent:#FF5A2C;--glow-1:rgba(255,90,44,.22);--glow-2:rgba(242,170,61,.16);
 --body:Onest,system-ui,sans-serif;--disp:Geologica,Onest,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
 --step-0:clamp(1rem,.95rem + .25vw,1.19rem);--step-1:clamp(1.25rem,1.1rem + .7vw,1.75rem);--step-2:clamp(1.6rem,1.3rem + 1.5vw,2.6rem);--step-3:clamp(2.1rem,1.5rem + 3vw,4rem);--step-4:clamp(2.8rem,1.6rem + 5vw,5.2rem);
 --ease:cubic-bezier(.16,1,.3,1);--shadow:0 1px 2px rgba(21,25,42,.06),0 12px 32px -16px rgba(21,25,42,.18);--r:18px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--text);font:400 var(--step-0)/1.55 var(--body);overflow-x:hidden}
 ::selection{background:var(--accent);color:#fff}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
 a{color:inherit}h1,h2,h3{font-family:var(--disp);letter-spacing:-.025em;line-height:1.04;margin:0;text-wrap:balance;color:var(--ink)}
 h1{font-size:var(--step-4);font-weight:700}
 .hero h1{font-size:clamp(2.1rem,1.2rem + 3.6vw,4.4rem)}@media (max-width:1200px){.hero h1{font-size:clamp(2rem,1rem + 2.6vw,2.9rem)}.hero{padding-top:clamp(28px,4vw,48px)}.hero .lead{font-size:1.1rem}}h2{font-size:var(--step-3);font-weight:600}h3{font-size:var(--step-1);font-weight:600}
 p{margin:0;max-width:62ch;text-wrap:pretty}.lead{font-size:var(--step-1);color:var(--muted);line-height:1.4}
-.caps{font-size:.8125rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);font-weight:500}
+.caps{font:600 .8125rem/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.dim{color:var(--dim)}
 .wrap{width:min(1180px,100% - 32px);margin-inline:auto}
 section{padding:clamp(72px,10vw,140px) 0}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:16px 26px;border-radius:999px;background:var(--ink);color:#fff;font-weight:600;text-decoration:none;transition:transform .2s var(--ease),background .2s;white-space:nowrap}
 .btn:hover{transform:translateY(-2px)}.btn.accent{background:var(--accent);color:var(--accent-ink)}.btn.quiet{background:var(--surface-2);color:var(--ink)}
 /* шапка */
-header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft)}
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft);transition:background .3s,border-color .3s}
+header.night{background:color-mix(in srgb,var(--night) 80%,transparent);border-color:rgba(255,255,255,.06)}header.night .logo,header.night nav{color:var(--night-text)}header.night nav a:hover{color:#fff}header.night .logo i{background:var(--night-text)}
 header .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
 .logo{display:flex;align-items:center;gap:10px;font:700 1.3rem var(--disp);letter-spacing:-.03em;color:var(--ink);text-decoration:none}
 .logo i{width:28px;height:28px;border-radius:9px;background:var(--ink);position:relative}.logo i::after{content:"";position:absolute;left:8px;top:8px;width:12px;height:12px;border-radius:50%;background:var(--accent)}
 header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav a{text-decoration:none}header nav a:hover{color:var(--ink)}
 /* hero */
-.hero{padding:clamp(56px,8vw,110px) 0 40px}
+.hero{padding:clamp(56px,8vw,110px) 0 clamp(56px,7vw,96px);background:var(--night);color:var(--night-text);position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(900px 560px at 10% -10%,var(--glow-2),transparent 62%),radial-gradient(820px 560px at 100% 110%,var(--glow-1),transparent 62%)}
+.hero .wrap{position:relative}
+.hero h1,.hero .caps{color:var(--night-text)}.hero .caps{color:var(--night-muted)}.hero .lead{color:var(--night-muted)}
+.hero .trust{color:var(--night-muted)}.hero .trust b{color:var(--night-text);font-weight:600}
+.hero .btn.quiet{background:rgba(255,255,255,.08);color:var(--night-text);border:1px solid rgba(255,255,255,.12)}.hero .btn.quiet:hover{background:rgba(255,255,255,.14)}
+.hero .btn.accent{background:var(--night-accent);box-shadow:0 14px 34px -14px rgba(255,90,44,.75)}
+.hero .demo{box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 40px 90px -40px rgba(255,120,60,.45),0 30px 60px -30px rgba(0,0,0,.6)}
 .hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,5vw,72px);align-items:center}
-.hero h1 em{font-style:normal;color:var(--accent)}
+.hero h1 em{font-style:normal;color:var(--night-accent)}
 .hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;align-items:center}.hero .cta .btn{white-space:normal;text-align:center}
-.hero .trust{margin-top:14px;font-size:.95rem;color:var(--dim)}
+.hero .trust{margin-top:14px;font-size:.95rem;color:var(--night-muted)}
 /* живой лист */
 .demo{background:var(--surface);border-radius:26px;box-shadow:var(--shadow);padding:18px;position:relative}
 .demo .ask{display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:18px;padding:14px 16px;font-size:1.05rem;color:var(--ink);min-height:54px}
@@ -56,6 +67,8 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .demo .go svg{width:18px;height:18px;stroke:var(--accent-ink);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .demo .crew{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px}.demo .crew span{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--surface-2);color:var(--dim);transition:all .4s}
 .demo .crew span.on{background:var(--accent-soft);color:var(--accent-text)}
+.demo .sheet{display:flex;flex-direction:column}
+@media (max-width:900px){.demo .imgs{order:-1;margin:0 0 12px}.demo .txt:nth-of-type(n+3){display:none}}
 .demo .sheet{border-top:1px solid var(--line-soft);padding-top:14px;min-height:260px}
 .js .demo .ln{opacity:0;transform:translateY(8px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
 .js .demo .ln.in{opacity:1;transform:none}
@@ -70,32 +83,33 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .demo .meta{display:block;text-align:right;font:500 13px var(--mono);color:var(--dim);margin:0 4px 8px}
 /* картинки */
 .demo .img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.who .ph{aspect-ratio:4/3;border-radius:12px;overflow:hidden;margin:-6px -6px 14px;background:var(--bg-2)}.who .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.who .ph{aspect-ratio:4/3;border-radius:0;overflow:hidden;margin:0 -22px 16px;background:var(--bg-2)}.who .ph img{width:100%;height:100%;object-fit:cover;display:block}
 .card .cover{aspect-ratio:9/16;max-height:300px;border-radius:12px;overflow:hidden;margin-top:14px;background:var(--bg-2)}.card .cover img{width:100%;height:100%;object-fit:cover;display:block}
 .poster{position:relative;overflow:hidden}.poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}.poster::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(21,25,42,.15),rgba(21,25,42,.85));z-index:0}.poster>*{position:relative;z-index:1}
 .kino .still{aspect-ratio:21/9;border-radius:var(--r);overflow:hidden;margin-top:36px;position:relative;background:#0e1120}.kino .still img{width:100%;height:100%;object-fit:cover;display:block;opacity:.92}.kino .still span{position:absolute;left:18px;bottom:16px;font:500 12px var(--mono);color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase}
 /* как приходит в Telegram */
-.tgdemo{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,64px);align-items:center;margin-top:40px}
+.tgdemo{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,64px);align-items:start;margin-top:12px}
 .tgwrap{padding:18px;border-radius:22px;background:#DCE8F2;max-width:440px}
 .tgmsg{background:#fff;border-radius:14px 14px 14px 4px;padding:10px 12px;box-shadow:0 1px 1px rgba(0,0,0,.08);margin-bottom:8px;color:#1C2133}
 .tgname{font-weight:600;color:#2AABEE;font-size:13px;margin-bottom:4px}.tgtext{white-space:pre-wrap;font-size:14px;line-height:1.4}
-.tgalbum{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px}.tgalbum img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:6px;display:block}.tgalbum .tgtext{grid-column:1/-1;padding:6px 8px 4px}
+.tgalbum{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px}.tgalbum img{width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:6px;display:block}.tgalbum .tgtext{grid-column:1/-1;padding:6px 8px 4px}
 .tgme{background:#E3F6D0;border-radius:14px 14px 4px 14px;margin-left:auto;max-width:85%}
 .tgvoice{display:flex;align-items:center;gap:8px}.tgvoice i{display:block;width:120px;height:18px;background:repeating-linear-gradient(90deg,#4A8C3F 0 2px,transparent 2px 5px);border-radius:4px;opacity:.7}
 @media (max-width:900px){.tgdemo{grid-template-columns:1fr}}
 /* лента для кого */
 .who{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:36px}
-.who div{padding:22px 22px 24px;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow)}
+.who>div{padding:0 22px 24px;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--line-soft)}
 .who h3{font-size:1.15rem;margin-bottom:8px}.who p{font-size:.95rem;color:var(--muted)}
 /* как работает */
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
-.step{padding:26px;border-radius:var(--r);background:var(--ink);color:#fff}
-.step .n{font:500 15px var(--mono);color:#FFB38A;display:block;margin-bottom:14px}.step h3{color:#fff;margin-bottom:10px}.step p{color:rgba(255,255,255,.75);font-size:.95rem}
-.step:nth-child(2){background:var(--accent);color:var(--accent-ink)}.step:nth-child(2) .n,.step:nth-child(2) h3,.step:nth-child(2) p{color:var(--accent-ink)}
+.steps{display:grid;gap:0;margin-top:28px;max-width:520px}
+.step{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:20px 0;border-top:1px solid var(--line)}
+.step:last-child{border-bottom:1px solid var(--line)}
+.step .n{width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font:600 13px var(--mono)}.step h3{margin-bottom:6px;font-size:1.15rem}.step p{color:var(--muted);font-size:.95rem}
+.step:nth-child(2) .n{background:var(--accent);color:var(--accent-ink)}
 /* три листа */
 .three{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px;align-items:start}
 .card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:22px}
-.card .kind{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text);display:inline-block;margin-bottom:12px}
+.card{border:1px solid var(--line-soft)}.card .kind{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:999px;background:var(--ink);color:#fff;display:inline-block;margin-bottom:12px}
 .card h3{margin-bottom:8px}.card p{font-size:.95rem;color:var(--muted)}
 .tl{border-left:2px solid var(--line-soft);margin:14px 0 0 6px;display:grid;gap:10px}
 .tl div{padding-left:14px;position:relative;font-size:.9rem}.tl div::before{content:"";position:absolute;left:-6px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
@@ -125,6 +139,21 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 .ap .tr{flex:1;height:4px;border-radius:2px;background:var(--line);position:relative;cursor:pointer}.ap .tr i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:2px;background:var(--accent)}
 .ap time{font:500 12px var(--mono);color:var(--dim);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
 .kino{background:var(--ink);color:#fff}.kino h2,.kino h3{color:#fff}.kino .lead{color:rgba(255,255,255,.7)}
+/* ещё в JASA — ночная витрина трёх направлений */
+.eshche{background:var(--night);color:var(--night-text);position:relative;overflow:hidden}
+.eshche::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(700px 420px at 90% 0%,var(--glow-2),transparent 62%),radial-gradient(600px 420px at 0% 100%,var(--glow-1),transparent 62%)}
+.eshche .wrap{position:relative}.eshche h2{color:var(--night-text)}.eshche .caps{color:var(--night-muted)}.eshche .lead{color:var(--night-muted)}
+.tiles{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:14px;margin-top:36px}
+.tile{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:340px;padding:22px;border-radius:var(--r);background:var(--night-2);border:1px solid var(--night-line);color:var(--night-text);text-decoration:none;overflow:hidden;transition:transform .25s var(--ease),border-color .25s}
+.js .rv.in.tile:hover,.tile:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.22)}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;z-index:0;transition:opacity .4s,transform .6s var(--ease)}.tile:hover img{opacity:.7;transform:scale(1.03)}
+.tile::after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(18,21,30,0) 30%,rgba(18,21,30,.92))}
+.tile>*{position:relative;z-index:2}
+.tile .kind{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--night-muted);margin-bottom:10px}
+.tile h3{color:var(--night-text);font-size:1.35rem;margin-bottom:8px}.tile p{color:var(--night-muted);font-size:.95rem;max-width:40ch}
+.tile .go{margin-top:14px;font-weight:600;color:var(--night-accent)}
+.tile .score{position:absolute;top:18px;right:18px;z-index:1;font:700 1.1rem var(--disp);padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);display:block}
+@media (max-width:900px){.tiles{grid-template-columns:1fr}.tile{min-height:220px}}
 .kino .grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,72px);align-items:start;margin-top:40px}
 .ring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--accent) 75%,rgba(255,255,255,.12) 0);position:relative;flex:none}
 .ring::before{content:"";position:absolute;inset:12px;border-radius:50%;background:var(--ink)}
@@ -147,67 +176,66 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 details{border-top:1px solid var(--line);padding:18px 0}details summary{cursor:pointer;font:600 1.1rem var(--disp);color:var(--ink);list-style:none;display:flex;justify-content:space-between;gap:16px}
 details summary::after{content:"+";color:var(--accent);font-weight:400}details[open] summary::after{content:"–"}details p{margin-top:10px;color:var(--muted)}
 /* финал */
-.final{text-align:left}.final .box{background:var(--surface);border-radius:26px;box-shadow:var(--shadow);padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:1.2fr .8fr;gap:32px;align-items:center}
+.final{text-align:left}.final .box{background:var(--surface);border-radius:26px;box-shadow:var(--shadow);border:1px solid var(--line-soft);padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:1.2fr .8fr;gap:32px;align-items:center}
 footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem;color:var(--dim)}footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .sticky{display:none}
 .js .rv{opacity:0;transform:translateY(20px);transition:opacity .7s var(--ease),transform .7s var(--ease)}.js .rv.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .rv{opacity:1;transform:none;transition:none}.js .demo .ln{opacity:1;transform:none;transition:none}.demo .img::after,.demo .ask .cur{animation:none}}
 @media (max-width:900px){.hero .grid,.kino .grid,.final .box{grid-template-columns:1fr}.steps,.three{grid-template-columns:1fr}header nav{display:none}
+.who{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:28px -16px 0;padding:4px 16px 12px;scrollbar-width:none}.who::-webkit-scrollbar{display:none}.who>div{flex:0 0 78%;scroll-snap-align:start}.who .ph{aspect-ratio:16/10}
+.three{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:28px -16px 0;padding:4px 16px 12px;scrollbar-width:none;align-items:stretch}.three::-webkit-scrollbar{display:none}.three>.card{flex:0 0 84%;scroll-snap-align:start}.three .cover{max-height:220px}.three .cover img{height:220px}
 .sticky{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line-soft);transition:transform .3s var(--ease),opacity .3s}.sticky .btn{flex:1}.sticky.skryt{transform:translateY(110%);opacity:0;pointer-events:none}section{padding:64px 0}.lay{grid-template-columns:110px 1fr 28px}body{padding-bottom:90px}}
 </style>
 </head>
 <body>
-<header><div class="wrap"><a class="logo" href="#"><i></i>JASA</a><nav aria-label="Разделы"><a href="#kak">Как работает</a><a href="#chto">Что получаете</a><a href="#prezentacii">Презентации</a><a href="#kino">Кино</a><a href="#ceny">Цены</a></nav><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site" style="padding:10px 20px">Войти</a></div></header>
+<header><div class="wrap"><a class="logo" href="#"><i></i>JASA</a><nav aria-label="Разделы"><a href="#kak">Как работает</a><a href="#chto">Что получаете</a><a href="#eshche">Презентации и кино</a><a href="#ceny">Цены</a></nav><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site" style="padding:10px 20px">Войти</a></div></header>
 
 <main>
 <section class="hero"><div class="wrap grid">
   <div>
-    <span class="caps">Казахстан · тексты по-русски, по-казахски и по-английски · в тенге</span>
-    <h1 style="margin-top:14px">Скажите, <em>что нужно</em>. ИИ сделает пост, рилс или афишу в голосе вашего бренда.</h1>
-    <p class="lead" style="margin-top:18px">Скажите голосом или напишите — по-русски, по-казахски или по-английски. За 1–2 минуты у вас готовый текст и картинка; нужно выбрать — три варианта от трёх художников. Можно прислать чужой рилс как пример подачи.</p>
-    <div class="cta"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Войти в JASA</a><a class="btn quiet" href="#chto">Посмотреть примеры</a></div>
-    <p class="trust">Напишите боту, что у вас за бизнес, — он покажет три поста на вашем примере за 1–2 минуты. Первая волна — с ноября 2026.</p>
+    <span class="caps">Казахстан · по-русски, по-казахски и по-английски · в тенге</span>
+    <h1 style="margin-top:14px">Наговорите — получите пост, рилс или афишу, <em>которые звучат как вы</em>.</h1>
+    <p class="lead" style="margin-top:18px">Голосом или текстом, как коллеге. Через 1–2 минуты — готовый текст и три картинки на выбор. Можно прислать чужой рилс как пример подачи.</p>
+    <div class="cta"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Попробовать бесплатно</a><a class="btn quiet" href="#chto">Посмотреть примеры</a></div>
+    <p class="trust"><b>50 кредитов в день без входа.</b> Пост с тремя картинками — до 45 кредитов, около 540 ₸. Цена видна на кнопке до запуска.</p>
   </div>
   <div class="demo" id="demo">
     <span class="meta">пост + 3 картинки · до 45 кредитов ≈ 540 ₸</span>
     <div class="ask"><span id="typed">Пост для кофейни в Алматы: сезонное меню с тыквенным латте, скидка 20 % до пятницы</span><span class="cur"></span><span class="go"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
-    <div class="crew"><span>Понимающий</span><span>Копирайтер</span><span>Художник</span><span>Страж</span></div>
+    <div class="crew"><span>Читаю задание</span><span>Пишу текст</span><span>Рисую картинки</span><span>Проверяю пометки</span></div>
     <div class="sheet">
       <div class="ln hook">В Алматы пахнет корицей. У нас — тыквенный латте</div>
       <div class="ln txt">Осень в Алматы пахнет корицей, и мы решили это использовать. В меню появился тыквенный латте: пюре из запечённой тыквы, эспрессо, молоко, щепотка корицы и мускатного ореха. Сверху сливочная пенка, её взбиваем прямо перед подачей.</div>
       <div class="ln txt" style="margin-top:8px">Скидка 20 % на всё сезонное меню действует до пятницы. Заходите после работы или в обед, пока листья ещё жёлтые.</div>
-      <div class="ln txt" style="margin-top:8px;font-size:.85rem;color:var(--dim)">Реклама · создано с помощью ИИ · Страж: убрал обещание «самый вкусный», пометки добавлены по правилам РК.</div>
+      <div class="ln txt" style="margin-top:8px;font-size:.85rem;color:var(--dim)">Реклама · создано с помощью ИИ · убрали обещание «самый вкусный», пометки добавлены по правилам РК.</div>
       <div class="ln tags"><b>#алматы</b><b>#кофеалматы</b><b>#тыквенныйлатте</b><b>#осеньвалматы</b></div>
-      <div class="ln imgs"><div class="img"><img src="img/demo-latte.jpg" alt="Тыквенный латте на подоконнике кофейни" loading="lazy" width="800" height="1000"><small>латте, 4:5</small></div><div class="img"><img src="img/demo-almaty.jpg" alt="Осенняя аллея в Алматы" loading="lazy" width="800" height="800"><small>осень, 1:1</small></div><div class="img"><img src="img/rils-cover.jpg" alt="Стакан кофе на подоконнике" loading="lazy" width="720" height="1280"><small>окно, 4:5</small></div></div>
+      <div class="ln imgs"><div class="img"><img src="img/demo-latte.jpg" srcset="img/demo-latte-800.webp 800w" sizes="(max-width:900px) 33vw, 160px" alt="Тыквенный латте на подоконнике кофейни" width="800" height="993" fetchpriority="high"><small>латте, 4:5</small></div><div class="img"><img src="img/demo-almaty.jpg" srcset="img/demo-almaty-800.webp 800w" sizes="(max-width:900px) 33vw, 160px" alt="Осенняя аллея в Алматы" width="800" height="800" fetchpriority="high"><small>осень, 1:1</small></div><div class="img"><img src="img/rils-cover.jpg" srcset="img/rils-cover-800.webp 800w" sizes="(max-width:900px) 33vw, 160px" alt="Стакан кофе на подоконнике" width="800" height="1433" fetchpriority="high"><small>окно, 4:5</small></div></div>
     </div>
   </div>
 </div></section>
 
 <section id="komu"><div class="wrap">
   <span class="caps">Для кого</span>
-  <h2 style="margin-top:12px;max-width:16ch">Для тех, кто ведёт страницу сам и не успевает.</h2>
+  <h2 style="margin-top:12px;max-width:18ch">Сами ведёте страницу и времени нет? Это про вас.</h2>
   <div class="who">
-    <div><div class="ph"><img src="img/kto-bloger.jpg" alt="Блогер снимает себя на телефон" loading="lazy" width="800" height="600"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Блогер и автор</h3><p>Рилсы по кадрам: тренд → ваша тема → сценарий по секундам, кадры и обложка за вечер. Для Instagram и TikTok.</p></div>
-    <div><div class="ph"><img src="img/kto-biznes.jpg" alt="Владелица салона у стойки" loading="lazy" width="800" height="600"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Малый бизнес</h3><p>Кофейня, салон, Kaspi-магазин: посты, афиши акций, карточки товара за пару минут, в вашем тоне.</p></div>
-    <div><div class="ph"><img src="img/kto-smm.jpg" alt="SMM-специалист с ноутбуком в кафе" loading="lazy" width="800" height="600"></div><h3 style="font-size:1.15rem;margin-bottom:8px">SMM и агентство</h3><p>Голос бренда на каждого клиента, контент-план на месяц, согласование одной кнопкой.</p></div>
-    <div><div class="ph"><img src="img/kto-admin.jpg" alt="Админ канала за двумя экранами" loading="lazy" width="800" height="600"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Админ Telegram-канала</h3><p>Посты и анонсы для канала, тексты рассылок, разбор «почему не зашло». Автопубликация — скоро: сначала Telegram, потом Instagram.</p></div>
+    <div><div class="ph"><img src="img/kto-bloger.jpg" srcset="img/kto-bloger-800.webp 800w" sizes="(max-width:900px) 80vw, 25vw" alt="Блогер снимает себя на телефон" loading="lazy" width="800" height="993"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Блогер и автор</h3><p>Рилсы по кадрам: тренд → ваша тема → сценарий по секундам, кадры и обложка за вечер. Для Instagram и TikTok.</p></div>
+    <div><div class="ph"><img src="img/kto-biznes.jpg" srcset="img/kto-biznes-800.webp 800w" sizes="(max-width:900px) 80vw, 25vw" alt="Владелица салона у стойки" loading="lazy" width="800" height="993"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Малый бизнес</h3><p>Кофейня, салон, Kaspi-магазин: посты, афиши акций, карточки товара за пару минут, в вашем тоне.</p></div>
+    <div><div class="ph"><img src="img/kto-smm.jpg" srcset="img/kto-smm-800.webp 800w" sizes="(max-width:900px) 80vw, 25vw" alt="SMM-специалист с ноутбуком в кафе" loading="lazy" width="800" height="993"></div><h3 style="font-size:1.15rem;margin-bottom:8px">SMM и агентство</h3><p>Голос бренда на каждого клиента, контент-план на месяц, согласование одной кнопкой.</p></div>
+    <div><div class="ph"><img src="img/kto-admin.jpg" srcset="img/kto-admin-800.webp 800w" sizes="(max-width:900px) 80vw, 25vw" alt="Админ канала за двумя экранами" loading="lazy" width="800" height="993"></div><h3 style="font-size:1.15rem;margin-bottom:8px">Админ Telegram-канала</h3><p>Посты и анонсы для канала, тексты рассылок, разбор «почему не зашло».</p></div>
   </div>
 </div></section>
 
 <section id="kak" style="background:var(--bg-2)"><div class="wrap">
   <span class="caps">Как это работает</span>
-  <h2 style="margin-top:12px;max-width:18ch">Три шага от мысли до публикации.</h2>
-  <div class="steps">
-    <div class="step rv"><span class="n">01</span><h3>Скажите, что нужно</h3><p>Текстом или голосом, как коллеге: «пост про новое меню, тёплый тон, скидка до пятницы». Можно по-казахски.</p></div>
-    <div class="step rv"><span class="n">02</span><h3>Команда собирает лист</h3><p>Копирайтер пишет в голосе вашего бренда, художник готовит картинки, страж напоминает про пометку «Реклама» и подсказывает спорные места. Вы видите, кто чем занят.</p></div>
-    <div class="step rv"><span class="n">03</span><h3>Вы принимаете и публикуете</h3><p>Правите словами, пока не понравится. Забираете текст и картинки и публикуете. Автопубликация — скоро: сначала Telegram, потом Instagram — и тоже только после вашего «да».</p></div>
-  </div>
-</div></section>
-
-<section id="telegram" style="background:var(--bg-2)"><div class="wrap">
-  <span class="caps">Как это приходит</span>
   <div class="tgdemo">
-    <div><h2 style="max-width:16ch">Сказали голосом — получили пост и картинку. Нужно выбрать — три варианта от трёх художников.</h2><p class="lead" style="margin-top:16px">Наговорите задание в бота, как коллеге. За 1–2 минуты в чат приходит готовый пост и альбом из трёх картинок на выбор. Любую можно открыть в полный размер и посмотреть качество. Правки тоже голосом.</p><div class="cta" style="margin-top:22px"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Войти в JASA</a></div></div>
+    <div>
+      <h2 style="margin-top:12px;max-width:18ch">Сказали — получили — опубликовали.</h2>
+      <div class="steps">
+        <div class="step rv"><span class="n">1</span><div><h3>Скажите, что нужно</h3><p>Текстом или голосом: «пост про новое меню, тёплый тон, скидка до пятницы». Можно по-казахски.</p></div></div>
+        <div class="step rv"><span class="n">2</span><div><h3>Мы пишем и рисуем</h3><p>Текст в вашем тоне, три картинки на выбор, хэштеги и время публикации. Проверяем, что не забыли пометку «Реклама», и подсказываем спорные места.</p></div></div>
+        <div class="step rv"><span class="n">3</span><div><h3>Вы правите словами и публикуете</h3><p>Сказали, что поменять, — пост переделался. Забираете текст и картинки прямо из Telegram. Автопубликация — следующим шагом, тоже только после вашего «да».</p></div></div>
+      </div>
+    </div>
     <div class="tgwrap rv">
       <div class="tgmsg tgme"><div class="tgvoice">🎤 <i></i><span class="small">0:09</span></div><div class="tgtext small dim">«Пост для кофейни в Алматы, тыквенный латте, скидка двадцать процентов до пятницы»</div></div>
       <div class="tgmsg"><div class="tgname">JASA</div><div class="tgtext">В Алматы пахнет корицей. У нас — тыквенный латте
@@ -216,81 +244,35 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 
 Реклама. Скидка 20 % до пятницы.
 <span class="dim">— создано с помощью ИИ · JASA</span></div></div>
-      <div class="tgmsg tgalbum"><img src="img/demo-latte.jpg" alt="" loading="lazy"><img src="img/rils-cover.jpg" alt="" loading="lazy"><img src="img/demo-almaty.jpg" alt="" loading="lazy"><div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>
+      <div class="tgmsg tgalbum"><img src="img/demo-latte.jpg" srcset="img/demo-latte-800.webp 800w" sizes="140px" alt="" loading="lazy" width="800" height="993"><img src="img/rils-cover.jpg" srcset="img/rils-cover-800.webp 800w" sizes="140px" alt="" loading="lazy" width="800" height="1433"><img src="img/demo-almaty.jpg" srcset="img/demo-almaty-800.webp 800w" sizes="140px" alt="" loading="lazy" width="800" height="800"><div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>
     </div>
   </div>
 </div></section>
+
 
 <section id="chto"><div class="wrap">
   <span class="caps">Что получаете</span>
   <h2 style="margin-top:12px;max-width:20ch">Не просто картинка: текст, картинки, хэштеги и время публикации.</h2>
   <div class="three">
     <div class="card rv"><span class="kind">Рилс</span><h3>Хук, сценарий по секундам, кадры</h3><p>Хук в первые 2 секунды. Рилсмейкер раскладывает ролик по секундам и готовит кадры и обложку.</p>
-      <div class="cover"><img src="img/rils-cover.jpg" alt="Кадр рилса: стакан кофе на подоконнике" loading="lazy" width="720" height="1280"></div><div class="tl"><div><b>0–2 с</b>Крупно: рука ставит стакан на подоконник, за окном жёлтые листья</div><div><b>2–8 с</b>Три ошибки новичков, субтитр по слову</div><div><b>8–15 с</b>Правильный вариант, спокойный голос</div><div><b>15–20 с</b>Призыв: «сохрани и приходи»</div></div></div>
+      <div class="cover"><img src="img/rils-cover.jpg" srcset="img/rils-cover-800.webp 800w" sizes="(max-width:900px) 100vw, 30vw" alt="Кадр рилса: стакан кофе на подоконнике" loading="lazy" width="800" height="1433"></div><div class="tl"><div><b>0–2 с</b>Крупно: рука ставит стакан на подоконник, за окном жёлтые листья</div><div><b>2–8 с</b>Три ошибки новичков, субтитр по слову</div><div><b>8–15 с</b>Правильный вариант, спокойный голос</div><div><b>15–20 с</b>Призыв: «сохрани и приходи»</div></div></div>
     <div class="card rv"><span class="kind">Афиша</span><h3>Три варианта композиции и все форматы</h3><p>Заголовок, вторая строка, детали события и три подхода к оформлению: 1:1, 4:5, 9:16 и 16:9 одним запросом.</p>
-      <div class="poster"><img src="img/afisha-fon.jpg" alt="" loading="lazy" width="800" height="1000"><div class="h">Гончарный мастер-класс</div><div><div class="s">суббота · 15:00 · Астана (пример)</div><div class="s" style="opacity:.6">12 000 ₸ · запись в Telegram</div></div></div></div>
+      <div class="poster"><img src="img/afisha-fon.jpg" srcset="img/afisha-fon-800.webp 800w" sizes="(max-width:900px) 100vw, 30vw" alt="" loading="lazy" width="800" height="993"><div class="h">Гончарный мастер-класс</div><div><div class="s">суббота · 15:00 · Астана (пример)</div><div class="s" style="opacity:.6">12 000 ₸ · запись в Telegram</div></div></div></div>
     <div class="card rv"><span class="kind">План на неделю</span><h3>Темы, форматы и даты под вашу цель</h3><p>Планировщик чередует форматы, учитывает праздники Казахстана и события вашего бизнеса. Кнопка «сделать все» запускает конвейер.</p>
       <div class="plan"><div><b>Пн</b>пост · новая коллекция, хук про первый снег</div><div><b>Ср</b>рилс · «распаковка» заказа с Kaspi</div><div><b>Пт</b>карусель · 5 вопросов о размерах</div><div><b>Сб</b>сторис · опрос «что показать дальше»</div></div></div>
   </div>
 </div></section>
 
-<section id="prezentacii"><div class="wrap">
-  <span class="caps">Презентации</span>
-  <h2 style="margin-top:12px;max-width:22ch">Защита диплома или питч инвестору: четыре вопроса — и презентация у вас.</h2>
-  <p style="margin-top:16px;max-width:58ch;color:var(--muted)">Расскажите своими словами, для чего презентация и о чём. JASA соберёт слайды, текст выступления под каждый слайд и ответы на вопросы, которые зададут комиссия или инвестор. Цифры и источники берём только из ваших материалов, а чего нет — оставляем пустым и подсвечиваем.</p>
-  <ul class="shagi"><li>слайды с графиками</li><li>речь и тайминг</li><li>вопросы и ответы</li><li>PDF для показа</li><li>PPTX, чтобы править</li><li>по-русски и қазақша</li></ul>
-  <div class="cta" style="margin-top:20px"><a class="btn accent" href="/prezentaciya/">Ответить на четыре вопроса</a><span class="ii" style="margin:0">Слайды, тексты и речь готовит ИИ.</span></div>
-</div></section>
 
-<section id="multiki" style="background:var(--bg-2)"><div class="wrap">
-  <span class="caps">Мультики к уроку</span>
-  <h2 style="margin-top:12px;max-width:20ch">Учитель пишет тему урока — получает обучающий мультик.</h2>
-  <p class="lead" style="margin-top:14px">По шагам: сценарий по КСП с проверкой методиста → герои → голоса → стоп-кадры → ролики → сборка. Цена каждого шага видна до запуска.</p>
-  <div class="mlt">
-    <div class="rv">
-      <div class="mp"><video playsinline preload="none" poster="img/multiki/multik-sultan-govorit-poster.jpg" data-no-lupa width="854" height="480"><source src="img/multiki/multik-sultan-govorit.mp4" type="video/mp4"></video><button type="button" class="mp-big" aria-label="Смотреть мультик"><span><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></span></button></div>
-      <p class="ii">Урок «Какие бывают растения?», 1 класс. Султан: «Нет, разные! А как их различить?» · создано с помощью ИИ</p>
-    </div>
-    <div class="rv">
-      <div class="kadry">
-        <figure style="margin:0" data-cap="Стоп-кадр: Аман у ромашки, подходит Султан · создано с помощью ИИ"><img src="img/multiki/kadr-polyana.jpg" alt="Мультик: снежный барс Аман у ромашки на поляне в горах, к нему идёт волчонок Султан" loading="lazy" width="1600" height="894"></figure>
-        <figure style="margin:0" data-cap="Стоп-кадр: Аман трогает ствол тополя · создано с помощью ИИ"><img src="img/multiki/kadr-aman-topol.jpg" alt="Мультик: снежный барс Аман кладёт лапу на ствол тополя" loading="lazy" width="1600" height="894"></figure>
-      </div>
-      <p class="ii">Стоп-кадры из того же урока · создано с помощью ИИ</p>
-      <div class="golosa">
-        <div><b>Аман</b><div class="ap"><audio preload="none" src="img/multiki/golos-aman.mp3"></audio><button type="button" aria-label="Послушать голос Амана"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button><span class="tr"><i></i></span><time>0:00</time></div></div>
-        <div><b>Султан</b><div class="ap"><audio preload="none" src="img/multiki/golos-sultan.mp3"></audio><button type="button" aria-label="Послушать голос Султана"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button><span class="tr"><i></i></span><time>0:00</time></div></div>
-      </div>
-      <p class="ii">Голоса героев подобраны по их рисунку · создано с помощью ИИ. Герои AMANSULTAN — авторские, показаны с согласия автора.</p>
-      <ul class="shagi"><li>сценарий по КСП</li><li>проверка методиста</li><li>герои</li><li>голоса</li><li>стоп-кадры</li><li>ролики</li><li>сборка</li></ul>
-      <div class="cta" style="margin-top:20px"><a class="btn accent" href="https://t.me/jasa_asia_bot?start=multiki">Оставить заявку в Telegram</a><span class="ii" style="margin:0">Для всех — скоро. Сейчас — по заявке в Telegram.</span></div>
-    </div>
-  </div>
-</div></section>
 
-<section class="kino" id="kino"><div class="wrap">
-  <span class="caps" style="color:rgba(255,255,255,.55)">Кино · уровень Studio</span>
-  <h2 style="margin-top:12px;max-width:20ch">Загрузите сценарий — за 5–10 минут покажем сильные и слабые места.</h2>
-  <p class="lead" style="margin-top:14px">Разбор стоит от 80 до 700 кредитов — зависит от длины сценария. Точная цена видна до запуска.</p>
-  <div class="still"><img src="img/kino-led.jpg" alt="Кадр: замёрзшая река, подросток на льду" loading="lazy" width="1600" height="686"><span>кадр · «Тонкий лёд»</span></div>
-  <p class="lead" style="margin-top:28px">Команда работает по слоям, как один редактор: сначала Сердце выписывает то, что нельзя трогать, потом структура и герои, сцены и диалог, рынок и риски. Каждый видит находки предыдущих, Критик оценивает вслепую. Каждая цитата проверяется по тексту. Ничего не меняется без вашего «да».</p>
-  <div class="grid">
-    <div>
-      <div class="score rv"><div class="ring"><b>7.5<small>/10</small></b></div><div><span class="caps" style="color:rgba(255,255,255,.55)">Настоящий разбор · короткий метр «Тонкий лёд», студия «3%»</span><p style="color:rgba(255,255,255,.85);margin-top:8px">Трёхминутная серия-инструкция о провале под лёд. Голос диктора на «ты» без стыжения — главный актив. Две серьёзные дыры найдены и предложены правки.</p></div></div>
-      <div style="margin-top:22px">
-        <div class="lay"><span>Казахстан</span><div class="bar"><i class="top" style="--w:80%"></i></div><span class="n">8</span></div>
-        <div class="lay"><span>YouTube</span><div class="bar"><i class="top" style="--w:80%"></i></div><span class="n">8</span></div>
-        <div class="lay"><span>СНГ</span><div class="bar"><i style="--w:70%"></i></div><span class="n">7</span></div>
-        <div class="lay"><span>Стриминги</span><div class="bar"><i style="--w:40%"></i></div><span class="n">4</span></div>
-        <div class="lay"><span>Фестивали</span><div class="bar"><i style="--w:30%"></i></div><span class="n">3</span></div>
-        <div class="lay"><span>«Оскар»</span><div class="bar"><i style="--w:10%"></i></div><span class="n">1</span></div>
-      </div>
-    </div>
-    <div>
-      <div class="zen rv"><span class="caps">Зеница ока · что нельзя трогать</span><p>«Голос диктора: обращение на „ты“, спокойный и без стыжения. Он объясняет реакцию тела, а не ругает.» Каждая правка проверяется на конфликт с этим списком. Задевает — становится вопросом автору, а не правкой.</p></div>
-      <div class="agents"><span>Читатель</span><span>Сердце</span><span>Архитектор</span><span>Персонажник</span><span>Жанрист</span><span>Критик</span><span>Сценовик</span><span>Логик</span><span>Языковед</span><span>Рыночник</span><span>Страж</span><span>Продюсер</span><span>Шоураннер</span><span>Миксер</span></div>
-      <p style="margin-top:22px;color:rgba(255,255,255,.7);font-size:.95rem">Режимы: оценить честно · найти ошибки · поднять балл · на фестиваль · под Казахстан · под Азию · под стриминг · сократить.</p>
-    </div>
+<section class="eshche" id="eshche"><div class="wrap">
+  <span class="caps">Ещё в JASA</span>
+  <h2 style="margin-top:12px;max-width:20ch">Презентация к защите, мультик к уроку, разбор сценария.</h2>
+  <p class="lead" style="margin-top:14px;max-width:60ch">Те же принципы: говорите своими словами, цена видна до запуска, ничего не меняется без вашего «да».</p>
+  <div class="tiles">
+    <a class="tile rv" href="/prezentaciya/"><span class="kind">Презентации</span><h3>Четыре вопроса — и презентация у вас</h3><p>Слайды с графиками, речь с таймингом, ответы на вопросы комиссии или инвестора. PDF для показа и PPTX, чтобы править. По-русски и қазақша.</p><span class="go">Ответить на четыре вопроса →</span></a>
+    <a class="tile rv" href="https://t.me/jasa_asia_bot?start=multiki"><img src="img/multiki/multik-sultan-govorit-poster.jpg" alt="" loading="lazy" width="854" height="480"><span class="kind">Мультики к уроку</span><h3>Тема урока — обучающий мультик</h3><p>Сценарий по КСП, герои, голоса, стоп-кадры и ролики. Сейчас по заявке.</p><span class="go">Оставить заявку →</span></a>
+    <a class="tile rv" href="/app/#/scenariy"><img src="img/kino-led.jpg" srcset="img/kino-led-800.webp 800w, img/kino-led-1600.webp 1600w" sizes="(max-width:900px) 100vw, 30vw" alt="" loading="lazy" width="1600" height="893"><span class="score">7.5<small style="font-size:.7em;opacity:.7">/10</small></span><span class="kind">Кино · разбор сценария</span><h3>За 5–10 минут — сильные и слабые места</h3><p>Команда редакторов читает по слоям, каждая цитата проверяется по тексту. От 80 до 700 кредитов, цена видна до запуска.</p><span class="go">Загрузить сценарий →</span></a>
   </div>
 </div></section>
 
@@ -317,13 +299,13 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 </div></section>
 
 <section class="final"><div class="wrap"><div class="box">
-  <div><h2>Скажите, что нужно. Остальное сделает команда.</h2><p class="lead" style="margin-top:12px">Первая волна — с ноября 2026, первым 30 заявкам: месяц Creator без оплаты и без карты. Будем рады отзыву.</p></div>
-  <div style="display:grid;gap:10px"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Войти в JASA</a><a class="btn quiet" href="https://t.me/jasahq">Новости JASA</a></div>
+  <div><h2>Скажите, что нужно. Остальное сделаем мы.</h2><p class="lead" style="margin-top:12px">Первая волна — с ноября 2026, первым 30 заявкам: месяц Creator без оплаты и без карты. Будем рады отзыву.</p></div>
+  <div style="display:grid;gap:10px"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Начать бесплатно</a><a class="btn quiet" href="https://t.me/jasahq">Новости JASA</a></div>
 </div></div></section>
 
 </main>
 <footer><div class="wrap"><span>© 2026 JASA — платформа ТОО «Digital Taurus Asia», БИН 221240018919 · Республика Казахстан, г. Алматы, ул. Масанчи, 23/8 · <a href="mailto:support@jasa.asia">support@jasa.asia</a> · <a href="https://t.me/jasa_asia_bot">@jasa_asia_bot</a> · <a href="/privacy/">Политика данных</a> · <a href="/ai/">Маркировка ИИ</a> · <a href="/obnovleniya/">Что нового</a></span><span>«Жаса» по-казахски — «создай». Контент с ИИ маркируется в тексте и в файлах — Закон РК № 230-VIII «Об искусственном интеллекте», ст. 21. Условия использования — скоро.</span></div></footer>
-<div class="sticky"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Войти в JASA</a></div>
+<div class="sticky"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Попробовать бесплатно</a></div>
 
 <script>
 (function(){
@@ -332,6 +314,7 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
   const io=('IntersectionObserver' in window)?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -5% 0px',threshold:0}):null;
   if(!('IntersectionObserver' in window))document.querySelectorAll('.rv').forEach(el=>el.classList.add('in'));
   if(io)document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+  const hd=document.querySelector('header'),hero=document.querySelector('.hero');if(hd&&hero&&'IntersectionObserver' in window){new IntersectionObserver(es=>es.forEach(e=>hd.classList.toggle('night',e.isIntersecting)),{rootMargin:'-64px 0px 0px 0px',threshold:0}).observe(hero);}else if(hd){hd.classList.add('night')}
   const q='Пост для кофейни в Алматы: сезонное меню с тыквенным латте, скидка 20 % до пятницы';
   const t=document.getElementById('typed'),crew=[...document.querySelectorAll('.demo .crew span')],lines=[...document.querySelectorAll('.demo .ln')];
   if(reduce){t.textContent=q;crew.forEach(c=>c.classList.add('on'));lines.forEach(l=>l.classList.add('in'));return}

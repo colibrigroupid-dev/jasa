@@ -138,6 +138,7 @@
     { r: 'multiki', i: 'i-multik', n: 'Мультики', tag: 'Урок', d: 'Мультик к уроку, шаг за шагом' },
     { r: 'prezentacii', i: 'i-slides', n: 'Презентации', s: 'Слайды', tag: 'PPTX', d: 'Защита, курсовая, питч, КП' },
     { r: 'scenariy', i: 'i-film', n: 'Кино', tag: 'Studio', d: 'Разбор сценария фильма или сериала' },
+    { r: 'kak', i: 'i-help', n: 'Как это работает', s: 'Уроки', tag: 'Уроки', d: 'Шесть уроков с примерами: что написать и что получится' },
     { r: 'partnery', i: 'i-share', n: 'Партнёрам', tag: '10 %', d: 'Приглашайте и получайте 10 % и 5 % с оплат' },
     { r: 'tarify', i: 'i-tarif', n: 'Тарифы', d: 'Кредиты и пакеты' },
     { r: 'kabinet', i: 'i-user', n: 'Кабинет', d: 'Вход, баланс, история' },
@@ -264,7 +265,7 @@
       </section>
       <section class="recwrap ${recOpen ? '' : 'hide'}" id="recwrap"><div class="rechead"><span class="caps">Заполните пару полей, остальное сделаем сами</span><span class="dim small">цена до запуска</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
       <div class="feed" id="feed"></div>
-      <div class="composer" id="composer">
+      <div class="composer ${first ? '' : 'has-feed'}" id="composer">
         <div class="box">
           ${stilPill()}${kartPill()}
           <textarea id="ask" rows="1" placeholder="${first ? 'Опишите задачу' : 'Что дальше?'}" enterkeyhint="send"></textarea>
@@ -404,6 +405,7 @@
         Object.assign(item, { state: 'error', error: e.message }); S.lastError = e.message;
       }
       S.feed.push(item); S.feed = S.feed.slice(-20); store.set('feed', S.feed);
+      comp.classList.add('has-feed');   // поле сворачивается, как только появился первый результат
       const done = sheet(item);
       el.replaceWith(done);
       if (item.state === 'done') { const inv = invite(); if (inv) done.after(inv); }
@@ -1442,17 +1444,22 @@
     if (token !== S.pollToken || !$('#loginbox')) return;
     const minut = Math.max(1, Math.round((+st.ttl || 300) / 60));
     const cifry = st.sverka ? esc(st.sverka) : '····';
-    box.innerHTML = `<div class="qr" id="qr"></div><ol class="login-shagi"><li>Наведите камеру на QR или <a href="${esc(st.url)}" target="_blank" rel="noopener">откройте бота</a></li><li>Проверьте, что в боте те же цифры: <b class="mono login-cifry">${cifry}</b></li><li>Нажмите «Да, это я»</li></ol><p class="small dim" id="loginst">Код действует ${minut} ${plural(minut, 'минуту', 'минуты', 'минут')} · жду подтверждения…</p>`;
-    try { new QRCode($('#qr'), { text: st.url, width: 180, height: 180, colorDark: '#15192A', colorLight: '#FFFDF8' }); } catch (e) { $('#qr').innerHTML = `<a class="btn quiet" href="${esc(st.url)}" target="_blank" rel="noopener">Открыть бота</a>`; }
+    const phone = document.documentElement.classList.contains('mob');   // на телефоне QR бесполезен: открываем Telegram сразу
+    box.innerHTML = phone
+      ? `<a class="btn accent login-open" href="${esc(st.url)}" target="_blank" rel="noopener">Открыть Telegram и подтвердить</a><p class="small" style="margin-top:12px">В боте проверьте цифры <b class="mono login-cifry">${cifry}</b> и нажмите «Да, это я». Потом вернитесь сюда.</p><p class="small dim" id="loginst">Код действует ${minut} ${plural(minut, 'минуту', 'минуты', 'минут')} · жду подтверждения…</p>`
+      : `<div class="qr" id="qr"></div><ol class="login-shagi"><li>Наведите камеру на QR или <a href="${esc(st.url)}" target="_blank" rel="noopener">откройте бота</a></li><li>Проверьте, что в боте те же цифры: <b class="mono login-cifry">${cifry}</b></li><li>Нажмите «Да, это я»</li></ol><p class="small dim" id="loginst">Код действует ${minut} ${plural(minut, 'минуту', 'минуты', 'минут')} · жду подтверждения…</p>`;
+    if (!phone) { try { new QRCode($('#qr'), { text: st.url, width: 180, height: 180, colorDark: '#15192A', colorLight: '#FFFDF8' }); } catch (e) { $('#qr').innerHTML = `<a class="btn quiet" href="${esc(st.url)}" target="_blank" rel="noopener">Открыть бота</a>`; } }
     for (let i = 0; i < 160; i++) {
       await new Promise((r) => setTimeout(r, 2000));
       if (token !== S.pollToken || !$('#loginst')) return;
       let r; try { r = await api('/api/login/status?code=' + st.code); } catch (e) { continue; }
       if (r.state === 'ok') { S.session = r.token; store.set('session', r.token); toast('Вход выполнен' + (r.name ? ', ' + r.name : '')); await loadMe(); kabinet(); return; }
-      if (r.state === 'expired') { $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; btn.disabled = false; return; }
-      if (r.state === 'otkaz') { $('#loginst').textContent = 'Вход отклонён в боте. Если это были не вы — ничего делать не нужно.'; btn.disabled = false; return; }
+      if (r.state === 'expired') { $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; loginSnova(); return; }
+      if (r.state === 'otkaz') { $('#loginst').textContent = 'Вход отклонён в боте. Если это были не вы — ничего делать не нужно.'; loginSnova(); return; }
     }
-    $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; btn.disabled = false;
+    $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; loginSnova();
+    // ссылка со старым кодом на телефоне больше не годится — убираем её, и кнопка «Войти через Telegram» возвращается
+    function loginSnova() { const o = $('.login-open'); if (o) o.remove(); btn.disabled = false; }
   }
   // Тарифы — один список для кабинета и лендинга (site/index.html, блок «Цены»): тексты сверяет test_p1.TestTarify.
   /*TARIFY*/const TARIFY = [

@@ -990,3 +990,20 @@ details.more summary{color:var(--muted);font-weight:500}
 .ed-ta.opis{min-height:84px;margin-top:4px}
 .btn .ic{width:16px;height:16px;vertical-align:-3px;margin-right:4px}
 .btn.zapis{background:var(--accent);color:#fff}
+
+/* ---------- 02.11 · этап 1 «ночной Алматы»: вход в один тап, компактное поле, баланс строками ---------- */
+.login-open{width:100%;min-height:52px;font-size:1.0625rem}
+/* после первого результата поле задания сворачивается до строки, пока в него не нажали; полупрозрачное — результат под ним виден */
+.composer .box{background:color-mix(in srgb,var(--surface) 90%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+:root[data-theme="dark"] .composer .box{background:color-mix(in srgb,var(--surface-2) 88%,transparent)}
+.composer.has-feed:not(:focus-within):not(.has) #tips{display:none}
+.composer.has-feed:not(:focus-within):not(.has) textarea{min-height:44px;padding-top:10px}
+.mob .composer.has-feed:not(:focus-within):not(.has) .cmp-mode{display:none}
+.mob .composer.has-feed:not(:focus-within):not(.has) .cmp-act{min-height:0}
+.mob .composer.has-feed:not(:focus-within):not(.has) .cmp-act .cmp-mic{position:absolute;right:14px;bottom:12px;width:40px;height:40px}
+.mob .composer.has-feed:not(:focus-within):not(.has) .box{position:relative;padding-right:60px}
+/* кошельки — строками под большим числом, а не тремя плитками */
+.koshelki{grid-template-columns:1fr;gap:6px;margin-top:14px}
+.kosh{display:grid;grid-template-columns:1fr auto;grid-template-areas:"name sum" "hint hint";align-items:center;padding:10px 14px}
+.kosh span{grid-area:name}.kosh b{grid-area:sum;margin:0;font-size:1.25rem}.kosh small{grid-area:hint;margin-top:2px}
+.mob #logincard:has(.login-open) #login{display:none}
