@@ -450,7 +450,7 @@
     s.textContent = `
 .mk-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:22px}
 .mk-pr{display:flex;flex-direction:column;gap:4px;text-decoration:none;padding:16px 18px}
-.mk-brif{max-width:760px}.mk-shab{max-width:760px;margin-bottom:16px}.mk-brif select,.mk-panel select{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;font:inherit;background:var(--field);color:var(--ink)}
+.mk-brif{max-width:760px}.mk-shab{max-width:760px;margin-bottom:16px}.mk-brif select,.mk-panel select{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;font:inherit;background-color:var(--field);color:var(--ink)}
 .mk-3{display:grid;grid-template-columns:2fr 1fr 1.4fr;gap:12px}.mk-2{display:grid;grid-template-columns:1fr 80px;gap:8px;margin-top:6px}
 .mk-g{display:grid;grid-template-columns:1fr 1.4fr 1.4fr;gap:8px;margin-bottom:8px}
 .mk-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}

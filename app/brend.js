@@ -167,10 +167,11 @@
       <div class="field"><label for="qn">Как называетесь</label><input id="qn" placeholder="Кофейня «Тыква», блог @aigerim_style" required maxlength="60"></div>
       <div class="field"><label for="qf">Чем занимаетесь и для кого</label><div class="inrow"><input id="qf" placeholder="Варим кофе для студентов у КазНУ, недорого и быстро" maxlength="200"><button type="button" class="icobtn" id="qmic" title="Сказать голосом"><svg><use href="#i-mic"/></svg></button></div></div>
       <div class="field"><label>Как говорите с клиентами</label><div class="chips" id="qt">${[['На «ты», просто', 'простой, дружеский', 'на «ты»'], ['На «вы», вежливо', 'вежливый, спокойный', 'на «вы»'], ['С юмором', 'лёгкий, с юмором', 'на «ты»']].map(([l, t, o], i) => `<button type="button" class="chip ${i === 0 ? 'on' : ''}" data-ton="${t}" data-ob="${o}">${l}</button>`).join('')}</div></div>
-      <div class="field"><label for="ql">Лого <span class="dim">— по желанию, PNG без фона</span></label><input id="ql" type="file" accept="image/png,image/jpeg,image/webp"></div>
+      <div class="field"><label>Лого <span class="dim">— по желанию, PNG без фона</span></label><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><input id="ql" type="file" accept="image/png,image/jpeg,image/webp" hidden><label for="ql" class="file-btn">Загрузить лого</label><span class="file-name" id="qln"></span></div></div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" type="submit">Сохранить</button>${arr(D.shablony).includes('welluma') ? '<button class="btn quiet" type="button" id="btpl">Карта Welluma</button>' : ''}</div></form>`;
     $('#qt').addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (!c) return; $$('#qt .chip').forEach((x) => x.classList.toggle('on', x === c)); });
     voice($('#qmic'), (t) => { const f = $('#qf'); f.value = (f.value ? f.value + ' ' : '') + t; });
+    $('#ql').addEventListener('change', () => { const f = $('#ql').files[0]; $('#qln').textContent = f ? f.name : ''; });   // 09.11: своя кнопка вместо системного «Choose File»
     const t = $('#btpl'); if (t) t.onclick = () => template('welluma');
     $('#qsf').addEventListener('submit', async (e) => {
       e.preventDefault();

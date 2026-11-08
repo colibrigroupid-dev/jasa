@@ -11,6 +11,7 @@
   --accent:#E8420F; --accent-ink:#111111; --accent-soft:#FFE6DA;
   /* текст на оранжевом — всегда тёмный --accent-ink (4,69:1); мелкий оранжевый текст на светлом — --accent-text (5,4:1) */
   --accent-text:#B33208;
+  --accent-wait:#F2A98E;   /* 09.11: кнопка «ещё нельзя» — свой цвет вместо opacity, текст --ink */
   /* подпись: тёплое свечение (янтарь сверху слева, огонь снизу справа) */
   --glow-1:rgba(232,66,15,.12); --glow-2:rgba(242,170,61,.20);
   --ink-fg:#FFFDF8; --ok:#149A74; --ok-soft:#DCF3E9; --warn:#C98A00; --warn-soft:#FFF1CC; --bad:#D8402C;
@@ -29,7 +30,7 @@
   --bg:#12151E; --bg-2:#171B26; --surface:#1B2029; --surface-2:#232937; --field:#272D3C;
   --line:#343C4E; --line-soft:#293142;
   --ink:#F5F1E8; --text:#E6E2D9; --muted:#A6AAB9; --dim:#8A8FA0;
-  --accent:#FF5A2C; --accent-ink:#141414; --accent-text:#FF9A72; --accent-soft:#3C2419;
+  --accent:#FF5A2C; --accent-ink:#141414; --accent-text:#FF9A72; --accent-soft:#3C2419; --accent-wait:#7A3A26;
   --glow-1:rgba(255,90,44,.20); --glow-2:rgba(242,170,61,.13);
   --ink-fg:#12151E; --ok:#3BCB9A; --ok-soft:#173A2F; --warn:#F2B33D; --warn-soft:#3B2F12; --bad:#FF6B5A;
   --shadow:inset 0 1px 0 rgba(255,255,255,.035), 0 16px 40px -22px rgba(0,0,0,.65);
@@ -1073,3 +1074,19 @@ input[type=file]::file-selector-button:hover{background:var(--surface);border-co
 .report .obl-ask{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:16px 18px;margin-bottom:16px;border:1px dashed var(--line);border-radius:18px;background:var(--surface)}
 .report .obl-ask p{margin:4px 0 0;max-width:46ch}
 .report ~ .otch-btns,.otch-btns{display:flex;gap:14px 18px;flex-wrap:wrap;align-items:flex-start;margin:-8px 0 20px}.otch-btns>div{display:flex;flex-direction:column;gap:5px;align-items:flex-start}.otch-btns .small{max-width:30ch}
+
+/* ======================================================================
+   09.11 · «как часы», дизайн, пакет 1 — баги вёрстки (KAK-CHASY/DIZAJN.md 🔴). Переопределяет правила выше. */
+/* длинная подпись кнопки переносится, а не уезжает за край карточки (Презентации, Партнёрам, «Приглашайте») */
+.btn{white-space:normal;max-width:100%;text-align:center;line-height:1.15}
+.btn.sm{line-height:1.15}
+/* кнопка «Сделать» при пустом поле: не прозрачная, а «ещё нельзя» — текст и цена читаются в обеих темах */
+.composer:not(.has) .cmp-go{opacity:1;background:var(--accent-wait);color:var(--ink);box-shadow:none}
+.composer:not(.has) .cmp-go small{opacity:.75}
+/* своя кнопка выбора файла вместо системного «Choose File / No file chosen» */
+.file-btn{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 16px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--line);color:var(--ink);font-weight:600;font-size:var(--fs-small);cursor:pointer}
+.file-btn:hover{border-color:var(--ink)}
+.field .file-btn{color:var(--ink);font-size:var(--fs-small)}   /* .field label{color:var(--muted)} весит больше — ревью 09.11 */
+.file-name{font-size:var(--fs-small);color:var(--muted);overflow-wrap:anywhere}
+/* список «Попробуйте» не прячется под композером: запас по высоте композера с чипами */
+.mob:has(#composer) .main{padding-bottom:calc(var(--nav-h) + var(--sab) + var(--cmp-h,190px) + 28px)}

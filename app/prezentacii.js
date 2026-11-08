@@ -89,7 +89,7 @@
     const pre = (() => { try { const x = JSON.parse(sessionStorage.getItem('jasa:prez') || 'null'); sessionStorage.removeItem('jasa:prez'); return x; } catch (e) { return null; } })();
     box.innerHTML = intro() + (arr(L.proekty).length ? `<div class="pz-list">${L.proekty.map((x) => `<a class="card pz-pr" href="#/prezentacii?p=${esc(x.id)}"><span class="caps">${esc((L.tipy[x.tip] || {}).name || x.tip)}</span><b>${esc(x.tema)}</b><span class="small muted">${x.slajdov} слайдов · шаг: ${esc(shagName(x.shag))} · потрачено ${kr(x.potracheno)}</span><span class="dim small">${esc(x.ts)}</span></a>`).join('')}</div>` : '') +
       `<form class="card pz-brif" id="pzb" autocomplete="off"><span class="caps">Новая презентация</span><h3 style="margin:6px 0 16px">Для кого и о чём</h3>${brifFields(null, pre)}
-      <div class="pz-row" style="margin-top:6px"><button class="btn accent" type="submit" id="pzgo">Собрать структуру · ${L.besplatno > 0 ? 'бесплатно, ещё ' + L.besplatno + ' сегодня' : 'до ' + L.potolok.struktura + ' кр'}</button><span class="small muted" id="pzsm"></span></div></form>`;
+      <div class="pz-row" style="margin-top:6px"><button class="btn accent" type="submit" id="pzgo">Собрать структуру · ${L.besplatno > 0 ? 'бесплатно' : 'до ' + L.potolok.struktura + ' кр'}</button><span class="small muted" id="pzsm">${L.besplatno > 0 ? 'ещё ' + L.besplatno + ' раз сегодня бесплатно' : ''}</span></div></form>`;
     bindBrif($('#pzb'), null);
   }
 
@@ -768,7 +768,7 @@
 .pz-chk{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:var(--fs-small)}.pz-chk input{width:auto!important;margin-top:3px}
 .pz-vedu{display:flex;gap:16px 24px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:16px 20px;margin-bottom:18px;border-radius:var(--r);background:var(--ink);color:var(--ink-fg)}
 .pz-vedu .caps{color:inherit;opacity:.65}.pz-vedu b{display:block;margin:4px 0 2px;font:600 clamp(1.05rem,1rem + .5vw,1.3rem)/1.2 var(--disp)}.pz-vedu small{display:block;max-width:60ch;opacity:.85;line-height:1.4}
-.pz-vedu.ok{background:var(--ok);color:#fff}.pz-vedu.ok .btn{background:#fff;color:var(--ink)}
+.pz-vedu.ok{background:var(--ok);color:#0b2a1f}.pz-vedu.ok .caps{opacity:.8}.pz-vedu.ok .btn{background:#0b2a1f;color:#fff}
 .pz-ank{max-width:640px;margin-bottom:16px}.pz-ank h3{margin:6px 0 8px}.pz-ank-t{margin:0 0 10px;font:500 1.05rem/1.4 var(--disp);color:var(--ink)}.pz-ank .btn{margin:10px 8px 0 0}
 .pz-head{margin-bottom:18px}.pz-head h2{margin:6px 0}
 .pz-grid{display:grid;grid-template-columns:210px 1fr;gap:18px;align-items:start}

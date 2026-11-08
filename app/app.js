@@ -1085,7 +1085,7 @@
   const MODES = ['Оценить честно', 'Найти ошибки', 'Поднять балл', 'На фестиваль', 'Под Казахстан', 'Под Азию', 'Под стриминг', 'Сократить на 10 минут'];
   function scenariy() {
     const j = S.job;
-    main.innerHTML = topbar('Кино', '<span class="pill" title="Держим 100 кр, списываем по факту, лишнее возвращаем">разбор ≈ 75–100 кр</span>') + `<div id="sc"></div>`;
+    main.innerHTML = topbar('Кино', j && j.done ? '' : '<span class="pill" title="Резерв зависит от длины текста, списываем по факту, лишнее возвращаем">разбор от 100 кр</span>') + `<div id="sc"></div>`;
     if (j && j.id && !j.done) { pollJob(j.id); return; }
     if (j && j.done && j.showrunner) { renderReport(j); return; }
     renderIntake();
@@ -1104,9 +1104,11 @@
         </div>
         <span class="caps" style="display:block;margin-top:18px">Что сделать</span>
         <div class="modes" id="modes">${MODES.map((m, i) => `<button class="chip ${i === 0 ? 'on' : ''}">${m}</button>`).join('')}</div>
-        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать сценарий</button><span class="dim small">Держим 100 кр, спишем по факту — обычно 75–100 за серию или короткий метр, лишнее вернём. Займёт 5–10 минут, можно уйти с экрана</span></div>
+        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать сценарий</button><span class="dim small" id="scres">Держим до 100 кр, спишем по факту — обычно 80–90 % от этой суммы, лишнее вернём. Займёт 5–15 минут, можно уйти с экрана</span></div>
       </div></div>`;
-    const ta = $('#script'); const cnt = () => { $('#cnt').textContent = ta.value ? Math.round(ta.value.split(/\s+/).length / 180 * 10) / 10 + ' стр · ' + ta.value.length + ' зн' : ''; };
+    // резерв разбора по длине: ступени из /api/ceny.razbor [[до минут, кр], …, [null, кр]] (сервер держит ровно столько, факт не выше); запасной — 100
+    const rezervRazbora = (text) => { const min = text.trim() ? text.trim().split(/\s+/).length / 180 : 0; const st = Array.isArray(S.ceny && S.ceny.razbor) ? S.ceny.razbor : null; if (!st) return 100; const r = st.find((x) => x[0] == null || min <= +x[0]); return r ? +r[1] || 100 : 100; };
+    const ta = $('#script'); const cnt = () => { $('#cnt').textContent = ta.value ? Math.round(ta.value.split(/\s+/).length / 180 * 10) / 10 + ' стр · ' + ta.value.length + ' зн' : ''; const n = rezervRazbora(ta.value); const r = $('#scres'); if (r) r.textContent = `Держим до ${n} кр, спишем по факту — обычно 80–90 % от этой суммы, лишнее вернём. Займёт 5–15 минут, можно уйти с экрана`; };
     ta.addEventListener('input', cnt);
     $('#pick').addEventListener('click', () => $('#file').click());
     $('#file').addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; f.text().then((t) => { ta.value = t; cnt(); }); });
@@ -1233,7 +1235,7 @@
       if (j.chitatel) $('#chit').innerHTML = `<span>Читатель: <b>${j.chitatel.scen}</b> сцен</span><span><b>${j.chitatel.stranic}</b> стр ≈ <b>${j.chitatel.minut}</b> мин</span><span>героев: <b>${j.chitatel.geroi.length}</b></span><span>режим: <b>${esc(j.rezhim)}</b></span>`;
       teamBoard(j, st);
       $('#jmeta').textContent = 'потрачено ' + j.kredity + ' кр';
-      if (j.done) { S.job = j; store.set('job', j); if (!S.spentJobs[j.id]) { S.spentJobs[j.id] = 1; store.set('spentJobs', S.spentJobs); spend(j.kredity, j.ostatok); } setTimeout(() => { if (token === S.pollToken) renderReport(j); }, 900); return; }
+      if (j.done) { S.job = j; store.set('job', j); if (!S.spentJobs[j.id]) { S.spentJobs[j.id] = 1; store.set('spentJobs', S.spentJobs); spend(j.kredity, j.ostatok); loadMe(); /* 09.11: ostatok задачи мог устареть — шапку сверяем с /api/me */ } setTimeout(() => { if (token === S.pollToken) renderReport(j); }, 900); return; }
       setTimeout(tick, 1500);
     };
     tick();
@@ -1269,12 +1271,19 @@
     const cenaObl0 = Math.round((S.ceny && S.ceny.image) || 12);
     const obloshkaHtml = j.oblozhka && j.oblozhka.image
       ? `<div class="obl rv"><img src="${esc(API_BASE + j.oblozhka.image)}" alt="Обложка по смыслу сценария" loading="lazy" crossorigin="anonymous"><span class="dim small">Обложка по смыслу сценария — первая страница «Уникального» PDF</span></div>` : '';
-    $('#sc').innerHTML = `<div class="steps"><span class="done">1 · Сценарий</span><span class="done">2 · Четыре вопроса</span><span class="done">3 · Разбор</span><span class="on">4 · Отчёт</span></div>
-      <div class="otch-btns"><div><button class="btn sm accent" id="otchet" type="button">Стандарт · PDF</button><span class="dim small">типографская обложка, входит в разбор · 0 кр</span></div><div><button class="btn sm" id="otchet-u" type="button">${j.oblozhka && j.oblozhka.image ? 'Уникальный · PDF' : 'Уникальный · ' + cenaObl0 + ' кр'}</button><span class="dim small">${j.oblozhka && j.oblozhka.image ? 'обложка по смыслу сценария готова · повторно бесплатно' : 'первая страница — картинка по смыслу сценария, платите один раз'}</span></div><button class="chip" id="newrun" type="button">Новый разбор</button></div>
-      <p class="dim small" style="margin:-10px 0 18px">В PDF: оценка, зеница ока, правки, рынки, карта ошибок${Object.keys(REG).length ? ' и реестр замечаний P' + Math.min(...Object.keys(REG).map((k) => +k.slice(1))) + '–P' + Math.max(...Object.keys(REG).map((k) => +k.slice(1))) : ''}.</p>
+    const plashka = main.querySelector('.pill[title^="Резерв"]'); if (plashka) plashka.remove();   // цена разбора на отчёте не нужна (отчёт мог открыться сразу после разбора)
+    const imyaSc = String((j.pasport && j.pasport.o_chem) || 'Ваш сценарий').split(/[:.!?]/)[0].trim();
+    const vPdf = 'Оценка, зеница ока, правки, рынки, карта ошибок' + (Object.keys(REG).length ? ' и реестр замечаний P' + Math.min(...Object.keys(REG).map((k) => +k.slice(1))) + '–P' + Math.max(...Object.keys(REG).map((k) => +k.slice(1))) : '') + '. Обложка типографская, входит в разбор.';
+    const estObl = j.oblozhka && j.oblozhka.image;
+    const dataRu = j.started ? new Date(j.started * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : '';
+    $('#sc').innerHTML = `<div class="otch-head" style="display:flex;gap:12px 18px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin:-6px 0 18px">
+        <div style="min-width:0;flex:1 1 300px"><div class="dim small">Разбор${dataRu ? ' от ' + esc(dataRu) : ''} · балл ${esc(ball.toFixed(1).replace('.', ','))}</div><div style="font:600 clamp(1.2rem,1rem + .8vw,1.55rem)/1.25 var(--disp,inherit);margin-top:4px" title="${esc((j.pasport && j.pasport.o_chem) || '')}">${esc(imyaSc.length > 90 ? imyaSc.slice(0, 90).replace(/\s\S*$/, '') + '…' : imyaSc)}</div></div>
+        <div style="display:flex;gap:8px;align-items:center"><details class="oh-skachat" style="position:relative"><summary class="btn sm" style="list-style:none;cursor:pointer">Скачать ▾</summary><div class="card" style="position:absolute;right:0;z-index:6;margin-top:6px;padding:8px;display:flex;flex-direction:column;gap:6px;min-width:260px"><button class="btn sm quiet" id="otchet" type="button" title="${esc(vPdf)}" style="justify-content:flex-start">PDF отчёта</button><button class="btn sm quiet" id="otchet-u" type="button" style="justify-content:flex-start" title="${estObl ? 'Первая страница — картинка по смыслу сценария, уже готова' : 'Первая страница — картинка по смыслу сценария, платите один раз'}">${estObl ? 'PDF с обложкой' : 'PDF с обложкой · ' + cenaObl0 + ' кр'}</button></div></details><button class="btn sm quiet" id="newrun" type="button">Новый разбор</button></div>
+      </div>
+      <div id="uluch-akcii" style="margin:0 0 22px"></div>
       <div class="report">
         ${obloshkaHtml}${otbr ? `<p class="dim small rv">Проверка по тексту: ${otbr} ${otbr === 1 ? 'находка без настоящей цитаты убрана' : 'находки без настоящих цитат убраны'}.</p>` : ''}${Object.keys(j.errors || {}).length ? `<div class="warn rv"><b>Отчёт неполный:</b> ${Object.entries(j.errors).map(([k, v]) => esc((j.agents[k] && j.agents[k].name) || k) + ' — ' + esc(v)).join(' · ')}</div>` : ''}
-        <div class="card score rv"><div class="ring" style="--v:${ball * 10}"><b>${ball.toFixed(1)}<small>/10</small></b><em>текст</em></div><div><span class="caps">Режим · ${esc(j.rezhim)} · ${j.kredity} кр · ${j.sec || ''} с${j.zoloto ? ' · золотой v' + esc(j.zoloto) : ''}</span>
+        <div class="card score rv"><div class="ring" style="--v:${ball * 10}"><b>${ball.toFixed(1)}<small>/10</small></b><em>текст</em></div><div><span class="caps" title="${esc(j.kredity + ' кр · ' + (j.sec || '') + ' с' + (j.zoloto ? ' · золотой v' + j.zoloto : ''))}">Режим · ${esc(j.rezhim)}</span>
           ${B.rynok != null ? `<div class="rynok">${B.rynok_luchshij ? 'Лучший рынок' : 'Рынок'} · ${esc(B.rynok_imya || RP[B.rynok_po] || B.rynok_po)}: <b>${esc(B.rynok)}</b>/10</div>` : ''}
           ${chasti ? `<div class="chasti">${chasti}</div>` : ''}${B.razbros && Object.keys(B.razbros).length ? `<p class="dim small" style="margin:6px 0 0">Критик оценивал дважды независимо, в балл — среднее; наибольший разброс ${esc(Math.max(...Object.values(B.razbros)))}.</p>` : ''}${arr(B.potolok).length ? `<p class="small" style="margin:6px 0 0"><b>Потолок 7:</b> ${arr(B.potolok).map((k) => CH[k]).join(', ')} ниже 5 — остальное это не перекрывает.</p>` : ''}<h2 style="margin:6px 0 10px;font-size:var(--fs-title)">${esc((j.pasport && j.pasport.o_chem) || 'Ваш сценарий')}</h2><p>${esc(sr.odnim_abzacem || '')}</p></div></div>
         <div class="zen rv"><span class="caps" style="opacity:.6;color:inherit">Зеница ока · не трогаем</span><h3>Что делает этот сценарий вашим</h3><ol>${zen.map((z) => `<li><b>${esc(z.chto)}</b><span>${esc(z.gde)} — ${esc(z.pochemu)}</span></li>`).join('')}</ol>${R.serdce && R.serdce.chelovechnost ? `<div class="chel">${esc(R.serdce.chelovechnost)}</div>` : ''}${R.serdce && R.serdce.rashozhdenie_s_avtorom ? `<p class="small" style="margin-top:10px;opacity:.85"><b>Сверка с вами:</b> ${esc(R.serdce.rashozhdenie_s_avtorom)}</p>` : ''}</div>
@@ -1285,7 +1294,7 @@
         <div class="card rv"><span class="caps">Топ правок · принимайте каждую отдельно</span><div class="fixes" style="margin-top:12px">${arr(sr.pravki).map((p) => `<div class="fix ${p.vazhnost === 'вторая' ? 'second' : ''}"><span class="n">${esc(p.n)}</span><div><b>${scTxt(p.scena, ' · ') ? esc(scTxt(p.scena, ' · ')) : ''}${pref(p.chto)}</b>${p.vazhnost ? ` <span class="tagv">${esc(p.vazhnost)}</span>` : ''}<p>${pref(p.zachem)}</p><div class="ef ${p.konflikt && p.konflikt !== 'нет' ? 'q' : ''}">${esc(p.effekt)}${p.konflikt !== 'нет' ? ' · ' + (p.konflikt === 'не проверено' ? 'конфликт не проверен' : 'задевает ' + esc(p.konflikt)) + ' — вопрос автору' : ''}</div></div><div class="ok"><button ${p.konflikt !== 'нет' ? 'disabled title="Задевает зеницу ока или не проверено — сначала ответ автора"' : ''} class="yes ${S.accepted[j.id + ':' + p.n] === 1 ? 'on' : ''}" data-k="${esc(j.id + ':' + p.n)}" data-v="1" title="Принять"><svg width="18" height="18" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#i-check"/></svg></button><button class="no ${S.accepted[j.id + ':' + p.n] === 0 ? 'on' : ''}" data-k="${esc(j.id + ':' + p.n)}" data-v="0" title="Отклонить"><svg width="18" height="18" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#i-x"/></svg></button></div></div>`).join('')}</div>
           ${arr(sr.protivorechiya).length ? `<div class="contra"><span class="caps">Где помощники не согласны</span>${arr(sr.protivorechiya).map((c) => `<p class="small"><b>${esc(c.kto)}</b> — ${esc(c.sut)}<br><span class="dim">Решение: ${pref(slej2(c.reshenie, c.pochemu))}</span></p>`).join('')}</div>` : ''}
           ${arr(sr.voprosy_avtoru).length ? `<div class="warn" style="margin-top:14px"><b>Вопросы автору:</b> ${arr(sr.voprosy_avtoru).map(esc).join(' · ')}</div>` : ''}
-          <div class="actions"><button class="btn sm accent">Собрать версию 2 из принятых</button><button class="btn sm quiet">Разложить на кадры и героев →</button></div></div>
+          <p class="dim small" style="margin-top:12px">Отметьте правки ✓ или ✕ — затем «Улучшить сценарий» вверху соберёт версию 2.</p></div>
         <div class="card rv"><span class="caps">Критик · три голоса</span><div class="voice3" style="margin-top:12px">${['otborshchik', 'redaktor', 'zritel'].map((k, i) => kr[k] ? `<div class="v3"><small>${['Отборщик', 'Редактор', 'Зритель'][i]}</small><b>${esc(kr[k].ball)}</b><p>${esc(kr[k].slovo)}</p></div>` : '').join('')}</div>${kr.odno ? `<p class="small" style="margin-top:12px"><b>Одно, что поменял бы критик:</b> ${esc(kr.odno)}</p>` : ''}</div>
         <div class="card rv"><span class="caps">Логик · карта ошибок</span><div style="margin-top:8px">${j.errors && j.errors.logik ? `<p class="warn">Логик не ответил: ${esc(j.errors.logik)}</p>` : ''}${arr(R.logik && R.logik.oshibki).map((o) => `<div class="err"><span class="s">${esc(scTxt(o.scena) || '—')}</span><div><b>${esc(o.tip)} · ${esc(o.sereznost)}</b><br>${esc(o.sut)}<br><i>${(o.kak || []).map(esc).join(' / ')}</i></div></div>`).join('') || (j.errors && j.errors.logik ? '' : '<p class="muted small">Ошибок не найдено.</p>')}</div></div>
         <div class="card rv"><span class="caps">Жанрист · референсы</span><p class="small muted" style="margin:8px 0 12px">${esc((R.zhanrist && (R.zhanrist.zhanr + ' · ' + R.zhanrist.podzhanr + ' · ' + (R.zhanrist.ton || []).join(', '))) || '')}</p><div class="refs">${arr(R.zhanrist && R.zhanrist.referensy).map((r) => `<div class="ref"><b>${esc(r.nazvanie)}</b><small>${esc(r.god)} · ${esc(r.strana)}</small><p>${esc(r.chem_pohozh)}</p><p class="dim">${esc(r.kak_proshel)}</p></div>`).join('')}</div></div>
@@ -1304,6 +1313,7 @@
       </div>`;
     $$('.rv', $('#sc')).forEach((n, i) => (n.style.animationDelay = Math.min(i * 120, 1500) + 'ms'));
     setTimeout(() => $$('.lay .bar i').forEach((i) => (i.style.width = i.dataset.w + '%')), 300);
+    if (window.JASA_ULUCHSHIT) window.JASA_ULUCHSHIT.knopka(j, $('#uluch-akcii'));   // «Улучшить сценарий» — модуль uluchshit.js, цена по хронометражу
     $('#sc').addEventListener('click', (e) => { const a = e.target.closest('abbr.pref'); if (a && a.dataset.tip) toast(a.dataset.tip.slice(0, 260)); });
     $('#newrun').addEventListener('click', () => { S.job = null; store.set('job', null); renderIntake(); });
     $('#otchet').addEventListener('click', (e) => { if (window.JASA_OTCHET) window.JASA_OTCHET.skachat(j, e.currentTarget, { standart: true }); else toast('Обновите страницу — модуль отчёта не загрузился'); });
@@ -1311,7 +1321,7 @@
       const b = e.currentTarget;
       if (!window.JASA_OTCHET) { toast('Обновите страницу — модуль отчёта не загрузился'); return; }
       if (!(j.oblozhka && j.oblozhka.image)) {
-        if (S.me && S.me.guest) { toast('Уникальный отчёт — после входа через Telegram'); location.hash = '#/kabinet'; return; }
+        if (S.me && S.me.guest) { toast('PDF с обложкой — после входа через Telegram'); location.hash = '#/kabinet'; return; }
         const o = b.textContent; b.disabled = true; b.innerHTML = '<span class="spin"></span> Рисую обложку, до минуты…';
         try { const r = await api('/api/scenariy/oblozhka', { id: j.id }); j.oblozhka = { image: r.image }; S.job = j; store.set('job', j); if (r.kredity) spend(r.kredity, r.ostatok); hap('success'); }
         catch (er) { toast(er.message); b.disabled = false; b.textContent = o; hap('error'); return; }

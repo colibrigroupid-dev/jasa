@@ -134,7 +134,7 @@
   function stilKab() {
     if (document.getElementById('ptkab-style')) return;
     const s = document.createElement('style'); s.id = 'ptkab-style';
-    s.textContent = `.ptkab{margin-top:22px}.ptkab h3{margin:8px 0 6px;font-size:1.15rem}.ptkab-grid{display:grid;grid-template-columns:168px minmax(0,1fr);gap:20px;align-items:start}
+    s.textContent = `.ptkab{margin-top:22px}.ptkab h3{margin:8px 0 6px;font-size:1.15rem}.ptkab-grid{display:grid;grid-template-columns:168px minmax(0,1fr);gap:20px;align-items:start}.ptkab-grid>div:only-child{grid-column:1/-1;max-width:62ch}
 .ptkab-qr{display:flex;flex-direction:column;align-items:center;text-align:center}.ptkab-qr .ptqr{margin:6px 0 8px}
 .ptkab textarea{width:100%;margin-top:8px;min-height:0;border:1px solid var(--line);border-radius:var(--r-sm,12px);padding:10px 12px;font:inherit;font-size:var(--fs-small);background:var(--field);color:var(--ink);resize:vertical}
 .ptkab-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.ptkab-stat{margin-top:12px}.ptkab-stat b{color:var(--ink)}.ptkab-rules{margin-top:10px}.ptkab-rules summary{cursor:pointer;color:var(--muted);font-size:var(--fs-small)}
