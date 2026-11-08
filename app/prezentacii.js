@@ -35,14 +35,14 @@
   const b64u = (x) => new TextDecoder().decode(Uint8Array.from(atob(x.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
   function zabratAnketu() {
     const m = (location.hash.split('?')[1] || '').match(/(?:^|&)a=([A-Za-z0-9_-]{4,6000})/); if (!m) return;
-    try { const o = JSON.parse(b64u(m[1])); if (o && L_TIPY.includes(o.t) && String(o.m || '').length > 4) store.set('pzAnketa', Object.assign({}, o, { ts: Date.now() })); } catch (e) { /* битая ссылка — просто откроем раздел */ }
+    try { const o = JSON.parse(b64u(m[1])); if (o && L_TIPY.includes(o.t) && String(o.m || '').length > 4) store.set('pzAnketa', Object.assign({}, o, { n: Math.max(0, Math.min(60, +o.n || 0)) || undefined, ts: Date.now() })); } catch (e) { /* битая ссылка — просто откроем раздел */ }
     history.replaceState(null, '', '#/prezentacii');
   }
   const L_TIPY = ['diplom', 'kursovaya', 'pitch', 'kp', 'produkt', 'otchet'];
   const anketa = () => { const a = store.get('pzAnketa', null); return a && Date.now() - (a.ts || 0) < 3 * 86400e3 ? a : null; };
   const EST = { rabota: 'работа или текст', cifry: 'цифры', nichego: 'пока ничего' };
   function anketaKarta(a, zagolovok, tekst, knopka) {
-    return `<section class="card pz-ank"><span class="caps">${esc(zagolovok)}</span><h3>${esc((L.tipy[a.t] || {}).name || '')}${a.n ? ' · ' + a.n + ' мин' : ''}</h3><p class="pz-ank-t">«${esc(String(a.m).slice(0, 220))}»</p>
+    return `<section class="card pz-ank"><span class="caps">${esc(zagolovok)}</span><h3>${esc((L.tipy[a.t] || {}).name || '')}${a.n ? ' · ' + esc(a.n) + ' мин' : ''}</h3><p class="pz-ank-t">«${esc(String(a.m).slice(0, 220))}»</p>
       <p class="small muted">${esc(tekst)}</p>${knopka || ''}<button class="btn sm ghost" id="pzankx" type="button">Удалить анкету</button></section>`;
   }
   function anketaKnopki() { const x = $('#pzankx'); if (x) x.onclick = () => { store.set('pzAnketa', null); screen(); }; }
@@ -300,10 +300,10 @@
     const rub = Object.entries(k.rubrika || {}); const nazv = { struktura: 'Структура', logika: 'Логика', yasnost: 'Ясность', dokazatelnost: 'Доказательность', dlina: 'Длина' };
     const prin = arr(k.pravki).filter((x) => x.status === 'prinyata').length;
     return `<section class="card pz-kr"><span class="caps">Критик глазами ${P.komanda === 'student' ? 'комиссии' : 'инвестора'} · видит только слайды, без черновиков команды · ${esc(k.versiya || '')}</span>
-      <div class="pz-rub">${rub.map(([kk, v]) => `<div><span>${esc(nazv[kk] || kk)}</span><b>${v.ball}</b><i style="--v:${v.ball * 10}%"></i><small>${esc(v.pochemu)}</small></div>`).join('')}</div>
+      <div class="pz-rub">${rub.map(([kk, v]) => `<div><span>${esc(nazv[kk] || kk)}</span><b>${esc(v.ball)}</b><i style="--v:${Math.max(0, Math.min(100, (+v.ball || 0) * 10))}%"></i><small>${esc(v.pochemu)}</small></div>`).join('')}</div>
       ${arr(k.golosa).length ? `<div class="pz-golosa">${k.golosa.map((g) => `<p><b>${esc(g.kto)}${g.ball ? ' · ' + esc(g.ball) : ''}:</b> ${esc(g.slovo)}</p>`).join('')}</div>` : ''}
       ${arr(k.silno).length ? `<p class="small"><b>Беречь:</b> ${k.silno.map(esc).join(' · ')}</p>` : ''}
-      <div class="pz-pravki">${arr(k.pravki).map((x) => `<div class="pz-pv ${x.status}"><span class="pz-vz">${esc(x.vazhnost)}</span><div><b>${esc(x.chto)}</b><small>${slideNo(x.slajd)}${esc(x.pochemu)}${x.kak ? ' · сделано: ' + esc(x.kak) : ''}</small></div>
+      <div class="pz-pravki">${arr(k.pravki).map((x) => `<div class="pz-pv ${esc(x.status)}"><span class="pz-vz">${esc(x.vazhnost)}</span><div><b>${esc(x.chto)}</b><small>${slideNo(x.slajd)}${esc(x.pochemu)}${x.kak ? ' · сделано: ' + esc(x.kak) : ''}</small></div>
         ${x.status === 'vneseno' ? '<span class="pz-ok sm">внесено</span>' : `<span class="pz-yn"><button type="button" class="chip ${x.status === 'prinyata' ? 'on' : ''}" data-pr="${x.status === 'prinyata' ? 'novaya' : 'prinyata'}" data-n="${x.n}">Принять</button><button type="button" class="chip ${x.status === 'otklonena' ? 'on' : ''}" data-pr="${x.status === 'otklonena' ? 'novaya' : 'otklonena'}" data-n="${x.n}">Отклонить</button></span>`}</div>`).join('')}</div>
       ${prin ? `<button class="btn" id="pzvn">Внести принятые (${prin}) · ${esc(price(P.ceny.pravki))}</button>` : ''}</section>`;
   }
@@ -314,7 +314,7 @@
     const i = P.slajdy.indexOf(s);
     const cif = arr(s.cifry).map((c) => c.znachenie + ' | ' + c.podpis).join('\n');
     box.innerHTML = `<section class="card pz-ed"><div class="pz-edg"><div><div class="pz-sl big">${slideHtml(s, i)}</div>
-      ${arr(s.metki).length ? `<div class="pz-metki">${s.metki.map((m) => `<p><span class="pz-m ${m.tip}">${esc(METKA[m.tip] || m.tip)}</span> <b>${esc(m.chto)}</b> — ${esc(m.tekst)}</p>`).join('')}</div>` : '<p class="small pz-green">Всё на слайде нашлось в ваших материалах.</p>'}
+      ${arr(s.metki).length ? `<div class="pz-metki">${s.metki.map((m) => `<p><span class="pz-m ${esc(m.tip)}">${esc(METKA[m.tip] || m.tip)}</span> <b>${esc(m.chto)}</b> — ${esc(m.tekst)}</p>`).join('')}</div>` : '<p class="small pz-green">Всё на слайде нашлось в ваших материалах.</p>'}
       ${arr(s.opory).length ? `<details class="small"><summary>На чём держится слайд (${s.opory.length})</summary>${s.opory.map((o) => `<p><b>${esc(o.chto)}</b> ← «${esc(o.citata)}»</p>`).join('')}</details>` : ''}</div>
       <form id="pzef"><span class="caps">Слайд ${i + 1}</span><div class="field"><label>Заголовок</label><input name="zagolovok" value="${esc(s.zagolovok || '')}" maxlength="160"></div>
       <div class="field"><label>Подзаголовок</label><input name="podzagolovok" value="${esc(s.podzagolovok || '')}" maxlength="220"></div>
@@ -402,7 +402,7 @@
     box.innerHTML = `<div class="pz-show"><div class="pz-sl big" id="pzbig">${slideHtml(P.slajdy[pokaz], pokaz)}</div>
       <div class="pz-row"><button class="btn sm quiet" id="pzprev">←</button><span class="small mono">${pokaz + 1} / ${P.slajdy.length}</span><button class="btn sm quiet" id="pznx">→</button>${(P.slajdy[pokaz].rech || {}).tekst ? `<span class="small muted pz-notes">${esc(P.slajdy[pokaz].rech.tekst.slice(0, 220))}…</span>` : ''}</div>
       <div class="pz-strip">${P.slajdy.map((s, i) => `<button type="button" class="${i === pokaz ? 'on' : ''}" data-i="${i}"><div class="pz-sl">${slideHtml(s, i)}</div></button>`).join('')}</div></div>
-      ${vse.length || obshchie.length ? `<section class="card pz-check"><span class="caps">Проверьте сами перед выступлением</span>${obshchie.map((x) => `<p>${esc(x)}</p>`).join('')}${vse.map((x) => `<p><a href="#" data-go="${x.i}">слайд ${x.i + 1}</a> · <span class="pz-m ${x.m.tip}">${esc(METKA[x.m.tip] || x.m.tip)}</span> <b>${esc(x.m.chto)}</b> — ${esc(x.m.tekst)}</p>`).join('')}</section>` : '<p class="small pz-green">Все цифры, цитаты и источники нашлись в ваших материалах.</p>'}
+      ${vse.length || obshchie.length ? `<section class="card pz-check"><span class="caps">Проверьте сами перед выступлением</span>${obshchie.map((x) => `<p>${esc(x)}</p>`).join('')}${vse.map((x) => `<p><a href="#" data-go="${x.i}">слайд ${x.i + 1}</a> · <span class="pz-m ${esc(x.m.tip)}">${esc(METKA[x.m.tip] || x.m.tip)}</span> <b>${esc(x.m.chto)}</b> — ${esc(x.m.tekst)}</p>`).join('')}</section>` : '<p class="small pz-green">Все цифры, цитаты и источники нашлись в ваших материалах.</p>'}
       ${kz ? `<label class="pz-chk"><input type="checkbox" id="pzkz" ${P.oformlenie.kz_provereno ? 'checked' : ''}> Казахский текст прочитал носитель языка</label>${P.oformlenie.kz_provereno ? '' : '<p class="small pz-red">Казахский текст написан ИИ — перед защитой пусть его прочитает носитель.</p>'}` : ''}
       <section class="card pz-out"><span class="caps">Скачать</span><div class="pz-row" style="margin-top:10px"><button class="btn accent" data-out="pdf">PDF · ${P.komanda === 'student' ? 'для защиты' : 'для показа'}</button><button class="btn" data-out="pptx">PPTX · править</button><button class="btn quiet" data-out="pdf-rech">PDF с речью</button><button class="btn ghost" data-out="copy">Скопировать речь</button></div>
       <p class="small dim" style="margin-top:10px">PDF выглядит везде одинаково — его и берите на ${P.komanda === 'student' ? 'защиту' : 'встречу'}. PPTX — для PowerPoint: текст правится, графики редактируются, речь — в заметках; в Keynote и Google Slides откроется, но графики и шрифты могут сдвинуться. Создано с помощью ИИ — метка стоит в свойствах файла.</p></section>`;
