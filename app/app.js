@@ -75,8 +75,8 @@
   })();
 
   // ---------- API ----------
-  async function api(path, body) {
-    const headers = { 'Content-Type': 'application/json' };
+  async function api(path, body, extra) {   // extra — дополнительные заголовки (X-Login-Key при входе с компьютера, B-06 09.11)
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, extra || {});
     if (TG) headers['X-Tg-Init'] = TG.initData;
     else if (S.session) headers['X-Session'] = S.session;
     const r = await fetch(API_BASE + path, body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers });
@@ -1535,7 +1535,7 @@
     for (let i = 0; i < 160; i++) {
       await new Promise((r) => setTimeout(r, 2000));
       if (token !== S.pollToken || !$('#loginst')) return;
-      let r; try { r = await api('/api/login/status?code=' + st.code); } catch (e) { continue; }
+      let r; try { r = await api('/api/login/status?code=' + st.code, null, st.klyuch ? { 'X-Login-Key': st.klyuch } : null); } catch (e) { continue; }   // ключ устройства: токен получает только страница, начавшая вход
       if (r.state === 'ok') { S.session = r.token; store.set('session', r.token); toast('Вход выполнен' + (r.name ? ', ' + r.name : '')); await loadMe(); kabinet(); return; }
       if (r.state === 'expired') { $('#loginst').textContent = 'Код устарел, нажмите ещё раз.'; loginSnova(); return; }
       if (r.state === 'otkaz') { $('#loginst').textContent = 'Вход отклонён в боте. Если это были не вы — ничего делать не нужно.'; loginSnova(); return; }
