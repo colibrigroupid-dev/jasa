@@ -9,7 +9,7 @@
   const { api, esc, toast, arr, toB64, API_BASE, TG } = J;
   const W = 794, H = 1123;                 // A4 при 96 dpi
   const SAJT = 'https://jasa.asia';
-  const abs = (u) => (/^https?:/.test(u) ? u : (API_BASE || location.origin) + u);
+  const abs = (u) => J.absUrl(u);   // только свои адреса (app.js absUrl, B-20 09.11)
 
   // библиотеки — только при выгрузке, с хешами целостности
   const LIBS = { pdf: ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk'],

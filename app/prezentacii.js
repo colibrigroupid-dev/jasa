@@ -19,7 +19,7 @@
   const MAKET = { titul: 'Титул', razdel: 'Раздел', punkty: 'Пункты', dve_kolonki: 'Две колонки', cifra: 'Большие цифры', grafik: 'График', shema: 'Схема', tajmlajn: 'Таймлайн', tablica: 'Таблица', citata: 'Цитата', kartinka: 'Картинка', final: 'Финал' };
   const METKA = { cifra: 'Цифра', ocenka: 'Оценка', opora: 'Опора', istochnik: 'Источник', pusto: 'Заполните', dlina: 'Длинно' };
   const S_KART = ['titul', 'kartinka', 'punkty', 'razdel', 'citata'];   // = MAKET_S_KARTINKOJ + MAKET_V_KARTINKU в prezentacii.py
-  const abs = (u) => (/^https?:/.test(u) ? u : (API_BASE || location.origin) + u);
+  const abs = (u) => J.absUrl(u);   // только свои адреса (app.js absUrl, B-20 09.11)
 
   style();
 

@@ -7,7 +7,7 @@
   'use strict';
   const J = window.JASA; if (!J) return;
   const { api, esc, toast, arr, $, $$, S, store, API_BASE, TG, spend, voice } = J;
-  const abs = (u) => (/^https?:/.test(u) ? u : (API_BASE || location.origin) + u);
+  const abs = (u) => J.absUrl(u);   // только свои адреса (app.js absUrl, B-20 09.11)
   const DEJ = { ostavit: 'оставить', pravit: 'править', slit: 'слить', ubrat: 'убрать', novaya: 'новая', vlita: 'вливается' };
   const INT = { lyogkaya: ['Лёгкая', 'только принятые правки'], srednyaya: ['Средняя', 'правки и соседние места, чтобы всё стыковалось'], glubokaya: ['Глубокая', 'можем менять и соседние сцены, если правка требует — всё увидите в плане'] };
   let poll = null;

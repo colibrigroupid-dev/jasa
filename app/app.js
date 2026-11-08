@@ -1596,7 +1596,16 @@
     $('#pform').addEventListener('submit', (e) => { e.preventDefault(); const q = $('#pq').value.trim(); if (!q) return; $('#pq').value = ''; ask(q); });
   })();
 
-  window.JASA = { openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2 };
+  // 09.11 (B-20, bezopasnost): адреса файлов из ответов сервера — только свои. Относительный путь → хост API;
+  // абсолютный — только с хостом api.jasa.asia / jasa.asia / стенда; всё чужое → '' (ни пикселя, ни референера).
+  const SVOI_HOSTY = /^(api\.jasa\.asia|jasa\.asia|www\.jasa\.asia|localhost|127\.0\.0\.1)$/;
+  function absUrl(u) {
+    u = String(u || ''); if (!u) return '';
+    if (/^\/(?!\/)/.test(u)) return (API_BASE || location.origin) + u;
+    try { const x = new URL(u); if (/^https?:$/.test(x.protocol) && SVOI_HOSTY.test(x.hostname)) return x.href; } catch (e) { /* не адрес */ }
+    return '';
+  }
+  window.JASA = { openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl };
   window.addEventListener('jasa:ready', route);
   if (!window.JASA_DEFER) route();
 })();
