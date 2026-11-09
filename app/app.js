@@ -87,7 +87,7 @@
     return j;
   }
   api('/api/status').then((s) => { S.status = s; }).catch(() => {});
-  api('/api/ceny').then((c) => { S.ceny = c; const ta = document.getElementById('ask'); if (ta) ta.dispatchEvent(new Event('input')); }).catch(() => {});
+  api('/api/ceny').then((c) => { S.ceny = c; ['ask', 'script'].forEach((id) => { const ta = document.getElementById(id); if (ta) ta.dispatchEvent(new Event('input')); }); }).catch(() => {});
   api('/api/recepty').then((r) => { S.recepty = arr(r.recepty); const box = $('#recepty'); if (box) box.innerHTML = receptyHtml(); }).catch(() => {});
   // цена до запуска = тем же расчётом, что резерв на сервере (Plumar: «цена под кнопкой совпадает со счётом»)
   const LANG_LABEL = { ru: 'Русский', kz: 'Қазақша', en: 'English' };
@@ -104,7 +104,7 @@
   const priceOf = (tip) => { const z = (S_KART() === 3 && S.ceny.zadanie_3) || S.ceny.zadanie; return (z && z[tip]) || 3; };
   const priceLabel = (tip, extra) => 'до ' + (priceOf(tip) + (extra || 0)) + ' кр';
   const LINK_RE = /https?:\/\/\S*(instagram\.com|tiktok\.com|youtu|vk\.com)\S*/;
-  function loadMe() { return api('/api/me').then((m) => { S.me = m; if (m.yazyk && !store.get('yazyk', null)) { S.yazyk = m.yazyk; S.yazykChosen = true; store.set('yazyk', m.yazyk); } else if (!m.guest && !m.yazyk && store.get('yazyk', null)) { api('/api/yazyk', { yazyk: store.get('yazyk', 'ru') }).then(posleYazyka).catch(() => {}); } S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
+  function loadMe() { return api('/api/me').then((m) => { S.me = m; if (m.yazyk && !store.get('yazyk', null)) { S.yazyk = m.yazyk; S.yazykChosen = true; store.set('yazyk', m.yazyk); } else if (!m.guest && !m.yazyk && store.get('yazyk', null)) { api('/api/yazyk', { yazyk: store.get('yazyk', 'ru') }).then(posleYazyka).catch(() => {}); } S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); { const sc = document.getElementById('script'); if (sc) sc.dispatchEvent(new Event('input')); } const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
   S.meP = loadMe();
 
   // ---------- тема ----------
@@ -428,7 +428,7 @@
       // третий результат — момент предложить «Каждый день»: счёт выставляется здесь же, без похода в тарифы
       const el = document.createElement('div'); el.className = 'invite rv den';
       const p = (me.ceny_oplaty || {}).podpiska || { tenge: 3990, v_den: 45 };
-      el.innerHTML = `<div><b>Понравилось? Делайте так каждый день</b><p>«Каждый день» — ${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${esc(tng(p.tenge))} за 30 дней, оплата в Kaspi.</p></div><div class="ib"><button class="btn sm accent" type="button" data-den>Выставить счёт</button><button class="btn sm quiet" type="button" data-skip>Не сейчас</button></div>`;
+      el.innerHTML = `<div><b>Понравилось? Делайте так каждый день</b><p>«Каждый день» — ${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${S.ceny && S.ceny.kino ? 'Идут на посты, афиши, карусели и картинки. ' : ''}${esc(tng(p.tenge))} за 30 дней, оплата в Kaspi.</p></div><div class="ib"><button class="btn sm accent" type="button" data-den>Выставить счёт</button><button class="btn sm quiet" type="button" data-skip>Не сейчас</button></div>`;
       el.querySelector('[data-skip]').addEventListener('click', () => { store.set('skip_den', S.made + 3); el.remove(); });
       el.querySelector('[data-den]').addEventListener('click', async (e) => { e.target.disabled = true; try { const r = await api('/api/schet', { tip: 'podpiska' }); toast('Счёт ' + r.schet.id + ' выставлен — он в кабинете'); location.hash = '#/kabinet'; } catch (er) { toast(er.message); e.target.disabled = false; } });
       return el;
@@ -1094,7 +1094,8 @@
   const MODES = ['Оценить честно', 'Найти ошибки', 'Поднять балл', 'На фестиваль', 'Под Казахстан', 'Под Азию', 'Под стриминг', 'Сократить на 10 минут'];
   function scenariy() {
     const j = S.job;
-    main.innerHTML = topbar('Кино', j && j.done ? '' : '<span class="pill" title="Резерв зависит от длины текста, списываем по факту, лишнее возвращаем">разбор от 100 кр</span>') + `<div id="sc"></div>`;
+    const kinoP = S.ceny && S.ceny.kino && +S.ceny.kino.razbor ? S.ceny.kino : null;   // 10.11: «Кино» пакетами — одна цена за разбор (№215); null — сервер ещё со старой лестницей
+    main.innerHTML = topbar('Кино', j && j.done ? '' : (kinoP ? `<span class="pill" title="Одна цена за разбор. Не соберём отчёт — вернём всё">разбор · ${esc(kinoP.razbor)} кр</span>` : '<span class="pill" title="Резерв зависит от длины текста, списываем по факту, лишнее возвращаем">разбор от 100 кр</span>')) + `<div id="sc"></div>`;
     if (j && j.id && !j.done) { pollJob(j.id); return; }
     if (j && j.done && j.showrunner) { renderReport(j); return; }
     renderIntake();
@@ -1113,12 +1114,12 @@
         </div>
         <span class="caps" style="display:block;margin-top:18px">Что сделать</span>
         <div class="modes" id="modes">${MODES.map((m, i) => `<button class="chip ${i === 0 ? 'on' : ''}">${m}</button>`).join('')}</div>
-        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать сценарий</button><span class="dim small" id="scres">Держим до 100 кр, спишем по факту — обычно 80–90 % от этой суммы, лишнее вернём. Займёт 5–15 минут, можно уйти с экрана</span></div>
+        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать сценарий</button><span class="dim small" id="scres">Держим до 100 кр, спишем по факту — обычно 80–90 % от этой суммы, лишнее вернём. Займёт 5–15 минут, можно уйти с экрана</span><span class="dim small hide" id="scpovtor"></span></div>
       </div></div>`;
     // резерв разбора по длине: ступени из /api/ceny.razbor [[до минут, кр], …, [null, кр]] (сервер держит ровно столько, факт не выше); запасной — 100
     const rezervRazbora = (text) => { const min = text.trim() ? text.trim().split(/\s+/).length / 180 : 0; const st = Array.isArray(S.ceny && S.ceny.razbor) ? S.ceny.razbor : null; if (!st) return 100; const r = st.find((x) => x[0] == null || min <= +x[0]); return r ? +r[1] || 100 : 100; };
-    const ta = $('#script'); const cnt = () => { $('#cnt').textContent = ta.value ? Math.round(ta.value.split(/\s+/).length / 180 * 10) / 10 + ' стр · ' + ta.value.length + ' зн' : ''; const n = rezervRazbora(ta.value); const r = $('#scres'); if (r) r.textContent = `Держим до ${n} кр, спишем по факту — обычно 80–90 % от этой суммы, лишнее вернём. Займёт 5–15 минут, можно уйти с экрана`; };
-    ta.addEventListener('input', cnt);
+    const ta = $('#script'); const cnt = () => { $('#cnt').textContent = ta.value ? Math.round(ta.value.split(/\s+/).length / 180 * 10) / 10 + ' стр · ' + ta.value.length + ' зн' : ''; const n = rezervRazbora(ta.value); const r = $('#scres'); const kp = S.ceny && S.ceny.kino && +S.ceny.kino.razbor ? S.ceny.kino : null; if (kp) { const cena = S.kinoPovtor ? kp.povtor : kp.razbor; const pl = $('.topbar .pill'); if (pl) { pl.textContent = (S.kinoPovtor ? 'новая версия · ' : 'разбор · ') + cena + ' кр'; pl.title = 'Одна цена за разбор. Не соберём отчёт — вернём всё'; } $('#run').textContent = (S.kinoPovtor ? 'Разобрать новую версию · ' : 'Разобрать сценарий · ') + cena + ' кр'; if (r) r.textContent = 'Одна цена за разбор. Не соберём отчёт — вернём все ' + cena + ' кр. Займёт 5–15 минут, можно уйти с экрана'; const lich = S.me && S.me.koshelki ? (+S.me.koshelki.dar || 0) + (+S.me.koshelki.lichnye || 0) : null; const pv = $('#scpovtor'); if (pv) { const malo = lich != null && lich < cena; pv.classList.toggle('hide', !malo); pv.innerHTML = malo ? 'Не хватает ' + Math.ceil(cena - lich) + ' кр' + ((+S.me.koshelki.den || 0) > 0 ? ': дневные кредиты подписки на разбор не идут' : '') + '. <a href="#/kabinet">Пополнить</a>' : ''; } return; } if (r) r.textContent = `Держим до ${n} кр, спишем по факту — обычно 80–90 % от этой суммы, лишнее вернём. Займёт 5–15 минут, можно уйти с экрана`; };
+    ta.addEventListener('input', cnt); cnt();   // цена на кнопке видна сразу, до первого символа
     $('#pick').addEventListener('click', () => $('#file').click());
     $('#file').addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; f.text().then((t) => { ta.value = t; cnt(); }); });
     $('#sample').addEventListener('click', () => fetch('primer-tonkiy-led.fountain?v=2').then((r) => r.text()).then((t) => { ta.value = t; cnt(); $('#q1').value = 'Подростковый триллер-инструкция о правилах на тонком льду, 12–16 лет'; $('#q2').value = 'YouTube и TikTok, потом показы в школах Казахстана'; $('#q3').value = 'Голос диктора, который говорит с подростком как с равным, и честность про страх'; $('#q4').value = 'Автор — студия «3%», права у студии'; }));
@@ -1130,7 +1131,9 @@
       const rezhim = $('#modes .chip.on').textContent;
       $('#run').disabled = true;
       try {
-        const r = await api('/api/scenariy/razbor', { text, pasport, rezhim });
+        const telo = { text, pasport, rezhim }; if (S.kinoPovtor) telo.povtor_ot = S.kinoPovtor;   // новая версия своего оплаченного разбора — по цене повтора
+        const r = await api('/api/scenariy/razbor', telo);
+        S.kinoPovtor = null;
         S.job = { id: r.id, done: false }; store.set('job', S.job);
         pollJob(r.id);
       } catch (e) { toast(e.message); $('#run').disabled = false; }
@@ -1324,7 +1327,14 @@
     setTimeout(() => $$('.lay .bar i').forEach((i) => (i.style.width = i.dataset.w + '%')), 300);
     if (window.JASA_ULUCHSHIT) window.JASA_ULUCHSHIT.knopka(j, $('#uluch-akcii'));   // «Улучшить сценарий» — модуль uluchshit.js, цена по хронометражу
     $('#sc').addEventListener('click', (e) => { const a = e.target.closest('abbr.pref'); if (a && a.dataset.tip) toast(a.dataset.tip.slice(0, 260)); });
-    $('#newrun').addEventListener('click', () => { S.job = null; store.set('job', null); renderIntake(); });
+    $('#newrun').addEventListener('click', () => { S.kinoPovtor = null; S.job = null; store.set('job', null); renderIntake(); });
+    const kp2 = S.ceny && S.ceny.kino && +S.ceny.kino.povtor ? S.ceny.kino : null;
+    const svezhij = kp2 && j.started && (Date.now() / 1000 - (+j.started || 0)) < (+kp2.povtor_dnej || 30) * 86400 && (!j.paket || j.paket === 'razbor' || j.paket === 'povtor');
+    if (svezhij && $('#newrun')) {
+      const pb = document.createElement('button'); pb.type = 'button'; pb.className = 'btn sm'; pb.id = 'povtor'; pb.textContent = 'Новая версия · ' + kp2.povtor + ' кр'; pb.title = 'Повторный разбор после правок — дешевле, пока этому разбору меньше ' + (kp2.povtor_dnej || 30) + ' дней';
+      $('#newrun').before(pb);
+      pb.addEventListener('click', () => { S.kinoPovtor = j.id; S.job = null; store.set('job', null); renderIntake(); toast('Вставьте новую версию сценария — разберём за ' + kp2.povtor + ' кр'); });
+    }
     $('#otchet').addEventListener('click', (e) => { if (window.JASA_OTCHET) window.JASA_OTCHET.skachat(j, e.currentTarget, { standart: true }); else toast('Обновите страницу — модуль отчёта не загрузился'); });
     const ou = $('#otchet-u'); if (ou) ou.addEventListener('click', async (e) => {   // «Уникальный»: обложка один раз (12 кр), дальше PDF с ней бесплатно
       const b = e.currentTarget;
@@ -1462,7 +1472,7 @@
     const c = m.ceny_oplaty || {}; const p = c.podpiska || { tenge: 3990, dnej: 30, v_den: 45 }; const pod = m.podpiska;
     const pak = Object.entries(c.pakety || { 500: 5990, 2000: 19990, 10000: 89990 });
     return `<div class="card" id="popolnit"><span class="caps">Купить</span>
-      <div class="kupit-pod ${pod && pod.aktivna ? 'on' : ''}"><div><b>«Каждый день»</b><p class="small muted">${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${esc(p.dnej)} дней.</p></div>
+      <div class="kupit-pod ${pod && pod.aktivna ? 'on' : ''}"><div><b>«Каждый день»</b><p class="small muted">${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${S.ceny && S.ceny.kino ? 'Идут на посты, афиши, карусели и картинки; видео, презентации и кино — с личных кредитов. ' : ''}${esc(p.dnej)} дней.</p></div>
         <button class="btn sm accent" data-kupit="podpiska">${pod && pod.aktivna ? 'Продлить' : 'Выставить счёт'} · ${tng(p.tenge)}</button></div>
       <span class="caps" style="display:block;margin-top:14px">Пакеты · не сгорают</span>
       <div class="chips pakety">${pak.map(([n, t]) => `<button class="chip ${podsvet() === n || podsvet() === n.replace(/(\d)(?=(\d{3})$)/, '$1 ') ? 'on' : ''}" data-kupit="paket" data-paket="${esc(n)}">${esc(n)} кр · ${tng(t)} <small class="dim">${(t / n).toFixed(1).replace('.', ',')} ₸/кр</small></button>`).join('')}</div>
@@ -1561,7 +1571,7 @@
     {"n": "Studio", "p": "59 990 ₸", "kto": "Сценаристы, студии", "li": ["6 000 кредитов", "разбор сценария командой редакторов", "герои, локации, кадры, видео", "10 участников, 5 проектов"], "knopka": "Выбрать", "paket": "10 000"}
   ];/*/TARIFY*/
   function tarify() {
-    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Сколько это стоит</h2><p class="muted" style="margin-top:10px">Работа считается в кредитах. Пост с картинкой до ${esc((S.ceny.zadanie || {}).post || 21)} кр, с тремя картинками до ${esc((S.ceny.zadanie_3 || {}).post || 45)}, рилс или план на неделю до ${esc((S.ceny.zadanie || {}).rils || 6)}, ещё одна картинка ${esc(S.ceny.image || 12)}, видео 5 секунд ${esc((S.ceny.video || {})['720p'] || 131)}, разбор чужого ролика 10–12, разбор сценария ≈ 75–100 (держим 100, лишнее возвращаем). Цена каждого действия видна на кнопке до запуска.</p>
+    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Сколько это стоит</h2><p class="muted" style="margin-top:10px">Работа считается в кредитах. Пост с картинкой до ${esc((S.ceny.zadanie || {}).post || 21)} кр, с тремя картинками до ${esc((S.ceny.zadanie_3 || {}).post || 45)}, рилс или план на неделю до ${esc((S.ceny.zadanie || {}).rils || 6)}, ещё одна картинка ${esc(S.ceny.image || 12)}, видео 5 секунд ${esc((S.ceny.video || {})['720p'] || 131)}, разбор чужого ролика 10–12, разбор сценария ${S.ceny && S.ceny.kino ? esc(S.ceny.kino.razbor) + ' (повторный — ' + esc(S.ceny.kino.povtor) + ')' : '≈ 75–100 (держим 100, лишнее возвращаем)'}. Цена каждого действия видна на кнопке до запуска.</p>
       <p class="muted" style="margin-top:8px">Как платить сейчас: в Кабинете выставляете счёт → переводите в Kaspi по реквизитам → мы подтверждаем вручную, и кредиты на балансе. Пакеты не сгорают.</p></section>
       <div class="tiers">${TARIFY.map((t) => `<div class="tier ${t.hot ? 'hot' : ''} rv"><span class="caps">${esc(t.kto)}</span><h3>${esc(t.n)}</h3><div class="price">${esc(t.p)}<small> /мес</small></div><ul>${t.li.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><button type="button" class="btn ${t.hot ? 'accent' : 'quiet'}" data-tarif="${esc(t.n)}">${esc(t.knopka)}</button></div>`).join('')}</div>`;
     $$('.rv', main).forEach((n, i) => (n.style.animationDelay = i * 80 + 'ms'));
