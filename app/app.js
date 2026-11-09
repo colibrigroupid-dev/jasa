@@ -26,6 +26,7 @@
     yazyk: 'ru',   // ниже подставляется выбранный при первом запуске
     job: store.get('job', null),
     fkZapomnit: !!store.get('fkZapomnit', false),
+    brandFakty: store.get('brandFakty', null),
     status: { key: false, images: false },
     accepted: store.get('accepted', {}),
     spentJobs: store.get('spentJobs', {}),
@@ -345,9 +346,9 @@
         <div id="kopis" class="${S.kartOpis ? '' : 'hide'}">${opisBlock('kopista', S.kartOpis)}</div>
         </details>
         ${fkEst() ? `<details class="bs-more" ${FK.some(([k]) => fkVse()[k]) ? 'open' : ''}><summary>Адрес и как записаться</summary>
-        ${FK.map(([k, l, ph]) => `<label class="bs-lab" for="fk-${k}">${l}</label><input class="bs-inp" id="fk-${k}" data-fk="${k}" maxlength="120" autocomplete="off" placeholder="${esc(ph)}" value="${esc(fkVse()[k] || '')}">`).join('')}
+        ${FK.map(([k, l, ph]) => `<label class="bs-lab" for="fk-${k}">${l}</label><input class="bs-inp" id="fk-${k}" data-fk="${k}" maxlength="120" autocomplete="off" placeholder="${esc(fkBrend()[k] ? 'Из бренда: ' + fkBrend()[k].slice(0, 70) : ph)}" value="${esc(fkVse()[k] || '')}">`).join('')}
         ${hasBrand && S.useBrend && S.me && !S.me.guest ? `<div class="bs-row"><span class="tx"><b>Запомнить в бренде</b><small>Запишем только в пустые поля карты</small></span><button type="button" class="bs-sw ${S.fkZapomnit ? 'on' : ''}" id="fkz" role="switch" aria-checked="${!!S.fkZapomnit}" aria-label="Запомнить адрес и запись в бренде"></button></div>` : ''}
-        <p class="small dim" style="margin:-4px 0 10px">Подставим в пост как есть. Пустое поле в тексте останется как [уточнить] — его можно дописать перед публикацией.</p>
+        <p class="small dim" style="margin:-4px 0 10px">${FK.some(([k]) => fkBrend()[k]) ? 'Подставим в пост как есть. Пустое поле возьмём из карты бренда. Чего нет и там, в тексте останется как [уточнить].' : 'Подставим в пост как есть. Пустое поле в тексте останется как [уточнить] — его можно дописать перед публикацией.'}</p>
         </details>` : ''}
         <div class="bs-lab">Стиль</div>
         ${hasBrand ? `<div class="bs-row"><span class="av">${esc(bname.trim().charAt(0).toUpperCase())}</span><span class="tx"><b>${esc(bname)}</b><small>Писать в моём стиле</small></span><button type="button" class="bs-sw ${S.useBrend ? 'on' : ''}" id="bssw" role="switch" aria-checked="${S.useBrend}" aria-label="Писать в стиле бренда"></button></div>` : `<a class="bs-row" href="#/brend" data-bs-close><span class="tx"><b>Настроить бренд</b><small>Тексты станут точнее</small></span>${ico('i-chevr')}</a>`}
@@ -659,9 +660,10 @@
   const warnBlock = (w) => (w && w.length ? `<div class="warn rv"><b>Проверьте:</b> ${w.map(esc).join(' · ')}</div>` : '');
   // 10.11: «[уточнить]» — место, где сервис не знал факта (адрес, запись, цена). Подсвечиваем и не даём опубликовать как есть.
   // 10.11: адрес, запись и часы — данные для поста, чтобы «[уточнить]» не появлялось. Живут на устройстве; сервер получает их как fakty.
-  const FK = [['adres', 'Адрес', 'Алматы, Абая 10'], ['kontakt', 'Как записаться или заказать', 'WhatsApp +7 700 000 00 00 или @konyr_coffee'], ['chasy', 'Часы работы', 'Каждый день 8:00–22:00']];
+  const FK = [['adres', 'Адрес', 'Алматы, Абая 10'], ['kontakt', 'Как записаться или заказать', 'WhatsApp +7 700 000 00 00'], ['chasy', 'Часы работы', 'Каждый день 8:00–22:00']];
   const fkEst = () => !!(S.ceny && S.ceny.fakty);   // сервер объявил, что принимает fakty
   const fkChist = (v) => String(v || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+  const fkBrend = () => (S.useBrend && S.brandId && S.me && !S.me.guest && S.brandFakty) || {};   // что уже записано в карте бренда
   const fkVse = () => { if (!S.fakty) S.fakty = store.get('fakty', {}) || {}; return S.fakty; };
   const fkTelo = () => { if (!fkEst()) return undefined; const f = fkVse(), o = {}; FK.forEach(([k]) => { const v = fkChist(f[k]); if (v) o[k] = v; }); return Object.keys(o).length ? o : undefined; };
   const UT = /\[уточнить[^\]]*\]/g;

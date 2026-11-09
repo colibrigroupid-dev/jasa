@@ -14,6 +14,9 @@
 
   function remember(b) {
     S.brandId = b ? b.id : null; S.brandName = b ? b.name : null;
+    /* 10.11: адрес, запись и часы из папки «Призыв и контакты» — лист «Создать» показывает, что они уже есть */
+    const kf = (b && b.sections && b.sections.kontakty && b.sections.kontakty.fields) || {}; const one = (v) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+    S.brandFakty = b ? { adres: one(kf.adres), kontakt: one(kf.ssylki), chasy: one(kf.chasy) } : null; store.set('brandFakty', S.brandFakty);
     if (b && J.openSec) J.openSec('brend');
     store.set('brandId', S.brandId); store.set('brandName', S.brandName);
   }
@@ -75,6 +78,9 @@
         <label class="bthumb badd"><input type="file" accept="image/png,image/jpeg,image/webp" multiple hidden id="bfile"><span>+ Загрузить</span><small>${cur === 'logo' ? 'PNG с прозрачным фоном, края обрежем сами' : 'PNG, JPEG, WEBP до 9 МБ'}</small></label></div></div>` : ''}
       <div class="dim small" style="margin-top:12px" id="bsaved">Сохраняется само, когда вы выходите из поля.</div>`;
     $$('textarea', ed).forEach((ta) => ta.addEventListener('change', () => saveField(b, ta)));
+    /* 10.11: поле растёт по тексту — короткие (адрес, часы) не занимают пол-экрана */
+    const grow = (ta) => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, 480) + 'px'; };
+    $$('.bfields textarea', ed).forEach((ta) => { grow(ta); ta.addEventListener('input', () => grow(ta)); });
     const fi = $('#bfile'); if (fi) fi.onchange = () => upload(b, Array.from(fi.files || []));
     $$('.bx', ed).forEach((x) => { x.onclick = async (e) => { e.stopPropagation(); if (!(await J.confirm('Удалить файл из карты?'))) return; try { await api('/api/brend/fajl-udalit', { bid: b.id, kod: cur, fid: x.dataset.fid }); await load(); draw(); } catch (er) { toast(er.message); } }; });
     $$('.bthumb img', ed).forEach((im) => { im.onclick = () => lightbox(im.src, im.alt); });
@@ -83,7 +89,7 @@
   async function saveField(b, ta) {
     try {
       const r = await api('/api/brend/sohranit', { bid: b.id, kod: cur, polya: { [ta.dataset.key]: ta.value } });
-      const i = D.brands.findIndex((x) => x.id === b.id); D.brands[i] = r.brand;
+      const i = D.brands.findIndex((x) => x.id === b.id); D.brands[i] = r.brand; if (r.brand.id === D.active) remember(r.brand);
       $('#bsaved').textContent = 'Сохранено · ' + new Date().toLocaleTimeString().slice(0, 5);
       $$('.bnav a').forEach((a) => { if (a.dataset.kod === cur) a.outerHTML = navItem(r.brand, cur, a.querySelector('span').textContent); });
       $$('.bnav a').forEach((a) => { a.onclick = (e) => { e.preventDefault(); cur = a.dataset.kod; draw(); }; });
