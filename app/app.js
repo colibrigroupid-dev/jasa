@@ -112,6 +112,8 @@
     if (n3 >= 1 && n1 >= 2) return 'пост с тремя вариантами картинок — или ' + post(n1) + ' с одной картинкой';
     return n1 >= 1 ? post(n1) + ' с картинкой' : '';   // на пост с картинкой не хватает — ничего не обещаем
   };
+  const postSl = (x) => { const a = x % 10, b = x % 100; return a === 1 && b !== 11 ? 'пост' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'поста' : 'постов'; };
+  const postovHvatit = () => Math.floor(dostupno('post') / (+((S.ceny.zadanie || {}).post) || 21));   // на сколько постов с одной картинкой хватает сейчас
   const denStroka = (v) => { const f = denVmeshchaet(v); return v + ' кредитов каждое утро' + (f ? ': ' + f : ''); };
   // 10.11: на что идут дневные кредиты подписки — список с сервера; null — сервер старый, дневные идут на всё
   const podIdyot = () => (Array.isArray(S.ceny && S.ceny.podpiska_idyot) ? S.ceny.podpiska_idyot : null);
@@ -222,7 +224,7 @@
     const c = Math.floor(+S.credits || 0);
     if (headSig === slot + c + (S.me && S.me.guest ? 'g' : '')) return; headSig = slot + c + (S.me && S.me.guest ? 'g' : '');
     const guest = S.me && S.me.guest;
-    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Подарок: ' + Math.floor(S.ceny.gost_den || 50) + ' кредитов в день без входа. Пост с картинкой — до ' + priceOf('post') + ' кр' : 'Ваши кредиты'}">${c} кр${guest ? '<small>сегодня</small>' : ''}</a>${guest ? '<a class="mh-in" href="#/kabinet">Войти</a>' : ''}<button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
+    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Подарок: ' + Math.floor(S.ceny.gost_den || 50) + ' кредитов в день без входа. Пост с картинкой — до ' + priceOf('post') + ' кр' : 'Ваши кредиты'}">${guest && postovHvatit() >= 1 ? postovHvatit() + ' ' + postSl(postovHvatit()) + ' · 0 ₸' : c + ' кр' + (guest ? '<small>сегодня</small>' : '')}</a>${guest ? '<a class="mh-in" href="#/kabinet">Войти</a>' : ''}<button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
   }
   document.addEventListener('click', (e) => { if (e.target.closest('#mhelp')) { const f = $('#fab'); if (f) f.click(); } });
   // Первый вход: один экран «Выберите язык», пока не выбран — приложение не показываем. Язык влияет на тексты результатов, кнопки пока русские.
@@ -301,7 +303,7 @@
     const ico = (n) => `<svg class="ic"><use href="#${n}"/></svg>`;
     main.innerHTML = topbar('Создать', S.made || S.brandId ? brandPill() : '', 'only-desk') + `
       <section class="hero ${first ? 'first' : 'compact'} ${SG ? 'sgon' : ''}">
-        <h1>${first ? 'Что <em>сделать</em>?' : 'Что ещё <em>сделать</em>?'}</h1>
+        <div class="hero-top"><h1>${first ? 'Что <em>сделать</em>?' : 'Что ещё <em>сделать</em>?'}</h1>${first ? '<a class="stik" id="stik" href="#/tarify" title="Цены" hidden></a>' : ''}</div>
         ${SG ? '<div class="sg" id="sg"></div>' : (first ? '<p>Скажите или напишите. Получите текст и картинку — или сразу три варианта.</p>' : '')}
         <div class="examples" id="examples"><span id="exzapas"></span><button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}"><span>Готовые идеи</span><em>${S.recepty.length || ''}</em>${ico('i-chevr')}</button><button class="more-ideas" type="button" data-idei><span>Идеи с картинками</span><em>новое</em>${ico('i-chevr')}</button></div>
       </section>
@@ -338,6 +340,12 @@
       $('#price').style.display = low ? 'none' : '';
       $$('#tips .chip[data-tip] .cp').forEach((c) => { c.textContent = priceOf(c.parentElement.dataset.tip); });
       $$('#sg [data-sgp]').forEach((c) => { c.textContent = 'до ' + priceOf(c.dataset.sgp) + ' кр'; });
+      const st = $('#stik');   // наклейка: на сколько постов с картинкой хватает прямо сейчас — в постах, не в кредитах
+      if (st) {
+        const p1 = +((S.ceny.zadanie || {}).post) || 21, k = postovHvatit(), gost = S.me ? !!S.me.guest : !(S.session || TG);
+        st.innerHTML = k >= 1 ? `<b>${k} ${postSl(k)}</b><small>${gost ? 'сегодня бесплатно' : 'с картинкой на счету'}</small>` : `<b>${p1} кр</b><small>пост с картинкой</small>`;
+        st.hidden = false;
+      }
       $('#modetx').textContent = TIPS_SHORT[S.tip] + ' · до ' + priceOf(S.tip) + ' кр';
       $('#go').title = link ? 'С разбором ссылки-примера. Больше этой суммы не спишем' : 'Больше этой суммы не спишем. Текст по факту, картинки только готовые. Голос стоит 1 кр отдельно';
     };
@@ -908,7 +916,7 @@
     </div><div class="phone rv"><div class="scr"><div class="h">${esc((r.cover && r.cover.text) || r.title || '')}</div><div class="s">${esc(r.duration || '')} с · 9:16</div></div></div></div>`;
   }
   function renderAfisha(r, item) {
-    const V = (r.variants || []).map((v, i) => { const p = arr(v.palette).map((c) => col(c, '#15192A')); if (!p.length) p.push('#15192A', '#E8420F'); return `<div class="var rv"><div class="pv" style="background:linear-gradient(160deg,${p[0]},${p[1] || p[0]})">${v.url ? `<img src="${esc(v.url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">` : ''}<div class="hl">${esc(r.headline)}</div><div><div class="sb">${esc(r.sub)}</div><div class="sb" style="margin-top:6px;opacity:.7">${esc(r.details || '')}</div></div></div><div class="nm"><b>${esc(v.name)}</b>${esc(v.composition)}<div class="sw">${p.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div style="margin-top:10px">${v.url ? '' : `<button class="btn sm accent draw" data-prompt="${esc(v.prompt)}" data-aspect="4:5">Нарисовать фон · 12 кр</button>`}</div></div></div>`; }).join('');
+    const V = (r.variants || []).map((v, i) => { const p = arr(v.palette).map((c) => col(c, '#15192A')); if (!p.length) p.push('#15192A', '#FF4D1F'); return `<div class="var rv"><div class="pv" style="background:linear-gradient(160deg,${p[0]},${p[1] || p[0]})">${v.url ? `<img src="${esc(v.url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">` : ''}<div class="hl">${esc(r.headline)}</div><div><div class="sb">${esc(r.sub)}</div><div class="sb" style="margin-top:6px;opacity:.7">${esc(r.details || '')}</div></div></div><div class="nm"><b>${esc(v.name)}</b>${esc(v.composition)}<div class="sw">${p.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div style="margin-top:10px">${v.url ? '' : `<button class="btn sm accent draw" data-prompt="${esc(v.prompt)}" data-aspect="4:5">Нарисовать фон · 12 кр</button>`}</div></div></div>`; }).join('');
     return `${finalBlock(item)}<div class="variants">${V}</div>${threeImgs(item)}<dl class="kv rv"><dt>Форматы</dt><dd>${(r.formats || []).map(esc).join(' · ')}</dd>${r.kz_headline ? `<dt>Қазақша</dt><dd>${esc(r.kz_headline)}</dd>` : ''}</dl>${warnBlock(r.warnings)}${actionsBlock(editBtn(item))}`;
   }
   function renderKarusel(r, item) {
@@ -1089,10 +1097,10 @@
   // =====================================================================
   const TRENDS = [
     { t: '«Что было бы, если…» в твоей нише', fire: 'рилс', g: 'linear-gradient(160deg,#15192A,#3B4A8C)', p: 'Один вопрос на экране, ответ раскрывается за 15 секунд. Заходит у экспертов и магазинов.', tip: 'rils', q: 'Рилс «что было бы, если бы ты сделал это раньше» для моей ниши' },
-    { t: 'POV: ты пришёл в Алматы первый раз', fire: 'рилс', g: 'linear-gradient(160deg,#E8420F,#FFB38A)', p: 'Съёмка от первого лица, 3 локации, субтитры по слову. Кафе, салоны, туры.', tip: 'rils', q: 'POV-рилс: первый раз у нас, три момента, которые удивляют' },
+    { t: 'POV: ты пришёл в Алматы первый раз', fire: 'рилс', g: 'linear-gradient(160deg,#FF4D1F,#FFB38A)', p: 'Съёмка от первого лица, 3 локации, субтитры по слову. Кафе, салоны, туры.', tip: 'rils', q: 'POV-рилс: первый раз у нас, три момента, которые удивляют' },
     { t: 'Цены «тогда и сейчас» на Kaspi', fire: 'карусель', g: 'linear-gradient(160deg,#0E6B55,#19B98B)', p: 'Карусель с честным сравнением. Доверие растёт, когда показываешь цифры.', tip: 'karusel', q: 'Карусель «тогда и сейчас»: что изменилось в ценах и качестве за год' },
     { t: 'День из жизни за 20 секунд', fire: 'рилс', g: 'linear-gradient(160deg,#5B3A8C,#15192A)', p: 'Без лица, руки и процесс. Мастера, пекарни, швейные, автосервисы.', tip: 'rils', q: 'Рилс «день из жизни» без лица: руки, процесс, результат, 20 секунд' },
-    { t: 'Ответ на хейт с юмором', fire: 'рилс', g: 'linear-gradient(160deg,#B8231A,#E8420F)', p: 'Комментарий на экран — и спокойный ответ с фактами.', tip: 'rils', q: 'Рилс-ответ на типичный негативный комментарий в моей нише, с фактами и юмором' },
+    { t: 'Ответ на хейт с юмором', fire: 'рилс', g: 'linear-gradient(160deg,#B8231A,#FF4D1F)', p: 'Комментарий на экран — и спокойный ответ с фактами.', tip: 'rils', q: 'Рилс-ответ на типичный негативный комментарий в моей нише, с фактами и юмором' },
     { t: 'Афиша-календарь на ноябрь', fire: 'сезон', g: 'linear-gradient(160deg,#C98B1F,#F2B705)', p: 'Один пост со всеми событиями месяца — такие сохраняют.', tip: 'afisha', q: 'Афиша-календарь событий на ноябрь для моего бизнеса' },
   ];
   function trendy() {

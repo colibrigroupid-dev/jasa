@@ -8,12 +8,13 @@
   --bg:#F4EFE4; --bg-2:#ECE6D8; --surface:#FFFDF8; --surface-2:#F6F1E6; --field:#FFFFFF;
   --line:#DCD4C4; --line-soft:#E9E3D5;
   --ink:#15192A; --text:#1F2435; --muted:#575D6E; --dim:#6B7182;
-  --accent:#E8420F; --accent-ink:#111111; --accent-soft:#FFE6DA;
-  /* текст на оранжевом — всегда тёмный --accent-ink (4,69:1); мелкий оранжевый текст на светлом — --accent-text (5,4:1) */
+  --accent:#FF4D1F; --accent-ink:#111111; --accent-soft:#FFE6DA;
+  /* 10.11: один оранжевый #FF4D1F на обе темы — как знак канала и бота. Оранжевый — это поверхность: текст на нём всегда тёмный --accent-ink (5,69:1).
+     Оранжевым по бумаге не пишем (2,9:1): мелкий текст — --accent-text (5,4:1), слово в заголовке стоит на оранжевой плашке */
   --accent-text:#B33208;
   --accent-wait:#F2A98E;   /* 09.11: кнопка «ещё нельзя» — свой цвет вместо opacity, текст --ink */
   /* подпись: тёплое свечение (янтарь сверху слева, огонь снизу справа) */
-  --glow-1:rgba(232,66,15,.12); --glow-2:rgba(242,170,61,.20);
+  --glow-1:rgba(255,77,31,.12); --glow-2:rgba(242,170,61,.20);
   --ink-fg:#FFFDF8; --ok:#149A74; --ok-soft:#DCF3E9; --warn:#C98A00; --warn-soft:#FFF1CC; --bad:#D8402C;
   /* фирменные шрифты как на лендинге (P1-7, 31.10); запасные с казахскими буквами (ә ғ қ ң ө ұ ү і) — Noto Sans, системный */
   --ui:"Noto Sans",-apple-system,"system-ui","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -30,8 +31,8 @@
   --bg:#12151E; --bg-2:#171B26; --surface:#1B2029; --surface-2:#232937; --field:#272D3C;
   --line:#343C4E; --line-soft:#293142;
   --ink:#F5F1E8; --text:#E6E2D9; --muted:#A6AAB9; --dim:#8A8FA0;
-  --accent:#FF5A2C; --accent-ink:#141414; --accent-text:#FF9A72; --accent-soft:#3C2419; --accent-wait:#7A3A26;
-  --glow-1:rgba(255,90,44,.20); --glow-2:rgba(242,170,61,.13);
+  --accent:#FF4D1F; --accent-ink:#141414; --accent-text:#FF9A72; --accent-soft:#3C2419; --accent-wait:#7A3A26;
+  --glow-1:rgba(255,77,31,.20); --glow-2:rgba(242,170,61,.13);
   --ink-fg:#12151E; --ok:#3BCB9A; --ok-soft:#173A2F; --warn:#F2B33D; --warn-soft:#3B2F12; --bad:#FF6B5A;
   --shadow:inset 0 1px 0 rgba(255,255,255,.035), 0 16px 40px -22px rgba(0,0,0,.65);
   --shadow-lift:inset 0 1px 0 rgba(255,255,255,.05), 0 28px 56px -26px rgba(0,0,0,.8);
@@ -99,7 +100,7 @@ p{margin:0;max-width:68ch;text-wrap:pretty}
 .icobtn:hover{background:var(--line-soft)} .icobtn.zapis{background:var(--accent);color:var(--accent-ink);animation:pulse 1.2s infinite}
 .icobtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .icobtn.go{background:var(--accent);color:var(--accent-ink);width:44px;height:44px}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,66,15,.5)}60%{box-shadow:0 0 0 12px rgba(232,66,15,0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,77,31,.5)}60%{box-shadow:0 0 0 12px rgba(255,77,31,0)}}
 .examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .examples button{padding:9px 14px;border-radius:var(--r-pill);border:1px dashed var(--line);color:var(--muted);font-size:var(--fs-small);background:transparent;text-align:left;transition:border-color .15s,color .15s}
 .examples button:hover{border-color:var(--ink);color:var(--ink)}
@@ -415,7 +416,7 @@ ul.good{margin:10px 0 0;padding-left:20px}ul.good li{margin:4px 0}
 .fnode[data-s="готово"] i{background:var(--ok)}.fnode[data-s="частично"] i{background:var(--warn)}.fnode[data-s="ошибка"] i{background:var(--bad)}
 .fnode[data-s="ожидает"]{opacity:.62}
 .fnode.blind::after{content:"вслепую";position:absolute;top:-8px;right:10px;font:500 9.5px/1 var(--mono);padding:3px 6px;border-radius:999px;background:var(--ink);color:var(--surface);letter-spacing:.04em}
-@keyframes fnpulse{0%{box-shadow:0 0 0 0 rgba(232,66,15,.55)}70%{box-shadow:0 0 0 9px rgba(232,66,15,0)}100%{box-shadow:0 0 0 0 rgba(232,66,15,0)}}
+@keyframes fnpulse{0%{box-shadow:0 0 0 0 rgba(255,77,31,.55)}70%{box-shadow:0 0 0 9px rgba(255,77,31,0)}100%{box-shadow:0 0 0 0 rgba(255,77,31,0)}}
 .flow-svg .e{fill:none;stroke-width:1.6;transition:stroke .4s,opacity .4s}
 .flow-svg .e.idle{stroke:var(--line);opacity:.55;stroke-dasharray:2 5}
 .flow-svg .e.done{stroke:var(--ok);opacity:.45}
@@ -762,7 +763,7 @@ p{color:var(--text)}
 .credits b{font-size:1.35rem;font-weight:600;letter-spacing:-.02em}
 .credits .bar{height:5px;border-radius:3px;margin-top:10px}.credits .bar i{background:var(--accent)}
 .acct{padding:8px 10px}
-.acct .ava{width:34px;height:34px;box-shadow:0 6px 14px -6px rgba(232,66,15,.6)}
+.acct .ava{width:34px;height:34px;box-shadow:0 6px 14px -6px rgba(255,77,31,.6)}
 .acct small{color:var(--dim)}
 .main{padding:30px clamp(20px,4.5vw,64px) 210px}
 .pill{background:var(--surface);border-color:var(--line-soft);color:var(--muted);padding:9px 14px}
@@ -862,7 +863,7 @@ details.more summary{color:var(--muted);font-weight:500}
 .invite b{font-family:var(--disp);font-size:1.15rem;letter-spacing:-.015em;color:var(--ink)}
 .invite p{color:var(--muted)}
 .invite.den{position:relative;overflow:hidden;border:0;background:var(--ink);color:var(--ink-fg)}
-.invite.den::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(520px 260px at 0% 0%,rgba(242,170,61,.35),transparent 60%),radial-gradient(420px 240px at 100% 120%,rgba(255,90,44,.45),transparent 60%)}
+.invite.den::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(520px 260px at 0% 0%,rgba(242,170,61,.35),transparent 60%),radial-gradient(420px 240px at 100% 120%,rgba(255,77,31,.45),transparent 60%)}
 .invite.den>*{position:relative}
 .invite.den b{color:var(--ink-fg)}.invite.den p{color:color-mix(in srgb,var(--ink-fg) 78%,transparent)}
 .invite.den .btn.quiet{background:color-mix(in srgb,var(--ink-fg) 12%,transparent);color:var(--ink-fg);border-color:transparent}
@@ -891,7 +892,7 @@ details.more summary{color:var(--muted);font-weight:500}
 .kosh:nth-child(1) b{color:var(--accent-text)}
 #kab .card p.small.dim{margin-top:14px}
 .kupit-pod{position:relative;overflow:hidden;margin-top:0;padding:20px 22px;border-radius:18px;background:var(--ink);color:var(--ink-fg);gap:16px}
-.kupit-pod::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(460px 240px at 0% 0%,rgba(242,170,61,.32),transparent 60%),radial-gradient(380px 220px at 100% 130%,rgba(255,90,44,.42),transparent 60%)}
+.kupit-pod::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(460px 240px at 0% 0%,rgba(242,170,61,.32),transparent 60%),radial-gradient(380px 220px at 100% 130%,rgba(255,77,31,.42),transparent 60%)}
 .kupit-pod>*{position:relative}
 .kupit-pod b{font:700 1.25rem/1.15 var(--disp);letter-spacing:-.02em;color:var(--ink-fg)}
 .kupit-pod p.small.muted{color:color-mix(in srgb,var(--ink-fg) 78%,transparent);margin-top:6px}
@@ -990,7 +991,7 @@ details.more summary{color:var(--muted);font-weight:500}
 .img.dor .cap{position:static;background:none;padding:0 2px;font-size:12px;color:var(--muted)}
 .ed-ta.opis{min-height:84px;margin-top:4px}
 .btn .ic{width:16px;height:16px;vertical-align:-3px;margin-right:4px}
-.btn.zapis{background:var(--accent);color:#fff}
+.btn.zapis{background:var(--accent);color:var(--accent-ink)}
 
 /* ---------- 02.11 · этап 1 «ночной Алматы»: вход в один тап, компактное поле, баланс строками ---------- */
 .login-open{width:100%;min-height:52px;font-size:1.0625rem}
@@ -1209,3 +1210,22 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 .cmp-dop{margin:0 4px 6px;padding:8px 12px;border-radius:12px;background:var(--surface-2);color:var(--text);font-size:14px;line-height:1.3}
 .cmp-dop[hidden]{display:none}
 .composer.rec-on .cmp-dop{display:none}
+
+/* 10.11 · №270: первый экран «Создать» — крупный узкий заголовок (как на новых картинках), слово на оранжевой плашке, наклейка «сколько постов».
+   Рабочие экраны остаются спокойными: это только .hero.first */
+.hero-top{position:relative;display:flex;align-items:center;gap:16px}
+.hero-top h1{min-width:0}
+.hero h1 em{color:var(--accent-ink);background:var(--accent);padding:0 .13em .03em;border-radius:.15em;display:inline-block;transform:rotate(-1.5deg)}
+.hero h1 em::after{display:none}
+.hero.first h1{font-family:"Sofia Sans Extra Condensed",var(--disp);font-weight:800;letter-spacing:-.005em;line-height:.9;font-size:clamp(5rem,3rem + 6.4vw,8.6rem);white-space:nowrap}
+.mob .hero.first h1{font-size:clamp(3.2rem,16.4vw,4.1rem);letter-spacing:0}
+.stik{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 16px;border-radius:18px;background:var(--ink);color:var(--ink-fg);text-align:center;text-decoration:none;transform:rotate(5deg);box-shadow:var(--shadow-lift);transition:transform .2s var(--ease)}
+.stik[hidden]{display:none}
+.stik b{font:800 2rem/1 "Sofia Sans Extra Condensed",var(--disp);letter-spacing:.01em;white-space:nowrap}
+.stik small{font:600 12px/1.2 var(--body);opacity:.86;white-space:nowrap}
+@media (hover:hover){.stik:hover{transform:rotate(0deg) scale(1.04)}}
+.stik:active{transform:rotate(0deg) scale(.97)}
+/* на телефоне наклейке нет места рядом с заголовком: то же самое говорит плашка в шапке («2 поста · 0 ₸») */
+.mob .stik{display:none}
+.mob .mh-cr.gost{font-family:var(--body);font-weight:600;letter-spacing:-.01em}
+@media (max-height:720px){.mob .hero.first h1{font-size:clamp(3rem,14vw,3.3rem)}.mob .hero.sgon .sg{margin-top:9px}}
