@@ -33,7 +33,7 @@
     brandId: store.get('brandId', null),
     brandName: store.get('brandName', null),
     me: null,
-    ceny: { image: 12, zadanie: { post: 45, afisha: 45, karusel: 45, rils: 6, plan: 6, dna: 6 }, depo_prochitat: 2 },
+    ceny: { image: 12, zadanie: { post: 21, afisha: 21, karusel: 21, rils: 6, plan: 6, dna: 6 }, zadanie_3: { post: 45, afisha: 45, karusel: 45, rils: 6, plan: 6, dna: 6 }, depo_prochitat: 2 },   // запас до ответа /api/ceny: одна картинка 21, три — 45 (09.11: было 45 и 45 — «Тарифы» показывали «пост с картинкой до 45»)
     recepty: [],
     stil: store.get('stil', []),
     lastError: '',
@@ -658,7 +658,7 @@
   function tgPreview(r, item) {
     const hooks = arr(r.hooks); const text = ((hooks[0] ? hooks[0] + '\n\n' : '') + (r.text || '')).trim();
     const its = arr(item.imgItems).filter((x) => x.url);
-    return `<details class="more rv" ${document.documentElement.classList.contains('mob') ? '' : 'open'}><summary>Вид в Telegram</summary><div class="tgwrap"><div class="tgmsg"><div class="tgname">JASA</div><div class="tgtext">${esc(text).slice(0, 900)}${text.length > 900 ? '…' : ''}\n\n<span class="dim">— создано с помощью ИИ · JASA</span></div></div>${its.length ? `<div class="tgmsg tgalbum">${its.map((x) => `<img src="${esc(API_BASE + x.url)}" alt="">`).join('')}<div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>` : ''}<div class="dim small" style="margin-top:8px">В боте можно отвечать голосом: наговорите правку, и пост переделается.</div></div></details>`;
+    return `<details class="more rv" ${document.documentElement.classList.contains('mob') ? '' : 'open'}><summary>Вид в Telegram</summary><div class="tgwrap"><div class="tgmsg"><div class="tgname">JASA</div><div class="tgtext">${esc(text).slice(0, 900)}${text.length > 900 ? '…' : ''}\n\n<span class="dim">— создано с помощью ИИ · JASA</span></div></div>${its.length ? `<div class="tgmsg tgalbum">${its.map((x) => `<img src="${esc(API_BASE + x.url)}" alt="" loading="lazy" decoding="async" crossorigin="anonymous">`).join('')}<div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>` : ''}<div class="dim small" style="margin-top:8px">В боте можно отвечать голосом: наговорите правку, и пост переделается.</div></div></details>`;
   }
   const editBtn = (item) => `${item && !item.final ? '<button class="btn sm accent" type="button" data-pub>Опубликовать</button>' : ''}<button class="btn sm" type="button" data-edit>Редактировать</button><button class="btn sm quiet" type="button" data-svoya>Своя картинка</button>`;
   // «Опубликовать» без редактора: выбранная первая строка + первая готовая картинка → блок «Готово к публикации» с кнопками отправки
@@ -1548,19 +1548,27 @@
   }
   // Тарифы — один список для кабинета и лендинга (site/index.html, блок «Цены»): тексты сверяет test_p1.TestTarify.
   /*TARIFY*/const TARIFY = [
-    {"n": "Lite", "p": "0 ₸", "kto": "Попробовать", "li": ["50 кредитов в день без входа", "после входа — 135 пробных разово: 3 поста с картинками", "≈ 1 пост с картинками в день"], "knopka": "Попробовать бесплатно"},
-    {"n": "Creator", "p": "6 990 ₸", "kto": "Блогер, малый бизнес", "li": ["600 кредитов ≈ 13 постов с картинками", "голос бренда", "3 канала · автопубликация — скоро", "без водяных знаков"], "knopka": "Выбрать", "paket": "500", "hot": true},
-    {"n": "Pro", "p": "24 990 ₸", "kto": "SMM, агентство", "li": ["2 500 кредитов ≈ 55 постов с картинками", "до 10 брендов-клиентов", "команда 3 человека", "согласование и отчёты"], "knopka": "Выбрать", "paket": "2 000"},
-    {"n": "Studio", "p": "59 990 ₸", "kto": "Сценаристы, студии", "li": ["6 000 кредитов", "разбор сценария командой редакторов", "герои, локации, кадры, видео", "10 участников, 5 проектов"], "knopka": "Выбрать", "paket": "10 000"}
+    {"n": "Бесплатно", "p": "0 ₸", "per": "", "kto": "Попробовать", "li": ["50 кредитов в день без входа", "после входа — 135 пробных разово: 3 поста с картинками"], "knopka": "Попробовать бесплатно"},
+    {"n": "Каждый день", "p": "3 990 ₸", "per": "за 30 дней", "kto": "Кафе, салон, магазин", "li": ["45 кредитов каждое утро", "пост с тремя картинками или два поста с одной — каждый день", "посты, афиши, карусели, картинки", "дневные кредиты не копятся"], "knopka": "Оформить", "podpiska": true, "hot": true},
+    {"n": "Студент", "p": "1 990 ₸", "per": "разово", "kto": "Учусь", "li": ["200 кредитов, не сгорают", "защита диплома со слайдами и речью — 99 кредитов", "остальное — на посты и картинки"], "knopka": "Выбрать", "paket": "200"},
+    {"n": "Pro", "p": "24 990 ₸", "per": "разово", "kto": "SMM, агентство", "li": ["2 500 кредитов, не сгорают", "≈ 55 постов с тремя картинками", "до 10 брендов клиентов"], "knopka": "Выбрать", "paket": "2500"}
   ];/*/TARIFY*/
-  function tarify() {
+  function tarify(povtor) {
+    if (!S.me && !povtor) loadMe().then(() => { if ((location.hash || '').startsWith('#/tarify')) tarify(true); });   // цены и пакеты приходят с /api/me: дорисуем, когда ответит
+    // №213 (02.11): цены и состав пакетов — с сервера (/api/me → ceny_oplaty); пакетный тариф виден, только если сервер такой пакет продаёт
+    const co = (S.me && S.me.ceny_oplaty) || {}, srvPak = co.pakety || {}, tenge = (n) => Number(n).toLocaleString('ru-RU') + ' ₸';
+    const vidno = TARIFY.filter((t) => !t.paket || srvPak[t.paket] != null);
+    const cenaT = (t) => (t.paket && srvPak[t.paket] != null ? tenge(srvPak[t.paket]) : t.podpiska && co.podpiska && co.podpiska.tenge ? tenge(co.podpiska.tenge) : t.p);
+    const pakStr = ['500', '2000', '10000'].filter((k) => srvPak[k] != null).map((k) => Number(k).toLocaleString('ru-RU') + ' кр — ' + tenge(srvPak[k])).join(' · ');
     main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Сколько это стоит</h2><p class="muted" style="margin-top:10px">Работа считается в кредитах. Пост с картинкой до ${esc((S.ceny.zadanie || {}).post || 21)} кр, с тремя картинками до ${esc((S.ceny.zadanie_3 || {}).post || 45)}, рилс или план на неделю до ${esc((S.ceny.zadanie || {}).rils || 6)}, ещё одна картинка ${esc(S.ceny.image || 12)}, видео 5 секунд ${esc((S.ceny.video || {})['720p'] || 131)}, разбор чужого ролика 10–12, разбор сценария ≈ 75–100 (держим 100, лишнее возвращаем). Цена каждого действия видна на кнопке до запуска.</p>
       <p class="muted" style="margin-top:8px">Как платить сейчас: в Кабинете выставляете счёт → переводите в Kaspi по реквизитам → мы подтверждаем вручную, и кредиты на балансе. Пакеты не сгорают.</p></section>
-      <div class="tiers">${TARIFY.map((t) => `<div class="tier ${t.hot ? 'hot' : ''} rv"><span class="caps">${esc(t.kto)}</span><h3>${esc(t.n)}</h3><div class="price">${esc(t.p)}<small> /мес</small></div><ul>${t.li.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><button type="button" class="btn ${t.hot ? 'accent' : 'quiet'}" data-tarif="${esc(t.n)}">${esc(t.knopka)}</button></div>`).join('')}</div>`;
+      <div class="tiers">${vidno.map((t) => `<div class="tier ${t.hot ? 'hot' : ''} rv"><span class="caps">${esc(t.kto)}</span><h3>${esc(t.n)}</h3><div class="price">${esc(cenaT(t))}${t.per ? `<small> ${esc(t.per)}</small>` : ''}</div><ul>${t.li.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><button type="button" class="btn ${t.hot ? 'accent' : 'quiet'}" data-tarif="${esc(t.n)}">${esc(t.knopka)}</button></div>`).join('')}</div>
+      ${pakStr ? `<p class="muted" style="margin-top:18px">Пакеты кредитов, не сгорают: ${esc(pakStr)}. Купить — в Кабинете.</p>` : ''}`;
     $$('.rv', main).forEach((n, i) => (n.style.animationDelay = i * 80 + 'ms'));
     main.onclick = (e) => {
       const b = e.target.closest('[data-tarif]'); if (!b) return;
       const t = TARIFY.find((x) => x.n === b.dataset.tarif); if (!t) return;
+      if (t.podpiska) { location.hash = '#/kabinet'; return; }   // «Каждый день» оформляется в Кабинете, блок «Купить»
       if (!t.paket) { location.hash = '#/sozdat'; return; }
       S.podsvetPaket = t.paket; S.podsvetDo = Date.now() + 300000; S.podsvetSkroll = true; location.hash = '#/kabinet';   // Кабинет → «Пополнить» с подсвеченным пакетом
     };
