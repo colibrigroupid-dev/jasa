@@ -1190,7 +1190,7 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 .mob .sg-gl{font-size:clamp(52px,11vh,104px)}
 .mob .sg-body{padding:12px 14px 14px;gap:6px}
 .mob .sg-z{font-size:19px}
-@media (max-height:720px){.mob .sg-q span{display:none}.mob .sg-q{margin-bottom:8px}.mob .sg-n{min-height:40px}.mob .sg-qq{display:none}.mob .sg-list{width:38px;height:40px}.mob .sg-list i{line-height:14px}.mob .sg-list b{font-size:18px;line-height:24px}}
+@media (max-height:720px){.mob .sg-q span{display:none}.mob .sg-q{margin-bottom:8px}.mob .sg-n{min-height:40px}.mob .sg-qq{display:none}.mob .sg-qq.pp{display:-webkit-box;-webkit-line-clamp:1;font-size:13px}.mob .sg-list{width:38px;height:40px}.mob .sg-list i{line-height:14px}.mob .sg-list b{font-size:18px;line-height:24px}}
 /* у того, кто уже что-то сделал: без плакатов, одной строкой над лентой работ */
 .sg.compact{margin-top:14px}
 .sg.compact .sg-list{display:none}
@@ -1204,6 +1204,7 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 .sg.compact .sg-body{padding:8px 14px 12px}
 .sg.compact .sg-z{font-size:17px}
 .sg.compact .sg-qq{display:none}
+.sg.compact .sg-qq.pp,.mob .sg.compact .sg-qq.pp{display:-webkit-box;-webkit-line-clamp:1;font-size:13px}
 /* под полем: что дописать, чтобы вышло точнее */
 .cmp-dop{margin:0 4px 6px;padding:8px 12px;border-radius:12px;background:var(--surface-2);color:var(--text);font-size:14px;line-height:1.3}
 .cmp-dop[hidden]{display:none}
