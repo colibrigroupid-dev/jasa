@@ -25,6 +25,7 @@
     kartOpis: store.get('kartOpis', ''),   // своё описание картинки (пусто — промптер решает сам по посту)
     yazyk: 'ru',   // ниже подставляется выбранный при первом запуске
     job: store.get('job', null),
+    fkZapomnit: !!store.get('fkZapomnit', false),
     status: { key: false, images: false },
     accepted: store.get('accepted', {}),
     spentJobs: store.get('spentJobs', {}),
@@ -339,6 +340,11 @@
         <div class="bs-tiles kart"><button type="button" class="bs-tile ${S.kartOpis ? '' : 'on'}" data-kmode="auto" aria-pressed="${!S.kartOpis}">Авто<small>подберём по тексту поста</small></button><button type="button" class="bs-tile ${S.kartOpis ? 'on' : ''}" data-kmode="svoe" aria-pressed="${!!S.kartOpis}">Своё описание<small>скажите или напишите</small></button></div>
         <div id="kopis" class="${S.kartOpis ? '' : 'hide'}">${opisBlock('kopista', S.kartOpis)}</div>
         </details>
+        ${fkEst() ? `<details class="bs-more" ${FK.some(([k]) => fkVse()[k]) ? 'open' : ''}><summary>Адрес и как записаться</summary>
+        ${FK.map(([k, l, ph]) => `<label class="bs-lab" for="fk-${k}">${l}</label><input class="bs-inp" id="fk-${k}" data-fk="${k}" maxlength="120" autocomplete="off" placeholder="${esc(ph)}" value="${esc(fkVse()[k] || '')}">`).join('')}
+        ${hasBrand && S.useBrend && S.me && !S.me.guest ? `<div class="bs-row"><span class="tx"><b>Запомнить в бренде</b><small>Запишем только в пустые поля карты</small></span><button type="button" class="bs-sw ${S.fkZapomnit ? 'on' : ''}" id="fkz" role="switch" aria-checked="${!!S.fkZapomnit}" aria-label="Запомнить адрес и запись в бренде"></button></div>` : ''}
+        <p class="small dim" style="margin:-4px 0 10px">Подставим в пост как есть. Пустое поле в тексте останется как [уточнить] — его можно дописать перед публикацией.</p>
+        </details>` : ''}
         <div class="bs-lab">Стиль</div>
         ${hasBrand ? `<div class="bs-row"><span class="av">${esc(bname.trim().charAt(0).toUpperCase())}</span><span class="tx"><b>${esc(bname)}</b><small>Писать в моём стиле</small></span><button type="button" class="bs-sw ${S.useBrend ? 'on' : ''}" id="bssw" role="switch" aria-checked="${S.useBrend}" aria-label="Писать в стиле бренда"></button></div>` : `<a class="bs-row" href="#/brend" data-bs-close><span class="tx"><b>Настроить бренд</b><small>Тексты станут точнее</small></span>${ico('i-chevr')}</a>`}
         ${S.stil.length ? `<div class="bs-row"><span class="tx"><b>Стиль по ${S.stil.length} ${S.stil.length === 1 ? 'картинке' : 'картинкам'} из моих примеров</b></span><button type="button" class="btn sm quiet" id="bsstil">Снять</button></div>` : ''}
@@ -346,7 +352,9 @@
         <button type="button" class="bs-done" data-bs-close>Готово</button>`;
       const b = bsheet(html, () => { drawPrice(); const kp0 = $('#kartpill'); if (S.kartOpis && !kp0) $('#ask').insertAdjacentHTML('beforebegin', kartPill()); if (!S.kartOpis && kp0) kp0.remove(); const kp1 = $('#kartpill'); if (kp1) kp1.onclick = () => { S.kartOpis = ''; store.set('kartOpis', ''); kp1.remove(); }; }); sum();
       opisWire(b.el, 'kopista', () => $('#ask').value, (v) => { S.kartOpis = v.trim(); store.set('kartOpis', S.kartOpis); });
+      b.el.addEventListener('input', (e) => { const i = e.target.closest('[data-fk]'); if (!i) return; fkVse()[i.dataset.fk] = fkChist(i.value); store.set('fakty', S.fakty); });
       b.el.addEventListener('click', (e) => {
+        const fz = e.target.closest('#fkz'); if (fz) { hap('sel'); S.fkZapomnit = !S.fkZapomnit; store.set('fkZapomnit', S.fkZapomnit); fz.classList.toggle('on', S.fkZapomnit); fz.setAttribute('aria-checked', S.fkZapomnit); return; }
         const km = e.target.closest('.bs-tile[data-kmode]');
         if (km) { hap('sel'); const svoe = km.dataset.kmode === 'svoe'; $$('.bs-tile[data-kmode]', b.el).forEach((x) => { x.classList.toggle('on', x === km); x.setAttribute('aria-pressed', x === km); }); $('#kopis', b.el).classList.toggle('hide', !svoe); if (svoe) { $('#kopista', b.el).focus(); } else { S.kartOpis = ''; store.set('kartOpis', ''); $('#kopista', b.el).value = ''; } return; }
         const t = e.target.closest('.bs-tile[data-tip]');
@@ -405,7 +413,7 @@
       ta.value = ''; grow(); ta.blur();
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       try {
-        const res = await api('/api/ask', { tip: item.tip, tema: text, kartinok: S_KART(), aspect: S.aspect === 'auto' ? undefined : S.aspect, hudozhnik: S.hud === 'auto' ? undefined : S.hud, kartinka_opisanie: S.kartOpis || undefined, yazyk: S.yazyk, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: opts.ploshchadka || (item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram'), primer, depo: S.stil.length ? S.stil : undefined, besplatno: opts.besplatno || undefined });
+        const res = await api('/api/ask', { tip: item.tip, tema: text, kartinok: S_KART(), aspect: S.aspect === 'auto' ? undefined : S.aspect, hudozhnik: S.hud === 'auto' ? undefined : S.hud, kartinka_opisanie: S.kartOpis || undefined, yazyk: S.yazyk, fakty: fkTelo(), zapomnit: fkTelo() && S.fkZapomnit && S.useBrend && S.brandId ? true : undefined, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: opts.ploshchadka || (item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram'), primer, depo: S.stil.length ? S.stil : undefined, besplatno: opts.besplatno || undefined });
         Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null, zid: res.zid || '', besplatno: !!res.besplatno });
         spend(res.kredity, res.ostatok);
         S.made += 1; store.set('made', S.made);
@@ -646,6 +654,12 @@
   }
   const warnBlock = (w) => (w && w.length ? `<div class="warn rv"><b>Проверьте:</b> ${w.map(esc).join(' · ')}</div>` : '');
   // 10.11: «[уточнить]» — место, где сервис не знал факта (адрес, запись, цена). Подсвечиваем и не даём опубликовать как есть.
+  // 10.11: адрес, запись и часы — данные для поста, чтобы «[уточнить]» не появлялось. Живут на устройстве; сервер получает их как fakty.
+  const FK = [['adres', 'Адрес', 'Алматы, Абая 10'], ['kontakt', 'Как записаться или заказать', 'WhatsApp +7 700 000 00 00 или @konyr_coffee'], ['chasy', 'Часы работы', 'Каждый день 8:00–22:00']];
+  const fkEst = () => !!(S.ceny && S.ceny.fakty);   // сервер объявил, что принимает fakty
+  const fkChist = (v) => String(v || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+  const fkVse = () => { if (!S.fakty) S.fakty = store.get('fakty', {}) || {}; return S.fakty; };
+  const fkTelo = () => { if (!fkEst()) return undefined; const f = fkVse(), o = {}; FK.forEach(([k]) => { const v = fkChist(f[k]); if (v) o[k] = v; }); return Object.keys(o).length ? o : undefined; };
   const UT = /\[уточнить[^\]]*\]/g;
   const utN = (t) => (String(t || '').match(UT) || []).length;
   const utMark = (t) => esc(t).replace(UT, '<mark class="ut">$&</mark>');
