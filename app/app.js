@@ -689,7 +689,8 @@
         const ta = $('#svta', b.el); if (ta.value.trim().length < 5) { toast('Опишите, что должно быть на картинке'); return; }
         const btn = $('#svgo', b.el); btn.disabled = true; btn.textContent = 'Рисую, около минуты…';
         try {
-          const r = await api('/api/kartinka_svoya', { opisanie: ta.value, hudozhnik: hud, aspect, zid: item.zid || '', brand_id: item.brand ? item.brand.id : null });
+          const bn = (item.promty && item.promty.banner) || {};   // текст объявления остаётся и на своей картинке
+          const r = await api('/api/kartinka_svoya', { opisanie: ta.value, hudozhnik: hud, aspect, zid: item.zid || '', brand_id: item.brand ? item.brand.id : null, zagolovok: bn.zagolovok || '', podzagolovok: bn.podzagolovok || '' });
           spend(r.kredity, r.ostatok);
           const its = arr(item.imgItems); const n = its.reduce((m, x) => Math.max(m, +x.variant || 0), 0) + 1;
           its.push({ variant: n, kod: r.kod, url: r.image, svoya: true }); item.imgItems = its; store.set('feed', S.feed);
