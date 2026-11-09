@@ -130,6 +130,7 @@
   // или приглашение после результата — и они остаются в меню навсегда.
   const NAV = [
     { r: 'sozdat', i: 'i-spark', n: 'Создать', d: 'Пост, рилс, афиша, карусель' },
+    { r: 'idei', i: 'i-idea', n: 'Идеи', tag: 'новое', d: 'Готовые работы: посмотрите и сделайте такой же' },
     { r: 'brend', i: 'i-dna', n: 'Мой бренд', s: 'Бренд', d: 'Чтобы тексты звучали как вы' },
     { r: 'kanaly', i: 'i-chan', n: 'Мои каналы', s: 'Каналы', d: 'Где вы публикуетесь' },
     { r: 'trendy', i: 'i-trend', n: 'Тренды', tag: 'KZ', d: 'Что сейчас заходит' },
@@ -263,7 +264,7 @@
       <section class="hero ${first ? 'first' : 'compact'}">
         <h1>${first ? 'Что <em>сделать</em>?' : 'Что ещё <em>сделать</em>?'}</h1>
         ${first ? '<p>Скажите или напишите. Получите текст и картинку — или сразу три варианта.</p><div class="demo" title="Нажмите — подставим пример"><img src="demo-1.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-2.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-3.jpg" width="640" height="800" alt="" decoding="async"><span class="demo-hint">Нажмите на кадр — подставим пример</span></div>' : ''}
-        <div class="examples" id="examples">${first ? '<span class="caps">Попробуйте</span>' : ''}${(first ? EXAMPLES : []).map(([t, l, e]) => `<button type="button" data-tip="${t}" data-text="${esc(e)}"><span>${esc(l)}</span>${ico('i-chevr')}</button>`).join('')}<button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}"><span>Готовые идеи</span><em>${S.recepty.length || ''}</em>${ico('i-chevr')}</button></div>
+        <div class="examples" id="examples">${first ? '<span class="caps">Попробуйте</span>' : ''}${(first ? EXAMPLES : []).map(([t, l, e]) => `<button type="button" data-tip="${t}" data-text="${esc(e)}"><span>${esc(l)}</span>${ico('i-chevr')}</button>`).join('')}<button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}"><span>Готовые идеи</span><em>${S.recepty.length || ''}</em>${ico('i-chevr')}</button><button class="more-ideas" type="button" data-idei><span>Идеи с картинками</span><em>новое</em>${ico('i-chevr')}</button></div>
       </section>
       <section class="recwrap ${recOpen ? '' : 'hide'}" id="recwrap"><div class="rechead"><span class="caps">Заполните пару полей, остальное сделаем сами</span><span class="dim small">цена до запуска</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
       <div class="feed" id="feed"></div>
@@ -316,7 +317,7 @@
     const sp = $('#stilpill'); if (sp) sp.addEventListener('click', () => { S.stil = []; store.set('stil', S.stil); sp.remove(); toast('Стиль снят'); });
     const kp = $('#kartpill'); if (kp) kp.addEventListener('click', () => { S.kartOpis = ''; store.set('kartOpis', ''); kp.remove(); toast('Картинку подберём сами'); });
     // примеры только подставляют текст: кредиты списываются кнопкой «Сделать»
-    $('#examples').addEventListener('click', (e) => { const b = e.target.closest('button[data-text]'); if (!b) return; hap('light'); setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); });
+    $('#examples').addEventListener('click', (e) => { if (e.target.closest('[data-idei]')) { hap('light'); location.hash = '#/idei'; return; } const b = e.target.closest('button[data-text]'); if (!b) return; hap('light'); setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); });
     $$('.hero .demo img').forEach((im, i) => im.addEventListener('click', () => { const ex = EXAMPLES[i]; if (!ex) return; hap('light'); setTip(ex[0]); ta.value = ex[2]; grow(); ta.focus(); }));   // кадр на первом экране — тоже пример
     const go = () => { const { n } = priceNow(); if (ta.value.trim() && n < 1) { hap('error'); sessionStorage.setItem('jasa:draft', JSON.stringify({ tip: S.tip, text: ta.value })); location.hash = '#/kabinet'; return; } hap('medium'); send(); };
     $('#go').addEventListener('click', go);

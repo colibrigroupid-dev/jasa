@@ -1,0 +1,43 @@
+{
+  "versiya": 1,
+  "obnovleno": "2026-11-10",
+  "nishi": [
+    {"kod": "kofejnya", "n": "Кофейня"},
+    {"kod": "studiya", "n": "Студия"}
+  ],
+  "idei": [
+    {
+      "id": "2026-11-09-kofejnya-latte-vspyshka",
+      "nisha": "kofejnya",
+      "tip": "post",
+      "zapros": "Пост для кофейни: новый тыквенный латте, скидка 20 % до пятницы, позвать зайти утром",
+      "na_kartinke": "Тыквенный латте · −20 % · до пятницы",
+      "podpis": "Рука со стаканом у оранжевой стены, вспышка",
+      "img": "idei-kofejnya-latte-vspyshka.webp",
+      "yazyk": "ru",
+      "data": "2026-11-09"
+    },
+    {
+      "id": "2026-11-09-kofejnya-latte-sverhu",
+      "nisha": "kofejnya",
+      "tip": "post",
+      "zapros": "Пост для кофейни: новый тыквенный латте, скидка 20 % до пятницы, позвать зайти утром",
+      "na_kartinke": "Тыквенный латте · −20 % · до пятницы",
+      "podpis": "Вид сверху: в чашку льют молоко, оранжевый стол",
+      "img": "idei-kofejnya-latte-sverhu.webp",
+      "yazyk": "ru",
+      "data": "2026-11-09"
+    },
+    {
+      "id": "2026-11-09-studiya-synaq-aptasy",
+      "nisha": "studiya",
+      "tip": "afisha",
+      "zapros": "Сынақ аптасы: 3 күн тегін",
+      "na_kartinke": "Сынақ аптасы · 3 күн тегін",
+      "podpis": "Афиша на казахском: рука с ковриком для йоги",
+      "img": "idei-studiya-synaq-aptasy.webp",
+      "yazyk": "kz",
+      "data": "2026-11-09"
+    }
+  ]
+}
