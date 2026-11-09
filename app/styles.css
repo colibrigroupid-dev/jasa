@@ -1108,3 +1108,103 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 /* 10.11 · карта бренда: поле папки по содержимому, а не 160 px каждое (растёт в brend.js) */
 .beditor .bfields textarea{min-height:0;overflow-y:auto}
 .bs-inp{text-overflow:ellipsis}
+
+/* 10.11 · «Сегодня»: три повода на первом экране «Создать» и вопрос «Чем занимаетесь?» (разметка — app.js, расчёт — segodnya.js) */
+.hero.first.sgon{display:block;max-width:1080px}
+.hero.first.sgon h1{max-width:none}
+.hero.sgon .examples{margin-top:22px}
+.sg{margin-top:26px}
+.sg:empty{display:none}
+.sg-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sg-list{flex:none;width:44px;height:46px;border-radius:12px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;text-align:center;transform:rotate(-3deg)}
+.sg-list i{font:600 10px/16px var(--mono);font-style:normal;letter-spacing:.08em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink)}
+.sg-list b{font:700 21px/28px var(--disp);color:var(--ink);letter-spacing:-.03em}
+.sg-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sg-tx>b{font:700 18px/1.15 var(--disp);letter-spacing:-.02em;color:var(--ink)}
+.sg-tx>span{font-size:14px;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:0 4px}
+.sg-kto{position:relative;display:inline-flex;align-items:center;gap:2px;padding:1px 0;font:inherit;font-weight:600;color:var(--accent-text);border-bottom:1px dashed currentColor;border-radius:0;background:transparent}
+.sg-kto::after{content:"";position:absolute;inset:-12px -10px}
+.sg-kto svg.ic{width:14px;height:14px;transform:rotate(90deg)}
+.sg-q{display:flex;flex-direction:column;gap:3px;margin:0 0 12px}
+.sg-q b{font:700 22px/1.1 var(--disp);letter-spacing:-.025em;color:var(--ink)}
+.sg-q span{font-size:14px;color:var(--muted)}
+.sg-nishi{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.sg-n{display:flex;align-items:center;gap:8px;min-height:54px;padding:8px 12px;border-radius:16px;background:var(--surface);border:1px solid var(--line-soft);box-shadow:var(--shadow);font:600 14px/1.15 var(--body);color:var(--ink);text-align:left;transition:transform .15s var(--ease),border-color .15s,background .15s}
+.sg-n i{font-style:normal;font-size:20px;line-height:1;flex:none}
+.sg-n span{min-width:0}
+@media (hover:hover){.sg-n:hover{transform:translateY(-2px);border-color:var(--ink)}}
+.sg-n:active{transform:scale(.97)}
+.sg-n.on{border-color:var(--accent);background:var(--accent-soft)}
+.sg-n.skip{background:transparent;border-style:dashed;border-color:var(--line);box-shadow:none;color:var(--muted);justify-content:center;font-weight:500;text-align:center}
+.sg-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.sg-card{display:flex;flex-direction:column;padding:0;text-align:left;border-radius:22px;background:var(--surface);border:1px solid var(--line-soft);box-shadow:var(--shadow);overflow:hidden;color:var(--text);transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .15s}
+@media (hover:hover){.sg-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}}
+.sg-card:active{transform:scale(.985)}
+.sg-card.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent),var(--shadow)}
+.sg-vis{position:relative;display:block;height:clamp(84px,17vh,170px);overflow:hidden;background:var(--surface-2)}
+.sg-vis img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 90%}
+.sg-pr{position:absolute;right:10px;bottom:8px;font:500 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:999px;background:rgba(0,0,0,.5);color:#fff}
+.sg-gl{position:absolute;right:14px;bottom:-.06em;font:700 clamp(64px,13.5vh,132px)/.86 var(--disp);letter-spacing:-.06em;white-space:nowrap}
+.sg-gl small{font-size:.26em;letter-spacing:0;font-weight:600;margin-left:.2em}
+.sg-gl small.pre{margin:0 .25em 0 0}
+.sg-gl.w{font-size:clamp(34px,7vh,60px);bottom:12px;letter-spacing:-.04em}
+.sg-gl.ic{bottom:8px;line-height:0}
+.sg-gl.ic svg.ic{width:clamp(56px,11vh,104px);height:clamp(56px,11vh,104px);stroke-width:1.3}
+.v-povod .sg-vis{background:var(--accent);color:var(--accent-ink)}
+.v-den .sg-vis{background:var(--ink);color:var(--ink-fg)}
+.v-ideya .sg-vis,.v-vsegda .sg-vis{background:var(--accent-soft);color:var(--accent-text)}
+.sg-met{position:absolute;left:10px;top:10px;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 11px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:var(--surface);color:var(--ink)}
+.sg-body{display:flex;flex-direction:column;gap:8px;padding:14px 16px 16px;flex:1;min-width:0}
+.sg-z{font:700 21px/1.12 var(--disp);letter-spacing:-.025em;color:var(--ink)}
+.sg-qq{font-size:14px;line-height:1.35;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sg-go{margin-top:auto;display:flex;align-items:center;gap:8px;padding:9px 12px 9px 14px;border-radius:999px;background:var(--surface-2);font-size:14px;color:var(--ink)}
+.sg-go b{font-weight:600}
+.sg-go em{font:500 12px var(--mono);font-style:normal;color:var(--muted)}
+.sg-go svg.ic{width:16px;height:16px;margin-left:auto;color:var(--dim);transition:transform .2s var(--ease),color .15s}
+@media (hover:hover){.sg-card:hover .sg-go svg.ic{transform:translateX(3px);color:var(--accent)}}
+.sg-card.on .sg-go svg.ic{color:var(--accent)}
+/* компьютер, пока идёт вопрос: карточки ниже и короче, чтобы не уходили под поле */
+.sg.ask .sg-vis{height:clamp(60px,10vh,104px)}
+.sg.ask .sg-gl{font-size:clamp(52px,9vh,88px)}
+.sg.ask .sg-gl.ic svg.ic{width:clamp(44px,7vh,72px);height:clamp(44px,7vh,72px)}
+.sg.ask .sg-qq{display:none}
+.sg-cards.sk i{display:block;height:clamp(200px,34vh,330px);border-radius:22px;background:var(--surface-2);opacity:.6}
+.sg.anim .sg-card,.sg.anim .sg-n{animation:sg-in .5s var(--ease) both}
+.sg.anim .sg-card:nth-child(2){animation-delay:.07s}
+.sg.anim .sg-card:nth-child(3){animation-delay:.14s}
+.sg.anim .sg-n{animation-duration:.35s}
+@keyframes sg-in{from{opacity:0;transform:translateY(12px) scale(.98)}}
+@media (prefers-reduced-motion:reduce){.sg.anim .sg-card,.sg.anim .sg-n{animation:none}}
+/* телефон: вопрос плитками в три колонки, карточки лентой с видимым краем следующей */
+.mob .sg{margin-top:14px}
+.mob .sg-head{margin-bottom:10px;gap:10px}
+.mob .sg-nishi{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:0}
+.mob .sg-n{min-height:clamp(42px,7.2vh,60px);padding:6px 7px;gap:5px;font-size:12.5px;letter-spacing:-.01em;border-radius:14px}
+.mob .sg-n i{font-size:16px}
+.mob .sg.ask .sg-cards{display:none}
+.mob .sg-cards{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:-3px -16px 0;padding:5px 16px 14px;scroll-padding-left:16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mob .sg-cards::-webkit-scrollbar{display:none}
+.mob .sg-card{flex:0 0 72%;max-width:290px;scroll-snap-align:start}
+.mob .sg-cards.sk i{flex:0 0 72%}
+.mob .sg-vis{height:clamp(64px,13vh,128px)}
+.mob .sg-gl{font-size:clamp(52px,11vh,104px)}
+.mob .sg-body{padding:12px 14px 14px;gap:6px}
+.mob .sg-z{font-size:19px}
+@media (max-height:720px){.mob .sg-q span{display:none}.mob .sg-q{margin-bottom:8px}.mob .sg-n{min-height:40px}.mob .sg-qq{display:none}.mob .sg-list{width:38px;height:40px}.mob .sg-list i{line-height:14px}.mob .sg-list b{font-size:18px;line-height:24px}}
+/* у того, кто уже что-то сделал: без плакатов, одной строкой над лентой работ */
+.sg.compact{margin-top:14px}
+.sg.compact .sg-list{display:none}
+.sg.compact .sg-head{margin-bottom:10px}
+.sg.compact .sg-tx{flex-direction:row;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sg.compact .sg-tx>b{font-size:15px}
+.sg.compact .sg-vis{height:auto;background:transparent!important;overflow:visible;padding:12px 14px 0}
+.sg.compact .sg-vis img,.sg.compact .sg-gl,.sg.compact .sg-pr{display:none}
+.sg.compact .sg-met{position:static;display:inline-block;background:var(--surface-2);color:var(--muted)}
+.sg.compact .sg-card{border-radius:18px}
+.sg.compact .sg-body{padding:8px 14px 12px}
+.sg.compact .sg-z{font-size:17px}
+.sg.compact .sg-qq{display:none}
+/* под полем: что дописать, чтобы вышло точнее */
+.cmp-dop{margin:0 4px 6px;padding:8px 12px;border-radius:12px;background:var(--surface-2);color:var(--text);font-size:14px;line-height:1.3}
+.cmp-dop[hidden]{display:none}
+.composer.rec-on .cmp-dop{display:none}

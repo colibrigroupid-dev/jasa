@@ -26,6 +26,7 @@
     yazyk: 'ru',   // ниже подставляется выбранный при первом запуске
     job: store.get('job', null),
     fkZapomnit: !!store.get('fkZapomnit', false),
+    nisha: store.get('nisha', ''),
     brandFakty: store.get('brandFakty', null),
     status: { key: false, images: false },
     accepted: store.get('accepted', {}),
@@ -262,15 +263,39 @@
   const TIPS_MAIN = ['post', 'rils', 'afisha'];
   const TIPS_SHORT = { post: 'Пост', rils: 'Рилс', afisha: 'Афиша', karusel: 'Карусель', plan: 'План' };
 
+  // 10.11 · «Сегодня»: три повода на сегодня по делу человека. Расчёт и данные — segodnya.js (JASA_SG), здесь только экран.
+  const SG = window.JASA_SG || null;
+  const SG_ZNAK = { kofe: '☕', pekarnya: '🥐', barber: '💈', salon: '💅', fitnes: '🧘', magazin: '🛍', cvety: '💐', ucheba: '📚', deti: '🧸', uslugi: '🛠', drugoe: '✨' };
+  const SG_MES = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  const SG_MES3 = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  const SG_DN2 = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  const SG_IDEI = { kofe: 'kofejnya', fitnes: 'studiya' };   // ниша «Сегодня» → ниша раздела «Идеи», если коды разные
+  const sgNisha = () => { const D = SG && SG.dannye(); const id = String(S.nisha || ''); return D && D.nishi.find((x) => x.id === id) || null; };
+  const sgKorotko = (n) => String(n.n || '').split(',')[0].trim();   // «Кофейня, кафе» → «Кофейня»
+  const nishaIdei = () => { const id = String(S.nisha || ''); return id ? (SG_IDEI[id] || id) : ''; };
+  const sgFoto = () => {   // картинки настоящих работ этой ниши из «Идей» — на карточки; список помним, чтобы блок рисовался сразу
+    const k = nishaIdei(); const vse = store.get('ideiFoto', null) || {};
+    return k ? arr(vse[k]).filter((f) => /^idei-[\w.\-]+\.(webp|jpg|png)$/.test(String(f))) : [];
+  };
+  let sgFotoZapros = null;
+  const sgFotoObnovit = (cb) => {
+    if (!sgFotoZapros) sgFotoZapros = fetch('idei.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).then((j) => {
+      if (!j || !Array.isArray(j.idei)) return false;
+      const m = {}; j.idei.forEach((i) => { if (i && i.nisha && i.img && i.yazyk !== 'kz' && i.yazyk !== 'en') (m[i.nisha] = m[i.nisha] || []).push(String(i.img)); });
+      const bylo = JSON.stringify(store.get('ideiFoto', null) || {}); store.set('ideiFoto', m); return JSON.stringify(m) !== bylo;
+    }).catch(() => false);
+    sgFotoZapros.then((izm) => { if (izm && cb) cb(); });
+  };
+
   function sozdat() {
     const first = !S.feed.length;
     const recOpen = store.get('recOpen', false);
     const ico = (n) => `<svg class="ic"><use href="#${n}"/></svg>`;
     main.innerHTML = topbar('Создать', S.made || S.brandId ? brandPill() : '', 'only-desk') + `
-      <section class="hero ${first ? 'first' : 'compact'}">
+      <section class="hero ${first ? 'first' : 'compact'} ${SG ? 'sgon' : ''}">
         <h1>${first ? 'Что <em>сделать</em>?' : 'Что ещё <em>сделать</em>?'}</h1>
-        ${first ? '<p>Скажите или напишите. Получите текст и картинку — или сразу три варианта.</p><div class="demo" title="Нажмите — подставим пример"><img src="demo-1.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-2.jpg" width="640" height="800" alt="" decoding="async"><img src="demo-3.jpg" width="640" height="800" alt="" decoding="async"><span class="demo-hint">Нажмите на кадр — подставим пример</span></div>' : ''}
-        <div class="examples" id="examples">${first ? '<span class="caps">Попробуйте</span>' : ''}${(first ? EXAMPLES : []).map(([t, l, e]) => `<button type="button" data-tip="${t}" data-text="${esc(e)}"><span>${esc(l)}</span>${ico('i-chevr')}</button>`).join('')}<button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}"><span>Готовые идеи</span><em>${S.recepty.length || ''}</em>${ico('i-chevr')}</button><button class="more-ideas" type="button" data-idei><span>Идеи с картинками</span><em>новое</em>${ico('i-chevr')}</button></div>
+        ${SG ? '<div class="sg" id="sg"></div>' : (first ? '<p>Скажите или напишите. Получите текст и картинку — или сразу три варианта.</p>' : '')}
+        <div class="examples" id="examples"><span id="exzapas"></span><button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}"><span>Готовые идеи</span><em>${S.recepty.length || ''}</em>${ico('i-chevr')}</button><button class="more-ideas" type="button" data-idei><span>Идеи с картинками</span><em>новое</em>${ico('i-chevr')}</button></div>
       </section>
       <section class="recwrap ${recOpen ? '' : 'hide'}" id="recwrap"><div class="rechead"><span class="caps">Заполните пару полей, остальное сделаем сами</span><span class="dim small">цена до запуска</span></div><div class="recepty" id="recepty">${receptyHtml()}</div></section>
       <div class="feed" id="feed"></div>
@@ -278,6 +303,7 @@
         <div class="box">
           ${stilPill()}${kartPill()}
           <textarea id="ask" rows="1" placeholder="${first ? 'Скажите или напишите, что нужно' : 'Что дальше?'}" enterkeyhint="send"></textarea>
+          <div class="cmp-dop" id="cdop" hidden></div>
           <div class="cmp-warn" id="cwarn">${ico('i-warn')}<span id="cwarntx"></span></div>
           <div class="cmp-act">
             <button type="button" class="cmp-mode" id="mode" aria-haspopup="dialog" title="Формат, картинка, стиль">${ico('i-sliders')}<span id="modetx">${TIPS_SHORT[S.tip]} · до ${priceOf(S.tip)} кр</span></button>
@@ -303,12 +329,13 @@
       $('#go').classList.toggle('low', low);
       $('#price').style.display = low ? 'none' : '';
       $$('#tips .chip[data-tip] .cp').forEach((c) => { c.textContent = priceOf(c.parentElement.dataset.tip); });
+      $$('#sg [data-sgp]').forEach((c) => { c.textContent = 'до ' + priceOf(c.dataset.sgp) + ' кр'; });
       $('#modetx').textContent = TIPS_SHORT[S.tip] + ' · до ' + priceOf(S.tip) + ' кр';
       $('#go').title = link ? 'С разбором ссылки-примера. Больше этой суммы не спишем' : 'Больше этой суммы не спишем. Текст по факту, картинки только готовые. Голос стоит 1 кр отдельно';
     };
     const setTip = (tip) => { S.tip = TIPS[tip] ? tip : 'post'; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c.dataset.tip === S.tip)); const k3 = $('#kart3'); if (k3) k3.classList.toggle('hide', !['post', 'afisha', 'karusel'].includes(S.tip)); drawPrice(); };
     $('#kart3').addEventListener('click', () => { const v = S_KART() === 3 ? 1 : 3; store.set('kartinki', v); $('#kart3').classList.toggle('on', v === 3); $('#kart3').setAttribute('aria-pressed', v === 3); drawPrice(); });
-    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; drawPrice(); };
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; if (!ta.value.trim()) { const dp = $('#cdop'); if (dp) dp.hidden = true; $$('#sg .sg-card.on').forEach((x) => { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); }); } drawPrice(); };
     ta.addEventListener('input', grow);
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !$('html').classList.contains('mob')) { e.preventDefault(); go(); } });
     $('#tips').addEventListener('click', (e) => {
@@ -324,7 +351,50 @@
     const kp = $('#kartpill'); if (kp) kp.addEventListener('click', () => { S.kartOpis = ''; store.set('kartOpis', ''); kp.remove(); toast('Картинку подберём сами'); });
     // примеры только подставляют текст: кредиты списываются кнопкой «Сделать»
     $('#examples').addEventListener('click', (e) => { if (e.target.closest('[data-idei]')) { hap('light'); location.hash = '#/idei'; return; } const b = e.target.closest('button[data-text]'); if (!b) return; hap('light'); setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); });
-    $$('.hero .demo img').forEach((im, i) => im.addEventListener('click', () => { const ex = EXAMPLES[i]; if (!ex) return; hap('light'); setTip(ex[0]); ta.value = ex[2]; grow(); ta.focus(); }));   // кадр на первом экране — тоже пример
+    const exZapas = () => { const z = $('#exzapas'); if (z && first && !z.innerHTML) z.outerHTML = '<span class="caps">Попробуйте</span>' + EXAMPLES.map(([t, l, e]) => `<button type="button" data-tip="${t}" data-text="${esc(e)}"><span>${esc(l)}</span>${ico('i-chevr')}</button>`).join(''); };
+    // ---- «Сегодня» ----
+    const sgBox = $('#sg'); let sgVybor = false, sgKart = [], sgNet = false;
+    const sgDraw = (anim) => { try { sgDraw0(anim); } catch (e) { sgKart = []; sgNet = true; if (sgBox) sgBox.innerHTML = ''; exZapas(); } };
+    const sgDraw0 = (anim) => {
+      if (!sgBox) return;
+      const D = SG.dannye();
+      if (!D) { sgBox.innerHTML = sgNet ? '' : '<div class="sg-cards sk" aria-hidden="true"><i></i><i></i><i></i></div>'; return; }
+      const den = SG.segodnya(); const n = sgNisha();
+      const sprosit = sgVybor || (first && !n && !store.get('nishaSkip', false));
+      try { sgKart = SG.calc(D, den, n ? n.id : 'drugoe'); } catch (e) { sgKart = []; }
+      if (sgKart.length !== 3) { sgBox.innerHTML = ''; exZapas(); return; }
+      const wd = (new Date(den.g, den.m - 1, den.d).getDay() + 6) % 7;
+      const foto = sgFoto(); let nf = 0;
+      const dm = (nomer) => { const t = new Date(nomer * 864e5); return [t.getUTCDate(), SG_MES3[t.getUTCMonth()]]; };
+      const vis = (c) => {
+        if (c.vid !== 'povod' && nf < foto.length) { const f = foto[(den.d + nf++) % foto.length]; return `<img src="${esc(f)}" alt="" width="800" height="993" decoding="async"><span class="sg-pr">пример</span>`; }
+        if (c.vid === 'povod') { const [d1, m1] = dm(c.s), [d2, m2] = dm(c.po); return c.do ? `<span class="sg-gl">${d1}<small>${m1}</small></span>` : (c.po > c.dn ? `<span class="sg-gl"><small class="pre">до</small>${d2}<small>${m2}</small></span>` : '<span class="sg-gl w">сегодня</span>'); }
+        if (c.vid === 'den') return `<span class="sg-gl">${SG_DN2[wd]}</span>`;
+        return `<span class="sg-gl ic">${ico('i-idea')}</span>`;
+      };
+      const metka = (c) => { const m = c.vid === 'povod' && c.n === c.z ? (c.do ? 'Через ' + c.do + ' дн.' : 'Уже идёт') : c.metka; return c.vid === 'povod' && c.do === 1 ? m.replace('Через 1 дн.', 'Завтра') : m; };
+      const tipN = (t) => TIPS_SHORT[t] || 'Пост';
+      sgBox.className = 'sg' + (sprosit ? ' ask' : '') + (first ? '' : ' compact') + (anim ? ' anim' : '');
+      sgBox.innerHTML = `<div class="sg-head"><span class="sg-list" aria-hidden="true"><i>${SG_MES3[den.m - 1]}</i><b>${den.d}</b></span><span class="sg-tx"><b>Сегодня, ${SG.DNI[wd].toLowerCase()}</b><span>${den.d} ${SG_MES[den.m - 1]}${sprosit ? '' : ` · <button type="button" class="sg-kto" id="sgkto" title="Сменить дело">${esc(n ? n.dlya : 'выбрать дело')}${ico('i-chevr')}</button>`}</span></span></div>
+        ${sprosit ? `<div class="sg-q"><b>Чем занимаетесь?</b><span>Покажем три повода для поста на сегодня</span></div>
+        <div class="sg-nishi" role="group" aria-label="Чем занимаетесь">${D.nishi.map((x) => `<button type="button" class="sg-n ${n && n.id === x.id ? 'on' : ''}" data-n="${esc(x.id)}" aria-pressed="${!!(n && n.id === x.id)}"><i aria-hidden="true">${SG_ZNAK[x.id] || '•'}</i><span>${esc(sgKorotko(x))}</span></button>`).join('')}<button type="button" class="sg-n skip" data-n="">${sgVybor ? 'Оставить как есть' : 'Пропустить'}</button></div>` : ''}
+        <div class="sg-cards" id="sgcards">${sgKart.map((c, i) => `<button type="button" class="sg-card v-${esc(c.vid)}" data-i="${i}" aria-pressed="false" title="${esc(c.q)}"><span class="sg-vis">${vis(c)}<span class="sg-met">${esc(metka(c))}</span></span><span class="sg-body"><b class="sg-z">${esc(c.z)}</b><span class="sg-qq">${esc(c.p || c.q)}</span><span class="sg-go"><b>${esc(tipN(c.tip))}</b><em data-sgp="${esc(TIPS[c.tip] ? c.tip : 'post')}">до ${priceOf(TIPS[c.tip] ? c.tip : 'post')} кр</em>${ico('i-chevr')}</span></span></button>`).join('')}</div>`;
+    };
+    if (sgBox) {
+      sgDraw(true);
+      SG.obnovit((izm) => { if (!sgBox.isConnected) return; if (!SG.dannye()) { sgNet = true; sgBox.innerHTML = ''; exZapas(); return; } if (!sgKart.length || (izm && !ta.value && !sgVybor)) sgDraw(true); });
+      sgFotoObnovit(() => { if (sgBox.isConnected && !ta.value && !sgVybor) sgDraw(false); });
+      sgBox.addEventListener('click', (e) => {
+        const nb = e.target.closest('.sg-n');
+        if (nb) { hap('medium'); if (nb.dataset.n) { S.nisha = nb.dataset.n; store.set('nisha', S.nisha); } else if (!sgVybor) store.set('nishaSkip', true); sgVybor = false; sgDraw(true); const k = $('#sgkto'); if (k) k.focus({ preventScroll: true }); return; }
+        if (e.target.closest('#sgkto')) { hap('light'); sgVybor = true; sgDraw(false); const on = $('.sg-n.on', sgBox) || $('.sg-n', sgBox); if (on) on.focus({ preventScroll: true }); return; }
+        const cb = e.target.closest('.sg-card'); const c = cb && sgKart[+cb.dataset.i]; if (!c) return;
+        hap('light'); setTip(c.tip); ta.value = c.q; grow();
+        $$('.sg-card', sgBox).forEach((x) => { x.classList.toggle('on', x === cb); x.setAttribute('aria-pressed', x === cb); });
+        const dp = $('#cdop'); if (dp) { dp.textContent = c.d ? 'Допишите: ' + c.d + ' — ' + (TIPS_SHORT[S.tip] || 'пост').toLowerCase() + ' выйдет точнее' : ''; dp.hidden = !c.d; }
+        ta.focus(); try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (er) { /* старый браузер */ }
+      });
+    } else exZapas();
     const go = () => { const { n } = priceNow(); if (ta.value.trim() && n < 1) { hap('error'); sessionStorage.setItem('jasa:draft', JSON.stringify({ tip: S.tip, text: ta.value })); location.hash = '#/kabinet'; return; } hap('medium'); send(); };
     $('#go').addEventListener('click', go);
     $('#mode').addEventListener('click', () => { hap('light'); settings(); });
@@ -1644,7 +1714,7 @@
     try { const x = new URL(u); if (/^https?:$/.test(x.protocol) && SVOI_HOSTY.test(x.hostname)) return x.href; } catch (e) { /* не адрес */ }
     return '';
   }
-  window.JASA = { openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl };
+  window.JASA = { openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl, nishaIdei };
   window.addEventListener('jasa:ready', route);
   if (!window.JASA_DEFER) route();
 })();

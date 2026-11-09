@@ -5,9 +5,9 @@
   'use strict';
   const J = window.JASA; if (!J) return;
   const { esc, $, $$, arr, topbar, toast, bsheet, bsHead } = J;
-  const VER = '1';
+  const VER = '2';
   const TIP = { post: 'Пост', afisha: 'Афиша', karusel: 'Карусель', rils: 'Рилс', plan: 'План' };
-  let D = null, filtr = '';
+  let D = null, filtr = '', filtrPo = null;   // filtrPo — для какого дела фильтр уже выставлен сам
 
   function stil() {
     if ($('#id-style')) return;
@@ -81,6 +81,9 @@
       try { const r = await fetch('idei.json?v=' + VER, { cache: 'no-cache' }); /* всегда сверяемся с сервером: новая идея видна сразу */ if (!r.ok) throw new Error(String(r.status)); D = await r.json(); }
       catch (e) { const box = $('#idbox'); if (box) box.innerHTML = '<div class="warn"><b>Идеи не открылись.</b> Проверьте связь и обновите страницу.</div>'; return; }
     }
+    /* 10.11: человек выбрал своё дело в «Сегодня» — открываем на его нише; выбор «Все» потом не сбиваем */
+    const moya = J.nishaIdei ? J.nishaIdei() : '';
+    if (moya !== filtrPo) { filtrPo = moya; if (moya && arr(D.idei).some((i) => i.nisha === moya && imgUrl(i) && i.zapros)) filtr = moya; }
     risovat();
   }
 
