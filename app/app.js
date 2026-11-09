@@ -103,6 +103,10 @@
   const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); try { document.cookie = 'jasa_yazyk=' + l + '; max-age=31536000; path=/; SameSite=Lax'; } catch (e) { /* без cookie */ } api('/api/yazyk', { yazyk: l }).then(posleYazyka).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
   const S_KART = () => (store.get('kartinki', 1) === 3 ? 3 : 1);   // сколько картинок рисовать сразу: 1 по умолчанию, 3 — по выбору (+24 кр)
   const priceOf = (tip) => { const z = (S_KART() === 3 && S.ceny.zadanie_3) || S.ceny.zadanie; return (z && z[tip]) || 3; };
+  // 10.11: на что идут дневные кредиты подписки — список с сервера; null — сервер старый, дневные идут на всё
+  const podIdyot = () => (Array.isArray(S.ceny && S.ceny.podpiska_idyot) ? S.ceny.podpiska_idyot : null);
+  const vnePodpiski = (tip) => { const k = S.me && S.me.koshelki, sp = podIdyot(); return !!(k && sp && !sp.includes(tip) && (+k.den || 0) > 0); };
+  const dostupno = (tip) => { const k = S.me && S.me.koshelki; return vnePodpiski(tip) ? (+k.dar || 0) + (+k.lichnye || 0) : (+S.credits || 0); };
   const priceLabel = (tip, extra) => 'до ' + (priceOf(tip) + (extra || 0)) + ' кр';
   const LINK_RE = /https?:\/\/\S*(instagram\.com|tiktok\.com|youtu|vk\.com)\S*/;
   function loadMe() { return api('/api/me').then((m) => { S.me = m; if (m.yazyk && !store.get('yazyk', null)) { S.yazyk = m.yazyk; S.yazykChosen = true; store.set('yazyk', m.yazyk); } else if (!m.guest && !m.yazyk && store.get('yazyk', null)) { api('/api/yazyk', { yazyk: store.get('yazyk', 'ru') }).then(posleYazyka).catch(() => {}); } S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); { const sc = document.getElementById('script'); if (sc) sc.dispatchEvent(new Event('input')); } const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
@@ -288,12 +292,12 @@
       </div>`;
     const ta = $('#ask'), comp = $('#composer');
     // тип задания и цена меняются только здесь, чтобы цена не отставала от типа
-    const priceNow = () => { const link = LINK_RE.test(ta.value) ? (S.ceny.transcribe || 1) : 0; return { link, p: priceOf(S.tip) + link, n: Math.floor((+S.credits || 0) / (priceOf(S.tip) + link)) }; };
+    const priceNow = () => { const link = LINK_RE.test(ta.value) ? (S.ceny.transcribe || 1) : 0; const d = dostupno(S.tip); return { link, p: priceOf(S.tip) + link, d, vne: vnePodpiski(S.tip), n: Math.floor(d / (priceOf(S.tip) + link)) }; };
     const drawPrice = () => {
-      const { link, p, n } = priceNow(); const has = !!ta.value.trim(); const low = n < 1;
+      const { link, p, n, d, vne } = priceNow(); const has = !!ta.value.trim(); const low = n < 1;
       comp.classList.toggle('has', has); comp.classList.toggle('low', low);
       $('#price').innerHTML = `<span class="du">до </span>${p} кр`;
-      $('#cwarntx').textContent = `Не хватает: нужно до ${p} кр, у вас ${Math.floor(+S.credits || 0)}`;
+      $('#cwarntx').textContent = vne ? `С подписки ${(TIPS_SHORT[S.tip] || 'это').toLowerCase()} не идёт: нужно до ${p} личных кр, у вас ${Math.floor(d)}` : `Не хватает: нужно до ${p} кр, у вас ${Math.floor(d)}`;
       $('#go').firstChild.textContent = low ? 'Пополнить ' : 'Сделать ';
       $('#go').classList.toggle('low', low);
       $('#price').style.display = low ? 'none' : '';
@@ -326,7 +330,7 @@
     // лист «Настройки результата»: тип, бренд, стиль, цена
     function settings() {
       const hasBrand = !!(S.brandId || S.brend); const bname = S.brandName || (S.brend && S.brend.name) || 'Мой бренд';
-      const sum = () => { const { p, n } = priceNow(); const low = n < 1; const el = $('#bssum'); el.classList.toggle('low', low); el.textContent = low ? `Не хватает: нужно до ${p} кр, у вас ${Math.floor(+S.credits || 0)}` : `До ${p} кр · хватит на ${n}`; };
+      const sum = () => { const { p, n, d, vne } = priceNow(); const low = n < 1; const el = $('#bssum'); el.classList.toggle('low', low); el.textContent = low ? (vne ? `С подписки ${(TIPS_SHORT[S.tip] || 'это').toLowerCase()} не идёт: нужно до ${p} личных кр, у вас ${Math.floor(d)}` : `Не хватает: нужно до ${p} кр, у вас ${Math.floor(d)}`) : `До ${p} кр · хватит на ${n}${vne ? ' · с личных кредитов' : ''}`; };
       const html = `${bsHead('Настройки')}
         <div class="bs-lab">Формат</div>
         <div class="bs-tiles">${Object.entries(TIPS).map(([k, v]) => `<button type="button" class="bs-tile ${k === S.tip ? 'on' : ''}" data-tip="${k}" aria-pressed="${k === S.tip}">${v}<small>до ${priceOf(k)} кр</small></button>`).join('')}<button type="button" class="bs-tile" data-prez>Слайды<small>мастер →</small></button></div>
@@ -436,7 +440,7 @@
       // третий результат — момент предложить «Каждый день»: счёт выставляется здесь же, без похода в тарифы
       const el = document.createElement('div'); el.className = 'invite rv den';
       const p = (me.ceny_oplaty || {}).podpiska || { tenge: 3990, v_den: 45 };
-      el.innerHTML = `<div><b>Понравилось? Делайте так каждый день</b><p>«Каждый день» — ${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${S.ceny && S.ceny.kino ? 'Идут на посты, афиши, карусели и картинки. ' : ''}${esc(tng(p.tenge))} за 30 дней, оплата в Kaspi.</p></div><div class="ib"><button class="btn sm accent" type="button" data-den>Выставить счёт</button><button class="btn sm quiet" type="button" data-skip>Не сейчас</button></div>`;
+      el.innerHTML = `<div><b>Понравилось? Делайте так каждый день</b><p>«Каждый день» — ${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${podIdyot() ? 'Идут на посты, афиши, карусели и картинки. ' : ''}${esc(tng(p.tenge))} за 30 дней, оплата в Kaspi.</p></div><div class="ib"><button class="btn sm accent" type="button" data-den>Выставить счёт</button><button class="btn sm quiet" type="button" data-skip>Не сейчас</button></div>`;
       el.querySelector('[data-skip]').addEventListener('click', () => { store.set('skip_den', S.made + 3); el.remove(); });
       el.querySelector('[data-den]').addEventListener('click', async (e) => { e.target.disabled = true; try { const r = await api('/api/schet', { tip: 'podpiska' }); toast('Счёт ' + r.schet.id + ' выставлен — он в кабинете'); location.hash = '#/kabinet'; } catch (er) { toast(er.message); e.target.disabled = false; } });
       return el;
@@ -1486,7 +1490,7 @@
     const c = m.ceny_oplaty || {}; const p = c.podpiska || { tenge: 3990, dnej: 30, v_den: 45 }; const pod = m.podpiska;
     const pak = Object.entries(c.pakety || { 500: 5990, 2000: 19990, 10000: 89990 });
     return `<div class="card" id="popolnit"><span class="caps">Купить</span>
-      <div class="kupit-pod ${pod && pod.aktivna ? 'on' : ''}"><div><b>«Каждый день»</b><p class="small muted">${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${S.ceny && S.ceny.kino ? 'Идут на посты, афиши, карусели и картинки; видео, презентации и кино — с личных кредитов. ' : ''}${esc(p.dnej)} дней.</p></div>
+      <div class="kupit-pod ${pod && pod.aktivna ? 'on' : ''}"><div><b>«Каждый день»</b><p class="small muted">${esc(p.v_den)} кредитов каждое утро: пост с тремя вариантами картинок — или два поста с одной картинкой. ${podIdyot() ? 'Идут на посты, афиши, карусели и картинки; видео, презентации и кино — с личных кредитов. ' : ''}${esc(p.dnej)} дней.</p></div>
         <button class="btn sm accent" data-kupit="podpiska">${pod && pod.aktivna ? 'Продлить' : 'Выставить счёт'} · ${tng(p.tenge)}</button></div>
       <span class="caps" style="display:block;margin-top:14px">Пакеты · не сгорают</span>
       <div class="chips pakety">${pak.map(([n, t]) => `<button class="chip ${podsvet() === n || podsvet() === n.replace(/(\d)(?=(\d{3})$)/, '$1 ') ? 'on' : ''}" data-kupit="paket" data-paket="${esc(n)}">${esc(n)} кр · ${tng(t)} <small class="dim">${(t / n).toFixed(1).replace('.', ',')} ₸/кр</small></button>`).join('')}</div>
