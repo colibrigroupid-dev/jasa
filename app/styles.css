@@ -1090,3 +1090,13 @@ input[type=file]::file-selector-button:hover{background:var(--surface);border-co
 .file-name{font-size:var(--fs-small);color:var(--muted);overflow-wrap:anywhere}
 /* список «Попробуйте» не прячется под композером: запас по высоте композера с чипами */
 .mob:has(#composer) .main{padding-bottom:calc(var(--nav-h) + var(--sab) + var(--cmp-h,190px) + 28px)}
+
+/* 09.11 · находка координатора на проде: подпись «вариант 1» лежала поверх второй строки надписи на самой картинке.
+   Подпись варианта — под миниатюрой; картинка не перекрывается ничем, кроме кнопки «С лого» в верхнем углу. */
+.imgs .img:has(>img){aspect-ratio:auto;overflow:visible;background:none;box-shadow:none;display:block}
+.imgs .img:has(>img)>img{position:static;display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:16px;box-shadow:var(--shadow)}
+.imgs .img:has(>img):hover>img{transform:none}
+.imgs .img:has(>img)>.ph{display:none}
+.imgs .img:has(>img)>.cap{position:static;background:none;color:var(--muted);padding:6px 2px 0;font-weight:500;font-size:12px;line-height:1.3}
+.mob .imgs .img:has(>img)>img{border-radius:12px}
+.mob .imgs .img:has(>img)>.cap{padding:5px 2px 0;font-size:12px}
