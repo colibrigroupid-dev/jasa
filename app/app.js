@@ -607,10 +607,10 @@
     el.addEventListener('click', (e) => {
       const h = e.target.closest('.hooks button'); if (h) { $$('.hooks button', el).forEach((b) => b.classList.toggle('on', b === h)); return; }
       const d = e.target.closest('.draw'); if (d) { drawImage(d, item); return; }
-      if (e.target.closest('[data-pub]')) { hap('light'); publish(item, el); return; }
+      if (e.target.closest('[data-pub]')) { if (utStop(item, el, postText(item))) return; hap('light'); publish(item, el); return; }
       if (e.target.closest('[data-edit]')) { hap('light'); editor(item, el); return; }
       if (e.target.closest('[data-svoya]')) { hap('light'); svoyaKartinka(item, el); return; }
-      const fin = e.target.closest('[data-fin]'); if (fin) { hap('light'); finalAct(fin.dataset.fin, item, fin); return; }
+      const fin = e.target.closest('[data-fin]'); if (fin) { if (utStop(item, el, (item.final || {}).text)) return; hap('light'); finalAct(fin.dataset.fin, item, fin); return; }
       const wl = e.target.closest('.withlogo'); if (wl) { withLogo(wl); return; }
       const vg = e.target.closest('.vgo'); if (vg) { startVideo(vg, item, el); return; }
       if (e.target.closest('.fb-ok')) { fbSend(item, 'ok', el).then(() => { $('.fb', el).outerHTML = fbBlock(item); }); return; }
@@ -627,7 +627,7 @@
         return;
       }
       const ch = e.target.closest('.vidpanel .chip'); if (ch) { const k = ch.dataset.res ? 'data-res' : 'data-ratio'; $$('.chip[' + k + ']', ch.parentElement).forEach((c) => c.classList.toggle('on', c === ch)); const vb = $('.vgo', ch.closest('.vidpanel')); if (vb) vb.textContent = 'Снять · 5 с · ' + ({ '480p': 59, '720p': 131, '1080p': 321 }[($('.chip.on[data-res]', ch.closest('.vidpanel')) || {}).dataset.res || '720p']) + ' кр'; return; }
-      const c = e.target.closest('[data-copy]'); if (c) { copyText(c.dataset.copy === 'self' ? c.closest('.sheet').innerText : $(c.dataset.copy, el).innerText, c); }
+      const c = e.target.closest('[data-copy]'); if (c) { copyText(c.dataset.copy === 'self' ? c.closest('.sheet').innerText : $(c.dataset.copy, el).innerText, c); if (utN(postText(item))) setTimeout(() => toast('Скопировано. В тексте остались [уточнить] — заполните перед публикацией'), 1200); }
     });
     return el;
   }
@@ -644,6 +644,12 @@
     }
   }
   const warnBlock = (w) => (w && w.length ? `<div class="warn rv"><b>Проверьте:</b> ${w.map(esc).join(' · ')}</div>` : '');
+  // 10.11: «[уточнить]» — место, где сервис не знал факта (адрес, запись, цена). Подсвечиваем и не даём опубликовать как есть.
+  const UT = /\[уточнить[^\]]*\]/g;
+  const utN = (t) => (String(t || '').match(UT) || []).length;
+  const utMark = (t) => esc(t).replace(UT, '<mark class="ut">$&</mark>');
+  const utHint = (t) => { const n = utN(t); return n ? `<button type="button" class="ut-hint rv" data-edit>В тексте ${n} ${n === 1 ? 'место' : n < 5 ? 'места' : 'мест'} без данных: адрес, запись или цена. Заполнить</button>` : ''; };
+  const utStop = (item, el, t) => { const n = utN(t); if (!n) return false; hap('medium'); toast('Сначала заполните [уточнить] — ' + n + ' ' + (n === 1 ? 'место' : n < 5 ? 'места' : 'мест') + ' в тексте'); editor(item, el); return true; };
   const actionsBlock = (extra) => `<div class="actions rv"><button class="btn sm" data-copy="self"><svg class="ic" style="width:18px;height:18px"><use href="#i-copy"/></svg>Скопировать</button>${extra || ''}<span class="dim small aimark" style="margin-left:auto;align-self:center">Метка ИИ добавится сама (закон РК № 230-VIII, ст. 21)</span></div>`;
   const imgCard = (im, cls, i) => `<div class="img ${cls || ''} rv" data-i="${i == null ? '' : i}" data-prompt="${esc(im.prompt)}" data-aspect="${esc(im.aspect || '4:5')}"><div class="ph"></div>${im.url ? `<img src="${esc(im.url)}" alt="">` : '<button class="btn sm accent draw">Нарисовать · 12 кр</button>'}<div class="cap">${esc(im.caption || im.text || '')}</div></div>`;
 
@@ -752,7 +758,7 @@
     const L = { sebe: 'Себе в Telegram', share: 'Поделиться…', tg: 'В Telegram', wa: 'В WhatsApp', copy: 'Скопировать' };
     const rest = ['sebe', 'share', 'tg', 'wa', 'copy'].filter((k) => k !== prim && k !== vtoroj && (k !== 'share' || canShare));
     return `<div class="final rv"><div class="caps">Готово к публикации</div>
-      <div class="final-body">${f.image ? `<img src="${esc(API_BASE + f.image)}" alt="">` : ''}<div class="posttext">${esc(f.text)}</div></div>
+      <div class="final-body">${f.image ? `<img src="${esc(API_BASE + f.image)}" alt="">` : ''}<div class="posttext">${utMark(f.text)}</div></div>${utHint(f.text)}
       <div class="final-act">
         <button type="button" class="btn accent" data-fin="${prim}">${L[prim]}</button>${vtoroj ? `<button type="button" class="btn" data-fin="${vtoroj}">${L[vtoroj]}</button>` : ''}
         <button type="button" class="btn quiet" data-edit>Изменить</button>
@@ -784,7 +790,7 @@
   function renderPost(r, item) {
     return `${finalBlock(item)}${threeImgs(item)}
       <div class="hooks rv">${(r.hooks || []).map((h, i) => `<button class="${i === (item.hook || 0) ? 'on' : ''}">${esc(h)}</button>`).join('')}</div>
-      <div class="posttext rv" id="pt">${esc(r.text || r._raw || '')}</div>
+      <div class="posttext rv" id="pt">${utMark(r.text || r._raw || '')}</div>${utHint(r.text)}
       <div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>
       ${tgPreview(r, item)}
       <dl class="kv rv"><dt>Когда</dt><dd>${esc(r.best_time || '—')}</dd></dl>
@@ -808,7 +814,7 @@
   }
   function renderKarusel(r, item) {
     return `${finalBlock(item)}<div class="slides">${(r.slides || []).map((s) => `<div class="slide rv"><span class="n">${esc(s.n)} / ${(r.slides || []).length}</span><div><b>${esc(s.headline)}</b><p>${esc(s.text)}</p></div></div>`).join('')}</div>
-      <div class="posttext rv" style="margin-top:16px">${esc(r.caption || '')}</div><div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>${threeImgs(item)}${warnBlock(r.warnings)}${actionsBlock(editBtn(item))}`;
+      <div class="posttext rv" style="margin-top:16px">${utMark(r.caption || '')}</div>${utHint(r.caption)}<div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>${threeImgs(item)}${warnBlock(r.warnings)}${actionsBlock(editBtn(item))}`;
   }
   function renderPlan(r) {
     return `<p class="rv muted">${esc(r.goal || '')}</p><div class="days">${(r.days || []).map((d) => `<div class="day rv"><div class="d">${esc(d.day)}</div><div class="f">${esc(d.format)}</div><div><b>${esc(d.topic)}</b><p>${esc(d.hook)}</p><p class="dim small">${esc(d.why)}</p></div></div>`).join('')}</div>
