@@ -38,7 +38,8 @@
         <div class="iz-knopki">${arr(L.knopki).map((k, i) => `<button type="button" class="iz-k ${vybor.includes(k.kod) ? 'on' : ''} ${i >= 4 && !vybor.includes(k.kod) && !store.get('izAll', false) ? 'hide' : ''}" data-k="${k.kod}"><b>${esc(k.name)}</b><small>${esc(k.opis)}</small><em>${kr(k.kredity)}</em></button>`).join('')}${arr(L.knopki).length > 4 && !store.get('izAll', false) ? `<button type="button" class="iz-k iz-more" id="izmore"><b>Ещё ${arr(L.knopki).length - 4}</b><small>перевод, в мои примеры, скачать свой ролик</small></button>` : ''}</div>
         <label class="iz-moj ${vybor.includes('skachat') ? '' : 'hide'}" id="izmoj"><input type="checkbox" id="izmojc"> Это мой ролик или у меня есть право на него — только тогда его можно скачать</label>
         <div class="iz-row"><button type="button" class="chip" id="izvse">Всё сразу · ${kr(L.vse)}${tg(L.vse)} · выгоднее на ${L.vse_bez - L.vse} кр</button>
-          <button class="btn accent" type="submit" id="izgo">Разобрать · ${kr(cena())}${tg(cena())}</button></div>
+          <button class="btn accent" type="submit" id="izgo">Разобрать · ${esc(cenaTxt())}</button></div>
+        <p class="small muted iz-dl" id="izdl" ${dlinaTxt() ? '' : 'hidden'}>${esc(dlinaTxt())}</p>
         <p class="small dim" style="margin-top:10px">Чужой ролик — только для разбора, не для публикации; автор и ссылка сохраняются. «Такой же ролик про мой бизнес» берёт приём и структуру, а не текст, кадры и музыку. Разбор делает ИИ, обычно 20–60 секунд.</p>
       </form>
       <div id="izres"></div>
@@ -57,7 +58,11 @@
   }
   const name = (k) => (arr(L.knopki).find((x) => x.kod === k) || {}).name || k;
   const short = (u) => String(u || '').replace(/^https?:\/\/(www\.)?/, '').slice(0, 60);
-  function upd() { const b = $('#izgo'); if (b) b.textContent = 'Разобрать · ' + kr(cena()) + tg(cena()); }
+  // 10.11: цена растёт с длиной ролика (L.dlina с сервера); длина до скачивания неизвестна — пишем «от … до …»
+  const dop = () => { const d = L && L.dlina; return d && cena() > 0 ? Math.max(0, Math.round(+d.doplata_max || 0)) : 0; };
+  const cenaTxt = () => { const c = cena(), m = dop(); return m ? 'от ' + kr(c).replace(' кр', '') + ' до ' + kr(c + m) : kr(c) + tg(c); };
+  const dlinaTxt = () => { const d = L && L.dlina; if (!d || !dop()) return ''; return `Цена — за ролик до ${+d.sek_v_cene} с. Длиннее — +${+d.kr_za_shag} кр за каждые начатые ${+d.shag_sek} с, не больше +${dop()} кр. Спишем по факту, лишнее вернём.`; };
+  function upd() { const b = $('#izgo'); if (b) b.textContent = 'Разобрать · ' + cenaTxt(); const h = $('#izdl'); if (h) { h.textContent = dlinaTxt(); h.hidden = !h.textContent; } }
   function setFile(f) {
     if (!f) return;
     if (f.size > 10e6) { toast('Видео больше 10 МБ — пришлите ссылку'); return; }
@@ -75,7 +80,7 @@
       if (url) body.url = url; else body.fajl = { b64: await toB64(fajl), mime: fajl.type };
       const r = await api('/api/izuchit', body);
       loadMe();
-      $('#izres').innerHTML = `<div class="card iz-wait"><span class="spin"></span><span id="izet">Скачиваю ролик…</span><small class="dim">обычно 20–60 секунд</small></div>`;
+      $('#izres').innerHTML = `<div class="card iz-wait"><span class="spin"></span><span id="izet">Скачиваю ролик…</span><small class="dim">обычно 20–60 секунд${+r.kredity_max > +r.kredity ? ' · удержали до ' + esc(kr(+r.kredity_max)) + ', спишем по длине ролика, лишнее вернём' : ''}</small></div>`;
       poll(r.id, S.pollToken);
     } catch (e) { toast(e.message); }
     b.disabled = false; upd();
@@ -103,6 +108,9 @@
     const box = $('#izres'); if (!box) return;
     const src = /^https?:/.test(j.istochnik || '') ? `<a href="${esc(j.istochnik)}" target="_blank" rel="noopener noreferrer">${esc(short(j.istochnik))}</a>` : esc(j.istochnik || 'файл');
     let h = `<div class="iz-head"><b>${src}</b><span class="small muted">${j.avtor ? 'автор: ' + esc(j.avtor) + ' · ' : ''}${j.sek ? j.sek + ' с · ' : ''}${kr(j.kredity || 0)}</span></div>`;
+    if (+j.doplata > 0) h += `<p class="small muted iz-dop">В том числе +${esc(kr(+j.doplata))} за длину ролика${j.sek ? ' (' + esc(j.sek) + ' с)' : ''}.</p>`;
+    const nv = arr(j.ne_vyshlo).map(name);   // разделы, которые не получились: за них не списано
+    if (nv.length) h += `<p class="warn iz-nv"><b>Не получилось: ${esc(nv.join(', '))}.</b> За это кредиты не списали — можно запустить ещё раз.</p>`;
     if (j.video) h += blok('Ваш ролик', `<video controls preload="metadata" src="${esc(API_BASE + j.video)}"></video><a class="btn sm" href="${esc(API_BASE + j.video)}" download="rolik.mp4">Скачать mp4</a><p class="small dim">Ссылка живёт 24 часа.</p>`);
     if (j.tekst) h += blok('Текст ролика', `${j.tekst.rech ? `<p class="iz-pre">${esc(j.tekst.rech)}</p>` : ''}${j.tekst.na_ekrane ? `<p class="small muted">На экране: ${esc(j.tekst.na_ekrane)}</p>` : ''}`, [j.tekst.rech, j.tekst.na_ekrane].filter(Boolean).join('\n\n'));
     if (j.smysl) h += blok('О чём и почему цепляет', kv(j.smysl, [['o_chyom', 'О чём'], ['kryuchok', 'Крючок'], ['prizyv', 'Призыв'], ['dlya_kogo', 'Для кого'], ['format', 'Формат']]));

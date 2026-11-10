@@ -149,7 +149,7 @@
       const r = await api('/api/brend/sobrat', { bid: b.id, material, sajt });
       spend(r.kredity, r.ostatok); lastQ = arr(r.voprosy);
       await load(); draw();
-      $('#bres').innerHTML = `<b>Заполнено полей: ${arr(r.zapolneno).length}.</b> ${esc(r.itog || '')}`;
+      $('#bres').innerHTML = `<b>Заполнено полей: ${arr(r.zapolneno).length}.</b> ${esc(r.itog || '')}` + (r.materialy_obrezany ? `<p class="small muted" style="margin-top:6px">Прочитали первые ${esc(Number(r.prochitano_znakov || 12000).toLocaleString('ru-RU'))} знаков. Остальное вставьте вторым заходом — заполним пустые поля.</p>` : '');
     } catch (e) { toast(e.message); btn.disabled = false; btn.textContent = 'Собрать · ≈6 кр'; }
   }
 

@@ -90,7 +90,7 @@
     return j;
   }
   api('/api/status').then((s) => { S.status = s; }).catch(() => {});
-  api('/api/ceny').then((c) => { S.ceny = c; drawHead(); if ((location.hash || '').startsWith('#/tarify') && routes.tarify) routes.tarify(true); ['ask', 'script'].forEach((id) => { const ta = document.getElementById(id); if (ta) ta.dispatchEvent(new Event('input')); }); }).catch(() => {});
+  api('/api/ceny').then((c) => { S.ceny = c; drawHead(); { const hh = document.getElementById('cmphint'); if (hh) hh.textContent = rechTxt(); } if ((location.hash || '').startsWith('#/tarify') && routes.tarify) routes.tarify(true); ['ask', 'script'].forEach((id) => { const ta = document.getElementById(id); if (ta) ta.dispatchEvent(new Event('input')); }); }).catch(() => {});
   api('/api/recepty').then((r) => { S.recepty = arr(r.recepty); const box = $('#recepty'); if (box) box.innerHTML = receptyHtml(); }).catch(() => {});
   // цена до запуска = тем же расчётом, что резерв на сервере (Plumar: «цена под кнопкой совпадает со счётом»)
   const LANG_LABEL = { ru: 'Русский', kz: 'Қазақша', en: 'English' };
@@ -107,6 +107,8 @@
   const priceOf = (tip) => { const z = (S_KART() === 3 && S.ceny.zadanie_3) || S.ceny.zadanie; return (z && z[tip]) || 3; };
   // 10.11: что даёт день подписки — фраза и число только с сервера (podpiska.chto считается там из числа кредитов и цены поста).
   // Старый сервер фразы не шлёт: тогда говорим без числа, чтобы не пообещать лишнего.
+  // 10.11: голос — по минутам записи (/api/ceny.rech); старый сервер — прежняя цена за запись
+  const rechTxt = (dlyaKnopki) => { const r = S.ceny && S.ceny.rech; if (r && +r.kr_za_minutu > 0) { const m = Math.round((+r.max_sek || 300) / 60); return dlyaKnopki ? 'Голос — ' + r.kr_za_minutu + ' кр за минуту записи, до ' + m + ' мин' : 'Говорите · ' + r.kr_za_minutu + ' кр за минуту, до ' + m + ' мин'; } const k = +S.ceny.transcribe || 1; return dlyaKnopki ? 'Голос стоит ' + k + ' кр отдельно' : 'Говорите · ' + k + ' кр'; };
   const postSl = (x) => { const a = x % 10, b = x % 100; return a === 1 && b !== 11 ? 'пост' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'поста' : 'постов'; };
   const postovHvatit = () => Math.floor(dostupno('post') / (+((S.ceny.zadanie || {}).post) || 21));   // на сколько постов с одной картинкой хватает сейчас
   const denStroka = (pod) => (pod && typeof pod.chto === 'string' && pod.chto && +pod.v_den > 0 ? Math.round(+pod.v_den) + ' кредитов каждое утро: ' + pod.chto : 'Кредиты каждое утро на посты и картинки');
@@ -319,7 +321,7 @@
             <button type="button" class="cmp-go" id="go">Сделать <small id="price"></small></button>
           </div>
           <div class="cmp-rec"><button type="button" class="cmp-mic" id="recx" aria-label="Отменить запись">${ico('i-x')}</button><span class="t" id="rect">0:00</span><div class="cmp-wave">${Array.from({ length: 22 }, () => '<i></i>').join('')}</div><button type="button" class="cmp-stop" id="recstop" aria-label="Закончить запись"><i></i></button></div>
-          <div class="cmp-hint">Говорите · 1 кр</div>
+          <div class="cmp-hint" id="cmphint">${esc(rechTxt())}</div>
         </div>
       </div>`;
     const ta = $('#ask'), comp = $('#composer');
@@ -342,7 +344,7 @@
         st.hidden = false;
       }
       $('#modetx').textContent = TIPS_SHORT[S.tip] + ' · до ' + priceOf(S.tip) + ' кр';
-      $('#go').title = link ? 'С разбором ссылки-примера. Больше этой суммы не спишем' : 'Больше этой суммы не спишем. Текст по факту, картинки только готовые. Голос стоит 1 кр отдельно';
+      $('#go').title = link ? 'С разбором ссылки-примера. Больше этой суммы не спишем' : 'Больше этой суммы не спишем. Текст по факту, картинки только готовые. ' + rechTxt(true);
     };
     const setTip = (tip) => { S.tip = TIPS[tip] ? tip : 'post'; $$('#tips .chip').forEach((c) => c.classList.toggle('on', c.dataset.tip === S.tip)); const k3 = $('#kart3'); if (k3) k3.classList.toggle('hide', !['post', 'afisha', 'karusel'].includes(S.tip)); drawPrice(); };
     $('#kart3').addEventListener('click', () => { const v = S_KART() === 3 ? 1 : 3; store.set('kartinki', v); $('#kart3').classList.toggle('on', v === 3); $('#kart3').setAttribute('aria-pressed', v === 3); drawPrice(); });
