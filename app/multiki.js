@@ -221,8 +221,8 @@
   function imgBox(x, alt) {
     if (x.status === 'idet') return '<div class="mk-ph-img"><span class="spin"></span><span class="small muted">рисую…</span></div>';
     if (x.status === 'oshibka') return `<div class="mk-ph-img err"><span class="small">Не получилось: ${esc(x.error || '')}. Кредиты вернулись.</span></div>`;
-    if (x.url && x.error) return `<img src="${esc(API_BASE + x.url)}" alt="${esc(alt)}" data-lb loading="lazy"><span class="mk-old">${esc(x.error)}</span>`;
-    if (x.url) return `<img src="${esc(API_BASE + x.url)}" alt="${esc(alt)}" data-lb loading="lazy">${x.ustarel ? '<span class="mk-old">устарел — описание изменилось</span>' : ''}`;
+    if (x.url && x.error) return `<img src="${esc(J.absUrl(x.url))}" alt="${esc(alt)}" data-lb loading="lazy"><span class="mk-old">${esc(x.error)}</span>`;
+    if (x.url) return `<img src="${esc(J.absUrl(x.url))}" alt="${esc(alt)}" data-lb loading="lazy">${x.ustarel ? '<span class="mk-old">устарел — описание изменилось</span>' : ''}`;
     return '<div class="mk-ph-img"><span class="small dim">ещё нет</span></div>';
   }
 
@@ -295,7 +295,7 @@
       (it('geroi', 'list').url ? '' : `<div class="mk-voices">${P.brif.geroi.map((g) => `<label>${esc(g.imya)}<select data-gv="${esc(g.imya)}">${arr(L.golosa).map((v) => `<option value="${v.kod}" ${g.golos === v.kod ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>`).join('')}</div>`) +
       `${net.length && !kz ? `<div class="mk-row" style="margin:14px 0"><button class="btn accent" id="mkall">Озвучить ${net.length === gp.length ? 'все' : 'остальные'} · ≈ ${kr(cena)}</button></div>` : ''}
       <div class="mk-lines">${gp.map((p) => { const x = it('golos', p.n); return `<div class="mk-line"><b>${p.n}. ${esc(p.kto || '—')}</b><span>${esc(p.replika)}${p.dolgo ? '<br><span class="small" style="color:var(--bad)">Реплика длиннее 11 с — один план её не вместит. Сократите в раскадровке.</span>' : ''}</span>
-        <div>${x.status === 'idet' ? '<span class="spin"></span>' : x.status === 'oshibka' ? `<span class="small" style="color:var(--bad)">${esc(x.error || 'ошибка')}</span>` : x.url ? `<audio controls preload="none" src="${esc(API_BASE + x.url)}"></audio>${x.ustarel ? '<span class="mk-old">устарел</span>' : ''}` : ''}
+        <div>${x.status === 'idet' ? '<span class="spin"></span>' : x.status === 'oshibka' ? `<span class="small" style="color:var(--bad)">${esc(x.error || 'ошибка')}</span>` : x.url ? `<audio controls preload="none" src="${esc(J.absUrl(x.url))}"></audio>${x.ustarel ? '<span class="mk-old">устарел</span>' : ''}` : ''}
         <button class="btn sm ${x.url || kz ? 'quiet' : ''}" data-g="${p.n}" ${x.status === 'idet' ? 'disabled' : ''}>${x.url ? 'Ещё раз' : 'Озвучить'} · ≈ ${kr(p.cena_golos)}</button>
         <label class="btn sm ${kz && !x.url ? '' : 'quiet'}"><input type="file" accept="audio/*" hidden data-gs="${p.n}">Своя запись</label>${x.svoj ? '<span class="small dim">ваша запись</span>' : ''}</div></div>`; }).join('') || '<p class="muted">В мультике нет реплик.</p>'}</div>
       <div class="mk-row" style="margin-top:18px">${P.ok.golos ? '' : utvBtn('golos', 'Голоса подходят')}</div>`;
@@ -318,11 +318,11 @@
     const an = it('animatik', 0);
     pan.innerHTML = head('Ролики', 'Каждый видео-план снимается от утверждённого стоп-кадра, губы — под голос. Снимайте по одному, если хотите сначала проверить качество. Неудача — кредиты возвращаются.') + okBadge('video') +
       `<div class="mk-anim"><div><b>Черновик с голосом · бесплатно</b><p class="small muted">Весь мультик из стоп-кадров с голосом, подписями и заданиями — посмотрите по времени до съёмки. Можно показать и так, без видео.</p></div>
-        ${an.status === 'idet' ? '<div class="working"><span class="spin"></span><span>Собираю…</span></div>' : an.status === 'oshibka' ? `<p class="warn">${esc(an.error || '')}</p>` : an.url ? `<video controls preload="metadata" src="${esc(API_BASE + an.url)}"></video><a class="btn sm quiet" href="${esc(API_BASE + an.url)}" download="chernovik.mp4">Скачать черновик</a>` : ''}
+        ${an.status === 'idet' ? '<div class="working"><span class="spin"></span><span>Собираю…</span></div>' : an.status === 'oshibka' ? `<p class="warn">${esc(an.error || '')}</p>` : an.url ? `<video controls preload="metadata" src="${esc(J.absUrl(an.url))}"></video><a class="btn sm quiet" href="${esc(J.absUrl(an.url))}" download="chernovik.mp4">Скачать черновик</a>` : ''}
         <button class="btn sm" id="mkan" ${an.status === 'idet' ? 'disabled' : ''}>${an.url ? 'Собрать заново' : 'Собрать черновик'}</button></div>` +
       `<div class="field"><label>Качество</label><div class="chips" id="mkres">${[['720p', '720p · для проектора в классе'], ['480p', '480p · проба одного плана']].map(([v, t]) => `<button class="chip ${res === v ? 'on' : ''}" data-v="${v}">${t}</button>`).join('')}</div></div>
       ${net.length ? `<div class="mk-row" style="margin-bottom:14px"><button class="btn accent" id="mkall">Снять ${net.length === vp.length ? 'все' : 'остальные'} (${net.length}) · ${kr(cena)}</button><span class="small muted">≈ 2–6 минут на план</span></div>` : ''}
-      <div class="mk-cards">${vp.map((p) => { const x = it('video', p.n); const k = it('kadr', p.n); return `<div class="mk-c"><div class="mk-img">${x.status === 'idet' ? `<img src="${esc(API_BASE + k.url)}" alt="" style="opacity:.45"><div class="mk-over"><span class="spin"></span> снимаю…</div>` : x.status === 'oshibka' ? `<div class="mk-ph-img err"><span class="small">Не получилось: ${esc(x.error || '')}. Кредиты вернулись.</span></div>` : x.url ? `<video controls preload="metadata" src="${esc(API_BASE + x.url)}" poster="${esc(API_BASE + k.url)}"></video>${x.ustarel ? '<span class="mk-old">устарел</span>' : ''}` : `<img src="${esc(API_BASE + k.url)}" alt="План ${p.n}" data-lb>`}</div>
+      <div class="mk-cards">${vp.map((p) => { const x = it('video', p.n); const k = it('kadr', p.n); return `<div class="mk-c"><div class="mk-img">${x.status === 'idet' ? `<img src="${esc(J.absUrl(k.url))}" alt="" style="opacity:.45"><div class="mk-over"><span class="spin"></span> снимаю…</div>` : x.status === 'oshibka' ? `<div class="mk-ph-img err"><span class="small">Не получилось: ${esc(x.error || '')}. Кредиты вернулись.</span></div>` : x.url ? `<video controls preload="metadata" src="${esc(J.absUrl(x.url))}" poster="${esc(J.absUrl(k.url))}"></video>${x.ustarel ? '<span class="mk-old">устарел</span>' : ''}` : `<img src="${esc(J.absUrl(k.url))}" alt="План ${p.n}" data-lb>`}</div>
         <p class="small"><b>${p.n}.</b> ${p.dlit} с${p.replika ? ' · ' + esc(p.kto) + ': ' + esc(p.replika) : ''}</p>
         <button class="btn sm ${x.url ? 'quiet' : ''}" data-v="${p.n}" ${x.status === 'idet' ? 'disabled' : ''}>${x.url ? 'Переснять' : 'Снять'} · ${kr(p.cena_video[res])}</button></div>`; }).join('')}</div>
       <div class="mk-row" style="margin-top:18px">${P.ok.video ? '' : utvBtn('video', 'Ролики подходят')}</div>`;
@@ -337,7 +337,7 @@
     const x = it('sborka', 0);
     pan.innerHTML = head('Сборка', 'Склеим планы, наложим подписи-термины, экраны-задания с паузой и «Запомни», в конце — титр «Создано с помощью ИИ». Бесплатно.') + okBadge('sborka') +
       `<div class="mk-prev" id="mkprev"><span class="spin"></span></div>
-      <div class="mk-final">${x.status === 'idet' ? '<div class="working"><span class="spin"></span><span>Собираю мультик… около минуты</span></div>' : x.status === 'oshibka' ? `<p class="warn"><b>Сборка не прошла:</b> ${esc(x.error || '')}</p>` : x.url ? `${x.ustarel ? '<p class="warn">Собрано из прежних планов — соберите заново.</p>' : ''}<video controls preload="metadata" src="${esc(API_BASE + x.url)}"></video><div class="mk-row"><a class="btn" href="${esc(API_BASE + x.url)}" download="multik.mp4">Скачать mp4 · ${x.sek} с</a>${P.ok.sborka ? '' : utvBtn('sborka', 'Готово')}</div>` : ''}</div>
+      <div class="mk-final">${x.status === 'idet' ? '<div class="working"><span class="spin"></span><span>Собираю мультик… около минуты</span></div>' : x.status === 'oshibka' ? `<p class="warn"><b>Сборка не прошла:</b> ${esc(x.error || '')}</p>` : x.url ? `${x.ustarel ? '<p class="warn">Собрано из прежних планов — соберите заново.</p>' : ''}<video controls preload="metadata" src="${esc(J.absUrl(x.url))}"></video><div class="mk-row"><a class="btn" href="${esc(J.absUrl(x.url))}" download="multik.mp4">Скачать mp4 · ${x.sek} с</a>${P.ok.sborka ? '' : utvBtn('sborka', 'Готово')}</div>` : ''}</div>
       <div class="mk-row" style="margin-top:14px"><button class="btn accent" id="mksb" ${x.status === 'idet' ? 'disabled' : ''}>${x.url ? 'Собрать заново' : 'Собрать мультик'} · бесплатно</button></div>`;
     bindCommon(pan);
     preview();
@@ -361,7 +361,7 @@
     const pl = P.raskadrovka.plany; let src = null;
     for (let i = pl.findIndex((p) => p.n === n); i >= 0 && !src; i--) if (pl[i].tip === 'video' && it('kadr', pl[i].n).url) src = it('kadr', pl[i].n).url;
     if (!src) { const after = pl.find((p) => p.tip === 'video' && it('kadr', p.n).url); src = after ? it('kadr', after.n).url : (it('geroi', 'lokaciya').url || null); }
-    return src ? loadImg(API_BASE + src).catch(() => null) : null;
+    return src ? loadImg(J.absUrl(src)).catch(() => null) : null;
   }
   async function card(p) {
     const c = cnv(); const g = c.getContext('2d'); const e = p.ekran || {}; const im = await bgFor(p.n);

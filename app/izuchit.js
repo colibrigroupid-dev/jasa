@@ -111,7 +111,7 @@
     if (+j.doplata > 0) h += `<p class="small muted iz-dop">В том числе +${esc(kr(+j.doplata))} за длину ролика${j.sek ? ' (' + esc(j.sek) + ' с)' : ''}.</p>`;
     const nv = arr(j.ne_vyshlo).map(name);   // разделы, которые не получились: за них не списано
     if (nv.length) h += `<p class="warn iz-nv"><b>Не получилось: ${esc(nv.join(', '))}.</b> За это кредиты не списали — можно запустить ещё раз.</p>`;
-    if (j.video) h += blok('Ваш ролик', `<video controls preload="metadata" src="${esc(API_BASE + j.video)}"></video><a class="btn sm" href="${esc(API_BASE + j.video)}" download="rolik.mp4">Скачать mp4</a><p class="small dim">Ссылка живёт 24 часа.</p>`);
+    if (j.video) h += blok('Ваш ролик', `<video controls preload="metadata" src="${esc(J.absUrl(j.video))}"></video><a class="btn sm" href="${esc(J.absUrl(j.video))}" download="rolik.mp4">Скачать mp4</a><p class="small dim">Ссылка живёт 24 часа.</p>`);
     if (j.tekst) h += blok('Текст ролика', `${j.tekst.rech ? `<p class="iz-pre">${esc(j.tekst.rech)}</p>` : ''}${j.tekst.na_ekrane ? `<p class="small muted">На экране: ${esc(j.tekst.na_ekrane)}</p>` : ''}`, [j.tekst.rech, j.tekst.na_ekrane].filter(Boolean).join('\n\n'));
     if (j.smysl) h += blok('О чём и почему цепляет', kv(j.smysl, [['o_chyom', 'О чём'], ['kryuchok', 'Крючок'], ['prizyv', 'Призыв'], ['dlya_kogo', 'Для кого'], ['format', 'Формат']]));
     if (j.kak) h += blok('Разбор по кадрам', `<div class="iz-plany">${arr(j.kak.plany).map((p) => `<div><b>${esc(p.s)} с</b><span>${esc(p.kadr || '')}</span><small>${esc([p.krupnost, p.kamera, p.zvuk, p.montazh].filter(Boolean).join(' · '))}</small></div>`).join('')}</div>` +

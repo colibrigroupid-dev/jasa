@@ -755,12 +755,12 @@
   const utHint = (t) => { const n = utN(t); return n ? `<button type="button" class="ut-hint rv" data-edit>В тексте ${n} ${n === 1 ? 'место' : n < 5 ? 'места' : 'мест'} без данных: адрес, запись или цена. Заполнить</button>` : ''; };
   const utStop = (item, el, t) => { const n = utN(t); if (!n) return false; hap('medium'); toast('Сначала заполните [уточнить] — ' + n + ' ' + (n === 1 ? 'место' : n < 5 ? 'места' : 'мест') + ' в тексте'); editor(item, el); return true; };
   const actionsBlock = (extra) => `<div class="actions rv"><button class="btn sm" data-copy="self"><svg class="ic" style="width:18px;height:18px"><use href="#i-copy"/></svg>Скопировать</button>${extra || ''}<span class="dim small aimark" style="margin-left:auto;align-self:center">Метка ИИ добавится сама (закон РК № 230-VIII, ст. 21)</span></div>`;
-  const imgCard = (im, cls, i) => `<div class="img ${cls || ''} rv" data-i="${i == null ? '' : i}" data-prompt="${esc(im.prompt)}" data-aspect="${esc(im.aspect || '4:5')}"><div class="ph"></div>${im.url ? `<img src="${esc(im.url)}" alt="">` : '<button class="btn sm accent draw">Нарисовать · 12 кр</button>'}<div class="cap">${esc(im.caption || im.text || '')}</div></div>`;
+  const imgCard = (im, cls, i) => `<div class="img ${cls || ''} rv" data-i="${i == null ? '' : i}" data-prompt="${esc(im.prompt)}" data-aspect="${esc(im.aspect || '4:5')}"><div class="ph"></div>${im.url ? `<img src="${esc(absUrl(im.url))}" alt="">` : '<button class="btn sm accent draw">Нарисовать · 12 кр</button>'}<div class="cap">${esc(im.caption || im.text || '')}</div></div>`;
 
   function threeImgs(item) {
     const its = arr(item.imgItems);
     const logo = item.brand && item.brand.logo;
-    if (its.length) return `<div class="caps rv" style="margin-top:16px">Выберите картинку${logo ? ' · лого поставим без искажений' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(API_BASE + it.url)}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}${it.svoya ? ' · по вашему описанию' : ''}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(API_BASE + it.url)}" data-logo="${esc(API_BASE + logo.url)}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : it.dorisovat ? `<div class="img dor rv" data-v="${esc(it.variant)}" data-kod="${esc(it.kod || '')}" data-prompt="${esc(it.prompt || '')}" data-aspect="${esc(it.aspect || '4:5')}"><div class="ph"></div><button class="btn sm accent draw" type="button">Нарисовать · 12 кр</button><div class="cap">вариант ${esc(it.variant)} · другой художник</div></div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
+    if (its.length) return `<div class="caps rv" style="margin-top:16px">Выберите картинку${logo ? ' · лого поставим без искажений' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(absUrl(it.url))}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}${it.svoya ? ' · по вашему описанию' : ''}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(absUrl(it.url))}" data-logo="${esc(absUrl(logo.url))}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : it.dorisovat ? `<div class="img dor rv" data-v="${esc(it.variant)}" data-kod="${esc(it.kod || '')}" data-prompt="${esc(it.prompt || '')}" data-aspect="${esc(it.aspect || '4:5')}"><div class="ph"></div><button class="btn sm accent draw" type="button">Нарисовать · 12 кр</button><div class="cap">вариант ${esc(it.variant)} · другой художник</div></div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
     if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Рисую, 1–2 минуты…</span></div>`;
     if (item.imgError) return `<div class="warn rv">Картинки: ${esc(item.imgError)}</div>`;
     return '';
@@ -768,7 +768,7 @@
   function tgPreview(r, item) {
     const hooks = arr(r.hooks); const text = ((hooks[0] ? hooks[0] + '\n\n' : '') + (r.text || '')).trim();
     const its = arr(item.imgItems).filter((x) => x.url);
-    return `<details class="more rv" ${document.documentElement.classList.contains('mob') ? '' : 'open'}><summary>Вид в Telegram</summary><div class="tgwrap"><div class="tgmsg"><div class="tgname">JASA</div><div class="tgtext">${esc(text).slice(0, 900)}${text.length > 900 ? '…' : ''}\n\n<span class="dim">— создано с помощью ИИ · JASA</span></div></div>${its.length ? `<div class="tgmsg tgalbum">${its.map((x) => `<img src="${esc(API_BASE + x.url)}" alt="" loading="lazy" decoding="async" crossorigin="anonymous">`).join('')}<div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>` : ''}<div class="dim small" style="margin-top:8px">В боте можно отвечать голосом: наговорите правку, и пост переделается.</div></div></details>`;
+    return `<details class="more rv" ${document.documentElement.classList.contains('mob') ? '' : 'open'}><summary>Вид в Telegram</summary><div class="tgwrap"><div class="tgmsg"><div class="tgname">JASA</div><div class="tgtext">${esc(text).slice(0, 900)}${text.length > 900 ? '…' : ''}\n\n<span class="dim">— создано с помощью ИИ · JASA</span></div></div>${its.length ? `<div class="tgmsg tgalbum">${its.map((x) => `<img src="${esc(absUrl(x.url))}" alt="" loading="lazy" decoding="async" crossorigin="anonymous">`).join('')}<div class="tgtext small">Три варианта картинки к посту — выберите свой.</div></div>` : ''}<div class="dim small" style="margin-top:8px">В боте можно отвечать голосом: наговорите правку, и пост переделается.</div></div></details>`;
   }
   const editBtn = (item) => `${item && !item.final ? '<button class="btn sm accent" type="button" data-pub>Опубликовать</button>' : ''}<button class="btn sm" type="button" data-edit>Редактировать</button><button class="btn sm quiet" type="button" data-svoya>Своя картинка</button>`;
   // «Опубликовать» без редактора: выбранная первая строка + первая готовая картинка → блок «Готово к публикации» с кнопками отправки
@@ -830,7 +830,7 @@
       <p class="small muted ed-hint" id="edhint"></p>
       <textarea class="ed-ta" id="edta" rows="10" spellcheck="true">${esc(text0)}</textarea>
       <div class="ed-warn small" id="edwarn"></div>
-      ${pics.length ? `<div class="bs-lab">Картинка к посту</div><div class="ed-pics">${pics.map((p) => `<button type="button" class="ed-pic ${pick === p.url ? 'on' : ''}" data-pic="${esc(p.url)}" aria-label="вариант ${esc(p.variant)}"><img src="${esc(API_BASE + p.url)}" alt=""></button>`).join('')}</div>` : ''}
+      ${pics.length ? `<div class="bs-lab">Картинка к посту</div><div class="ed-pics">${pics.map((p) => `<button type="button" class="ed-pic ${pick === p.url ? 'on' : ''}" data-pic="${esc(p.url)}" aria-label="вариант ${esc(p.variant)}"><img src="${esc(absUrl(p.url))}" alt=""></button>`).join('')}</div>` : ''}
       <div class="ed-act"><button type="button" class="btn sm" id="edcheck">Проверить и улучшить · ${esc(cena)} кр</button><button type="button" class="btn sm quiet" id="edcopy">Скопировать</button></div>
       <button type="button" class="bs-done" id="eddone">Готово</button>`;
     const b = bsheet(html);
@@ -862,7 +862,7 @@
     const L = { sebe: 'Себе в Telegram', share: 'Поделиться…', tg: 'В Telegram', wa: 'В WhatsApp', copy: 'Скопировать' };
     const rest = ['sebe', 'share', 'tg', 'wa', 'copy'].filter((k) => k !== prim && k !== vtoroj && (k !== 'share' || canShare));
     return `<div class="final rv"><div class="caps">Готово к публикации</div>
-      <div class="final-body">${f.image ? `<img src="${esc(API_BASE + f.image)}" alt="">` : ''}<div class="posttext">${utMark(f.text)}</div></div>${utHint(f.text)}
+      <div class="final-body">${f.image ? `<img src="${esc(absUrl(f.image))}" alt="">` : ''}<div class="posttext">${utMark(f.text)}</div></div>${utHint(f.text)}
       <div class="final-act">
         <button type="button" class="btn accent" data-fin="${prim}">${L[prim]}</button>${vtoroj ? `<button type="button" class="btn" data-fin="${vtoroj}">${L[vtoroj]}</button>` : ''}
         <button type="button" class="btn quiet" data-edit>Изменить</button>
@@ -871,7 +871,7 @@
       <p class="small dim" style="margin-top:10px">Instagram и TikTok — через «Поделиться…»: картинка и текст уйдут в приложение вместе. «Себе в Telegram» — чтобы переслать в любую группу или канал.</p></div>`;
   }
   async function finalAct(k, item, btn) {
-    const f = item.final || {}; const text = (f.text || '') + AI_MARK; const url = f.image ? (API_BASE || location.origin) + f.image : '';
+    const f = item.final || {}; const text = (f.text || '') + AI_MARK; const url = absUrl(f.image);
     if (k === 'copy') return copyPlain(text);
     if (k === 'tg') { const u = 'https://t.me/share/url?url=' + encodeURIComponent(url || 'https://jasa.asia') + '&text=' + encodeURIComponent(text); if (TG && TG.openTelegramLink) TG.openTelegramLink(u); else window.open(u, '_blank', 'noopener'); return; }
     if (k === 'wa') { const u = 'https://wa.me/?text=' + encodeURIComponent(text + (url ? '\n' + url : '')); if (TG && TG.openLink) TG.openLink(u); else window.open(u, '_blank', 'noopener'); return; }
@@ -913,7 +913,7 @@
     </div><div class="phone rv"><div class="scr"><div class="h">${esc((r.cover && r.cover.text) || r.title || '')}</div><div class="s">${esc(r.duration || '')} с · 9:16</div></div></div></div>`;
   }
   function renderAfisha(r, item) {
-    const V = (r.variants || []).map((v, i) => { const p = arr(v.palette).map((c) => col(c, '#15192A')); if (!p.length) p.push('#15192A', '#FF4D1F'); return `<div class="var rv"><div class="pv" style="background:linear-gradient(160deg,${p[0]},${p[1] || p[0]})">${v.url ? `<img src="${esc(v.url)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">` : ''}<div class="hl">${esc(r.headline)}</div><div><div class="sb">${esc(r.sub)}</div><div class="sb" style="margin-top:6px;opacity:.7">${esc(r.details || '')}</div></div></div><div class="nm"><b>${esc(v.name)}</b>${esc(v.composition)}<div class="sw">${p.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div style="margin-top:10px">${v.url ? '' : `<button class="btn sm accent draw" data-prompt="${esc(v.prompt)}" data-aspect="4:5">Нарисовать фон · 12 кр</button>`}</div></div></div>`; }).join('');
+    const V = (r.variants || []).map((v, i) => { const p = arr(v.palette).map((c) => col(c, '#15192A')); if (!p.length) p.push('#15192A', '#FF4D1F'); return `<div class="var rv"><div class="pv" style="background:linear-gradient(160deg,${p[0]},${p[1] || p[0]})">${v.url ? `<img src="${esc(absUrl(v.url))}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">` : ''}<div class="hl">${esc(r.headline)}</div><div><div class="sb">${esc(r.sub)}</div><div class="sb" style="margin-top:6px;opacity:.7">${esc(r.details || '')}</div></div></div><div class="nm"><b>${esc(v.name)}</b>${esc(v.composition)}<div class="sw">${p.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div style="margin-top:10px">${v.url ? '' : `<button class="btn sm accent draw" data-prompt="${esc(v.prompt)}" data-aspect="4:5">Нарисовать фон · 12 кр</button>`}</div></div></div>`; }).join('');
     return `${finalBlock(item)}<div class="variants">${V}</div>${threeImgs(item)}<dl class="kv rv"><dt>Форматы</dt><dd>${(r.formats || []).map(esc).join(' · ')}</dd>${r.kz_headline ? `<dt>Қазақша</dt><dd>${esc(r.kz_headline)}</dd>` : ''}</dl>${warnBlock(r.warnings)}${actionsBlock(editBtn(item))}`;
   }
   function renderKarusel(r, item) {
@@ -925,7 +925,7 @@
       <p class="rv small muted" style="margin-top:14px">${esc(r.rhythm || '')}</p>${actionsBlock('<button class="btn sm accent">Сделать все 7</button>')}`;
   }
   function videoPanel(item) {
-    if (item.video && item.video.url) return `<div class="vid rv"><video src="${esc(API_BASE + item.video.url)}" controls playsinline loop muted autoplay style="width:100%;max-width:340px;border-radius:14px;display:block;margin-top:16px"></video><div class="dim small" style="margin-top:6px">${esc(item.video.resolution)} · ${esc(item.video.duration)} с · ${esc(item.video.kredity)} кр · создано с помощью ИИ</div></div>`;
+    if (item.video && item.video.url) return `<div class="vid rv"><video src="${esc(absUrl(item.video.url))}" controls playsinline loop muted autoplay style="width:100%;max-width:340px;border-radius:14px;display:block;margin-top:16px"></video><div class="dim small" style="margin-top:6px">${esc(item.video.resolution)} · ${esc(item.video.duration)} с · ${esc(item.video.kredity)} кр · создано с помощью ИИ</div></div>`;
     if (item.videoJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Снимаю ролик (${esc(item.video && item.video.resolution)}), до 5 минут…</span></div>`;
     const pr = (item.promty && item.promty.video) || (item.result && item.result.scenes ? { prompt: [item.result.hook, ...arr(item.result.scenes).map((s) => (s.t || '') + ': ' + (s.kadr || '')), 'Sound: synchronous natural noises, no music. Photorealistic, warm light, Kazakhstani people.'].filter(Boolean).join(' ') } : null);
     return `<div class="vidpanel rv" style="margin-top:18px;padding:14px 16px;border-radius:var(--r-sm);background:var(--surface-2)">
@@ -986,7 +986,7 @@
       const kod = btn.dataset.kod || (card && card.dataset.kod) || undefined;
       const r = await api('/api/kartinka', { prompt, aspect, kod });
       spend(r.kredity, r.ostatok);
-      const img = document.createElement('img'); img.src = r.image; img.alt = '';
+      const img = document.createElement('img'); img.src = absUrl(r.image); img.alt = '';
       (card.querySelector('.pv') || card).prepend(img); btn.remove();
       if (card.dataset.v && item && item.imgItems) { const it = item.imgItems[+card.dataset.v - 1]; if (it) { it.url = r.image; delete it.dorisovat; } store.set('feed', S.feed); }
       const i = card.dataset.i; if (item && item.result) { if (i !== '' && arr(item.result.images)[i]) item.result.images[i].url = r.image; else if (item.tip === 'rils' && item.result.cover) item.result.cover.url = r.image; else if (item.tip === 'afisha') { const k = $$('.var', btn.closest('.sheet')).indexOf(card); if (arr(item.result.variants)[k]) item.result.variants[k].url = r.image; } store.set('feed', S.feed); }
@@ -1385,7 +1385,7 @@
     const chasti = Object.entries(B.chasti || {}).filter(([, v]) => v != null).map(([k, v]) => `<span class="${arr(B.potolok).includes(k) ? 'low' : ''}">${CH[k]} <b>${esc(v)}</b></span>`).join('');
     const cenaObl0 = Math.round((S.ceny && S.ceny.image) || 12);
     const obloshkaHtml = j.oblozhka && j.oblozhka.image
-      ? `<div class="obl rv"><img src="${esc(API_BASE + j.oblozhka.image)}" alt="Обложка по смыслу сценария" loading="lazy" crossorigin="anonymous"><span class="dim small">Обложка по смыслу сценария — первая страница «Уникального» PDF</span></div>` : '';
+      ? `<div class="obl rv"><img src="${esc(absUrl(j.oblozhka.image))}" alt="Обложка по смыслу сценария" loading="lazy" crossorigin="anonymous"><span class="dim small">Обложка по смыслу сценария — первая страница «Уникального» PDF</span></div>` : '';
     const plashka = main.querySelector('.pill[title^="Резерв"]'); if (plashka) plashka.remove();   // цена разбора на отчёте не нужна (отчёт мог открыться сразу после разбора)
     const imyaSc = String((j.pasport && j.pasport.o_chem) || 'Ваш сценарий').split(/[:.!?]/)[0].trim();
     const vPdf = 'Оценка, зеница ока, правки, рынки, карта ошибок' + (Object.keys(REG).length ? ' и реестр замечаний P' + Math.min(...Object.keys(REG).map((k) => +k.slice(1))) + '–P' + Math.max(...Object.keys(REG).map((k) => +k.slice(1))) : '') + '. Обложка типографская, входит в разбор.';
@@ -1510,7 +1510,7 @@
     const list = DEPO.filter(hit);
     $('#dcnt').textContent = DEPO.length ? (q ? list.length + ' из ' + DEPO.length : DEPO.length + ' кадров') : '';
     if (!DEPO.length) { g.innerHTML = '<p class="muted small">Пока пусто. Начните с 3–5 картинок, которые хотите повторить по настроению.</p>'; return; }
-    g.innerHTML = list.map((x) => `<article class="dcard ${S.stil.includes(x.id) ? 'sel' : ''}" data-id="${esc(x.id)}" data-cap="${esc(x.podpis || '')}"><img src="${esc(API_BASE + x.url)}" alt="${esc(x.podpis || 'картинка-образец')}" loading="lazy">
+    g.innerHTML = list.map((x) => `<article class="dcard ${S.stil.includes(x.id) ? 'sel' : ''}" data-id="${esc(x.id)}" data-cap="${esc(x.podpis || '')}"><img src="${esc(absUrl(x.url))}" alt="${esc(x.podpis || 'картинка-образец')}" loading="lazy">
       <div class="dpal">${arr(x.palitra).map((c) => `<button data-act="hex" data-hex="${esc(c)}" title="${esc(c)} — скопировать" style="background:${col(c, '#ccc')}"></button>`).join('')}</div>
       <div class="dbody">${x.podpis ? `<p class="small">${esc(x.podpis)}</p>` : ''}${x.krupnost ? `<p class="dim small">${[x.krupnost, x.svet, x.optika, x.nastroenie].filter(Boolean).map(esc).join(' · ')}</p>` : '<p class="dim small">только цвета</p>'}
       <div class="dact"><button class="btn sm ${S.stil.includes(x.id) ? 'accent' : 'quiet'}" data-act="stil">${S.stil.includes(x.id) ? 'В стиле ✓' : 'Сделать в таком стиле'}</button><button class="btn sm ghost" data-act="del" title="Удалить из примеров">Удалить</button></div></div></article>`).join('') || '<p class="muted small">Ничего не нашлось — попробуйте другое слово.</p>';
@@ -1792,8 +1792,10 @@
 
   // 09.11 (B-20, bezopasnost): адреса файлов из ответов сервера — только свои. Относительный путь → хост API;
   // абсолютный — только с хостом api.jasa.asia / jasa.asia / стенда; всё чужое → '' (ни пикселя, ни референера).
-  const SVOI_HOSTY = /^(api\.jasa\.asia|jasa\.asia|www\.jasa\.asia|localhost|127\.0\.0\.1)$/;
+  // Адрес файла, который прислал сервер (картинка, видео, файл выгрузки): относительный путь — от сервера API
+  // (на jasa.asia это api.jasa.asia, на стенде — тот же адрес), полный — только свои хосты. Все <img>/<video>/ссылки на файлы — через него.
   function absUrl(u) {
+    const SVOI_HOSTY = /^(api\.jasa\.asia|jasa\.asia|www\.jasa\.asia|localhost|127\.0\.0\.1)$/;
     u = String(u || ''); if (!u) return '';
     if (/^\/(?!\/)/.test(u)) return (API_BASE || location.origin) + u;
     try { const x = new URL(u); if (/^https?:$/.test(x.protocol) && SVOI_HOSTY.test(x.hostname)) return x.href; } catch (e) { /* не адрес */ }
