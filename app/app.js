@@ -207,8 +207,35 @@
     return { el: m, close };
   }
   const bsHead = (t) => `<div class="bs-head"><h3>${t}</h3><button type="button" class="bs-x" data-bs-close aria-label="Закрыть"><svg class="ic"><use href="#i-x"/></svg></button></div>`;
+  // 11.11 · группа обучения в Telegram: ссылка живёт здесь одна (лендинг сверяет test_gruppa.py). Добавить человека в группу
+  // без его нажатия Telegram не даёт — поэтому везде одно нажатие «Вступить».
+  const GRUPPA_URL = 'https://t.me/jasa_asia';
+  function otkrytGruppu() {
+    store.set('gruppaVstupil', 1);
+    if (TG && TG.openTelegramLink) TG.openTelegramLink(GRUPPA_URL);
+    else { const w = window.open(GRUPPA_URL, '_blank'); if (w) { try { w.opener = null; } catch (e) { /* чужой адрес */ } } else location.href = GRUPPA_URL; }   // с 'noopener' браузер всегда отдаёт null — кабинет уходил бы вслед за вкладкой
+  }
+  // любая ссылка с data-gruppa (окно, «Ещё», «Уроки») — через одну функцию: внутри Telegram ссылка открывается в самом Telegram
+  document.addEventListener('click', (e) => { const a = e.target.closest('[data-gruppa]'); if (!a) return; e.preventDefault(); hap('medium'); otkrytGruppu(); });   // лист с такой ссылкой закрывается сам: у ссылки data-bs-close
+  // С сайта — окно один раз: после первого готового поста или через 40 секунд, что раньше. «Не сейчас» — неделя тишины,
+  // «Перейти» — больше никогда; в эту сессию — не больше одного раза. Не поверх другого окна и не пока человек пишет.
+  const ZOV_PAUZA = 7 * 864e5;
+  const zovMozhno = () => { if (TG || store.get('gruppaVstupil', 0)) return false; if (Date.now() < +store.get('gruppaZovDo', 0)) return false; try { if (sessionStorage.getItem('jasa:gruppaZov')) return false; } catch (e) { /* нет хранилища — покажем */ } return true; };
+  let zovZhdyot = false;   // один отложенный повтор на всех: 40 с и «после поста» не плодят параллельные цепочки
+  function gruppaZov() {
+    if (!zovMozhno()) return;
+    const ta = document.getElementById('ask'), pishet = ta && document.activeElement === ta && ta.value.trim();
+    if (overlays.length || pishet || document.hidden) { if (!zovZhdyot) { zovZhdyot = true; setTimeout(() => { zovZhdyot = false; gruppaZov(); }, 5000); } return; }   // подождём, пока закроет окно или допишет
+    try { sessionStorage.setItem('jasa:gruppaZov', '1'); } catch (e) { /* приватное окно */ }
+    let vybor = false;
+    const b = bsheet(`${bsHead('Учимся в Telegram')}<p class="gr-zov">Как выжать из JASA максимум — показываем в Telegram: короткие уроки, разборы постов, ответы на вопросы. Бесплатно.</p>
+      <div class="gr-knopki"><a class="btn accent" href="${GRUPPA_URL}" target="_blank" rel="noopener" data-gruppa data-bs-close>Перейти в Telegram</a><button type="button" class="btn quiet" data-bs-close>Не сейчас</button></div>`,
+      () => { if (!vybor && !store.get('gruppaVstupil', 0)) store.set('gruppaZovDo', Date.now() + ZOV_PAUZA); });   // «Не сейчас», крестик, Esc и фон — неделя тишины
+    b.el.addEventListener('click', (e) => { if (e.target.closest('[data-gruppa]')) vybor = true; }, true);
+  }
+  if (!TG) setTimeout(gruppaZov, 40000);
   function moreSheet() {
-    const b = bsheet(`${bsHead('Разделы')}<div class="morelist">${NAV.map((x) => `<a href="#/${x.r}" class="${S.open.includes(x.r) ? 'is' : ''}"><svg><use href="#${x.i}"/></svg><span><b>${x.n}</b><small>${x.d}</small></span>${S.open.includes(x.r) ? '' : '<em>новое</em>'}</a>`).join('')}</div><button type="button" class="bs-link" data-theme-switch>Сменить тему</button>`);
+    const b = bsheet(`${bsHead('Разделы')}<div class="morelist">${NAV.map((x) => `<a href="#/${x.r}" class="${S.open.includes(x.r) ? 'is' : ''}"><svg><use href="#${x.i}"/></svg><span><b>${x.n}</b><small>${x.d}</small></span>${S.open.includes(x.r) ? '' : '<em>новое</em>'}</a>`).join('')}</div><a class="bs-link gr-link" href="${GRUPPA_URL}" target="_blank" rel="noopener" data-gruppa>Группа обучения в Telegram →</a><button type="button" class="bs-link" data-theme-switch>Сменить тему</button>`);
     b.el.addEventListener('click', (e) => { if (e.target.closest('a')) b.close(); const t = e.target.closest('[data-theme-switch]'); if (t) { $('#theme').click(); b.close(); } });
   }
   document.addEventListener('click', (e) => { if (e.target.closest('[data-more]')) { e.preventDefault(); moreSheet(); } });
@@ -301,6 +328,7 @@
     main.innerHTML = topbar('Создать', S.made || S.brandId ? brandPill() : '', 'only-desk') + `
       <section class="hero ${first ? 'first' : 'compact'} ${SG ? 'sgon' : ''}">
         <div class="hero-top"><h1>${first ? 'Что <em>сделать</em>?' : 'Что ещё <em>сделать</em>?'}</h1>${first ? '<a class="stik" id="stik" href="#/tarify" title="Цены" hidden></a>' : ''}</div>
+        ${TG && !store.get('gruppaKarta', 0) && !store.get('gruppaVstupil', 0) ? `<div class="gr-card" id="grcard"><span class="gr-tx"><b>Учимся вместе:</b> <span class="gr-dl">короткие уроки, разборы ваших постов, ответы — в группе JASA</span><span class="gr-kr">уроки и ответы в группе JASA</span></span><button type="button" class="btn sm accent" data-gruppa><span class="gr-dl">Вступить в группу</span><span class="gr-kr">Вступить</span></button><button type="button" class="gr-x" id="grx" aria-label="Скрыть приглашение в группу"><svg class="ic"><use href="#i-x"/></svg></button></div>` : ''}
         ${SG ? '<div class="sg" id="sg"></div>' : (first ? '<p>Скажите или напишите. Получите текст и картинку — или сразу три варианта.</p>' : '')}
         <div class="examples" id="examples"><span id="exzapas"></span><button class="more-ideas" id="ideas" type="button" aria-expanded="${recOpen}"><span>Готовые идеи</span><em>${S.recepty.length || ''}</em>${ico('i-chevr')}</button><button class="more-ideas" type="button" data-idei><span>Идеи с картинками</span><em>новое</em>${ico('i-chevr')}</button></div>
       </section>
@@ -365,6 +393,7 @@
     // примеры только подставляют текст: кредиты списываются кнопкой «Сделать»
     $('#examples').addEventListener('click', (e) => { if (e.target.closest('[data-idei]')) { hap('light'); location.hash = '#/idei'; return; } const b = e.target.closest('button[data-text]'); if (!b) return; hap('light'); setTip(b.dataset.tip); ta.value = b.dataset.text; grow(); });
     const exZapas = () => { const z = $('#exzapas'); if (z && first && !z.innerHTML) z.outerHTML = '<span class="caps">Попробуйте</span>' + EXAMPLES.map(([t, l, e]) => `<button type="button" data-tip="${t}" data-text="${esc(e)}"><span>${esc(l)}</span>${ico('i-chevr')}</button>`).join(''); };
+    { const gc = $('#grcard'); if (gc) { gc.addEventListener('click', (e) => { if (e.target.closest('#grx') || e.target.closest('[data-gruppa]')) { store.set('gruppaKarta', 1); gc.remove(); const a = $('#ask'); if (a) a.focus({ preventScroll: true }); } }); } }   // скрыть или вступить — карточка больше не появляется
     // ---- «Сегодня» ----
     const sgBox = $('#sg'); let sgVybor = false, sgKart = [], sgNet = false;
     const sgDraw = (anim) => { try { sgDraw0(anim); } catch (e) { sgKart = []; sgNet = true; if (sgBox) sgBox.innerHTML = ''; exZapas(); } };
@@ -505,6 +534,7 @@
         Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null, zid: res.zid || '', besplatno: !!res.besplatno });
         spend(res.kredity, res.ostatok);
         S.made += 1; store.set('made', S.made);
+        if (!TG) setTimeout(gruppaZov, 4000);
       } catch (e) {
         Object.assign(item, { state: 'error', error: e.message }); S.lastError = e.message;
       }
@@ -635,7 +665,7 @@
     let r; try { r = await api('/api/pravka/sverit', { zid: item.zid, prichiny: p }); } catch (e) { r = { nasha: false, pochemu: e.message }; }
     if (r.nasha) {
       // право выбора: переделать бесплатно или вернуть кредиты за этот результат
-      box.innerHTML = `<div class="ok-box"><b>Вы правы, ошибка наша.</b> ${arr(r.gde).map(esc).join(' · ')}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sm accent pv-redo" type="button">Переделать бесплатно · около минуты</button>${r.kredity ? `<button class="btn sm quiet pv-back" type="button">Вернуть ${esc(r.kredity)} кр за этот результат</button>` : ''}</div>${r.vozvrat_pochemu ? `<div class="dim small" style="margin-top:6px">${esc(r.vozvrat_pochemu)} <a href="https://t.me/jasa_asia" target="_blank" rel="noopener">Написать нам</a></div>` : ''}</div>`;
+      box.innerHTML = `<div class="ok-box"><b>Вы правы, ошибка наша.</b> ${arr(r.gde).map(esc).join(' · ')}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sm accent pv-redo" type="button">Переделать бесплатно · около минуты</button>${r.kredity ? `<button class="btn sm quiet pv-back" type="button">Вернуть ${esc(r.kredity)} кр за этот результат</button>` : ''}</div>${r.vozvrat_pochemu ? `<div class="dim small" style="margin-top:6px">${esc(r.vozvrat_pochemu)} <a href="${GRUPPA_URL}" target="_blank" rel="noopener">Написать нам</a></div>` : ''}</div>`;
       btn.remove();
       $('.pv-redo', box).onclick = (ev) => { ev.stopPropagation(); fbPeredelat(item, p, t, r.token); };
       const back = $('.pv-back', box);
@@ -645,7 +675,7 @@
       };
       return;
     }
-    box.innerHTML = `<div class="warn small">${esc(r.pochemu || 'Мы сверили результат с вашим заданием — расхождений нет.')} <a href="https://t.me/jasa_asia" target="_blank" rel="noopener">Написать нам</a></div>`;
+    box.innerHTML = `<div class="warn small">${esc(r.pochemu || 'Мы сверили результат с вашим заданием — расхождений нет.')} <a href="${GRUPPA_URL}" target="_blank" rel="noopener">Написать нам</a></div>`;
     btn.disabled = false; btn.dataset.mode = 'plat'; btn.dataset.p = JSON.stringify(p); btn.dataset.t = t; btn.textContent = btn.dataset.plat;
   }
   function kartPill() {
@@ -1801,7 +1831,7 @@
     try { const x = new URL(u); if (/^https?:$/.test(x.protocol) && SVOI_HOSTY.test(x.hostname)) return x.href; } catch (e) { /* не адрес */ }
     return '';
   }
-  window.JASA = { openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl, nishaIdei };
+  window.JASA = { openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl, nishaIdei, GRUPPA_URL };
   window.addEventListener('jasa:ready', route);
   if (!window.JASA_DEFER) route();
 })();

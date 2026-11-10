@@ -161,6 +161,7 @@
     return `<section class="kk-hero"><h2>Как работает JASA</h2>
       <p class="muted">Короткие уроки на живых примерах: кофейня, студия, курсы, магазин. Что написать, что нажать и что получится. Читать можно без входа.</p>
       <ol class="kk-3"><li><b>Скажите</b><span>словами или голосом, как помощнику</span></li><li><b>Получите</b><span>текст, картинку, файл — цена видна до запуска</span></li><li><b>Поправьте</b><span>одним словом или отправьте себе в Telegram</span></li></ol></section>
+      <a class="kk-gr" href="${esc(J.GRUPPA_URL)}" target="_blank" rel="noopener" data-gruppa><b>Группа обучения в Telegram</b><span>короткие уроки, разборы постов, ответы на вопросы →</span></a>
       <div class="kk-kto chips">${KTO.map(([k, n]) => `<button type="button" class="chip ${k === kto ? 'on' : ''}" data-kto="${k}">${n}</button>`).join('')}</div>
       <div class="kk-grid">${r1.map(kart).join('')}</div>
       ${r2.length ? `<h3 class="kk-h3">Ещё три урока: разбор чужого ролика, для учителей и для кино</h3><div class="kk-grid">${r2.map(kart).join('')}</div>` : ''}

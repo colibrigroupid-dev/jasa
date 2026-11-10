@@ -1271,3 +1271,26 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 .cn-det li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-top:1px solid var(--line-soft);font-size:var(--fs-small);color:var(--text)}
 .cn-det li span:last-child{font:500 13px var(--mono);color:var(--muted);text-align:right;flex:none}
 .cn-kak{margin-top:16px;font-size:var(--fs-small);max-width:70ch}
+
+/* 11.11 · группа обучения в Telegram: карточка внутри Telegram, окно с сайта, входы в «Ещё» и «Уроках» */
+.gr-card{display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 8px 10px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line-soft);box-shadow:var(--shadow);max-width:720px}
+.gr-tx{flex:1;min-width:0;font-size:14px;line-height:1.35;color:var(--text)}
+.gr-tx b{color:var(--ink)}
+.gr-card .btn{flex:none;white-space:nowrap}
+.gr-x{flex:none;width:36px;height:36px;display:grid;place-items:center;border-radius:10px;color:var(--dim)}
+.gr-x svg.ic{width:18px;height:18px}
+.gr-kr{display:none}
+/* телефон: одна строка — короткий текст, «Вступить», крестик */
+.mob .gr-card{gap:6px;padding:6px 4px 6px 12px;margin-top:10px;border-radius:14px}
+.mob .gr-tx{font-size:13.5px;line-height:1.25}
+.mob .gr-dl{display:none}.mob .gr-kr{display:inline}
+.mob .gr-card .btn{padding:0 14px;min-height:36px}
+.mob .gr-x{width:32px;height:36px}
+.gr-zov{margin:2px 0 16px;font-size:var(--fs-text);line-height:1.5;color:var(--text);max-width:none}
+.gr-knopki{display:flex;gap:10px;flex-wrap:wrap}
+.gr-knopki .btn{flex:1 1 180px;justify-content:center;text-align:center}
+.bs-link.gr-link{color:var(--accent-text);font-weight:600}
+.kk-gr{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline;margin:2px 0 16px;padding:12px 14px;border-radius:14px;background:var(--accent-soft);color:var(--ink);text-decoration:none;max-width:720px}
+.kk-gr b{font-weight:600}
+.kk-gr span{font-size:var(--fs-small);color:var(--text)}
+.bs-panel:focus{outline:none}   /* окно получает фокус само при открытии — рамка вокруг всего окна не нужна; кнопки внутри свою рамку сохраняют */
