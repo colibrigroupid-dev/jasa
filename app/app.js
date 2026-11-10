@@ -90,7 +90,7 @@
     return j;
   }
   api('/api/status').then((s) => { S.status = s; }).catch(() => {});
-  api('/api/ceny').then((c) => { S.ceny = c; ['ask', 'script'].forEach((id) => { const ta = document.getElementById(id); if (ta) ta.dispatchEvent(new Event('input')); }); }).catch(() => {});
+  api('/api/ceny').then((c) => { S.ceny = c; drawHead(); if ((location.hash || '').startsWith('#/tarify') && routes.tarify) routes.tarify(true); ['ask', 'script'].forEach((id) => { const ta = document.getElementById(id); if (ta) ta.dispatchEvent(new Event('input')); }); }).catch(() => {});
   api('/api/recepty').then((r) => { S.recepty = arr(r.recepty); const box = $('#recepty'); if (box) box.innerHTML = receptyHtml(); }).catch(() => {});
   // цена до запуска = тем же расчётом, что резерв на сервере (Plumar: «цена под кнопкой совпадает со счётом»)
   const LANG_LABEL = { ru: 'Русский', kz: 'Қазақша', en: 'English' };
@@ -105,16 +105,11 @@
   const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); try { document.cookie = 'jasa_yazyk=' + l + '; max-age=31536000; path=/; SameSite=Lax'; } catch (e) { /* без cookie */ } api('/api/yazyk', { yazyk: l }).then(posleYazyka).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
   const S_KART = () => (store.get('kartinki', 1) === 3 ? 3 : 1);   // сколько картинок рисовать сразу: 1 по умолчанию, 3 — по выбору (+24 кр)
   const priceOf = (tip) => { const z = (S_KART() === 3 && S.ceny.zadanie_3) || S.ceny.zadanie; return (z && z[tip]) || 3; };
-  // 10.11: что помещается в дневные кредиты подписки — из цен сервера: изменится число в день или цена поста, фраза останется правдой
-  const denVmeshchaet = (v) => {
-    const p1 = +((S.ceny.zadanie || {}).post) || 21, p3 = +((S.ceny.zadanie_3 || {}).post) || 45, n1 = Math.floor((+v || 0) / p1), n3 = Math.floor((+v || 0) / p3);
-    const post = (n) => (n === 1 ? 'пост' : n === 2 ? 'два поста' : n + (n < 5 ? ' поста' : ' постов'));
-    if (n3 >= 1 && n1 >= 2) return 'пост с тремя вариантами картинок — или ' + post(n1) + ' с одной картинкой';
-    return n1 >= 1 ? post(n1) + ' с картинкой' : '';   // на пост с картинкой не хватает — ничего не обещаем
-  };
+  // 10.11: что даёт день подписки — фраза и число только с сервера (podpiska.chto считается там из числа кредитов и цены поста).
+  // Старый сервер фразы не шлёт: тогда говорим без числа, чтобы не пообещать лишнего.
   const postSl = (x) => { const a = x % 10, b = x % 100; return a === 1 && b !== 11 ? 'пост' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'поста' : 'постов'; };
   const postovHvatit = () => Math.floor(dostupno('post') / (+((S.ceny.zadanie || {}).post) || 21));   // на сколько постов с одной картинкой хватает сейчас
-  const denStroka = (v) => { const f = denVmeshchaet(v); return v + ' кредитов каждое утро' + (f ? ': ' + f : ''); };
+  const denStroka = (pod) => (pod && typeof pod.chto === 'string' && pod.chto && +pod.v_den > 0 ? Math.round(+pod.v_den) + ' кредитов каждое утро: ' + pod.chto : 'Кредиты каждое утро на посты и картинки');
   // 10.11: на что идут дневные кредиты подписки — список с сервера; null — сервер старый, дневные идут на всё
   const podIdyot = () => (Array.isArray(S.ceny && S.ceny.podpiska_idyot) ? S.ceny.podpiska_idyot : null);
   const vnePodpiski = (tip) => { const k = S.me && S.me.koshelki, sp = podIdyot(); return !!(k && sp && !sp.includes(tip) && (+k.den || 0) > 0); };
@@ -158,7 +153,7 @@
     { r: 'scenariy', i: 'i-film', n: 'Кино', tag: 'Studio', d: 'Разбор сценария фильма или сериала' },
     { r: 'kak', i: 'i-help', n: 'Как это работает', s: 'Уроки', tag: 'Уроки', d: 'Уроки с примерами: что написать и что получится' },
     { r: 'partnery', i: 'i-share', n: 'Партнёрам', tag: '10 %', d: 'Приглашайте и получайте 10 % и 5 % с оплат' },
-    { r: 'tarify', i: 'i-tarif', n: 'Тарифы', d: 'Кредиты и пакеты' },
+    { r: 'tarify', i: 'i-tarif', n: 'Цены', d: 'Ваш месяц в тенге и пакеты' },
     { r: 'kabinet', i: 'i-user', n: 'Кабинет', d: 'Вход, баланс, история' },
   ];
   S.open = store.get('open', null) || ['sozdat'].concat(S.feed.length ? ['brend'] : []);
@@ -222,9 +217,9 @@
     const name = S.brandName || (S.brend && S.brend.name) || '';
     const slot = (S.brandId || S.brend) && name ? `<a class="mh-proj" id="mproj" href="#/brend"><span class="av">${esc(name.trim().charAt(0).toUpperCase())}</span><span class="n">${esc(name)}</span></a>` : `<a class="mh-proj" id="mproj" href="#/sozdat"><span class="av logo"></span><span class="n">JASA</span></a>`;
     const c = Math.floor(+S.credits || 0);
-    if (headSig === slot + c + (S.me && S.me.guest ? 'g' : '')) return; headSig = slot + c + (S.me && S.me.guest ? 'g' : '');
-    const guest = S.me && S.me.guest;
-    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Подарок: ' + Math.floor(S.ceny.gost_den || 50) + ' кредитов в день без входа. Пост с картинкой — до ' + priceOf('post') + ' кр' : 'Ваши кредиты'}">${guest && postovHvatit() >= 1 ? postovHvatit() + ' ' + postSl(postovHvatit()) + ' · 0 ₸' : c + ' кр' + (guest ? '<small>сегодня</small>' : '')}</a>${guest ? '<a class="mh-in" href="#/kabinet">Войти</a>' : ''}<button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
+    const guest = S.me && S.me.guest, ph = guest ? postovHvatit() : 0;   // S.me приходит после запуска, поэтому цены и кошельки к этому мигу уже объявлены
+    const sig = slot + c + (guest ? 'g' + ph : ''); if (headSig === sig) return; headSig = sig;
+    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Подарок: ' + Math.floor(S.ceny.gost_den || 50) + ' кредитов в день без входа. Пост с картинкой — до ' + priceOf('post') + ' кр' : 'Ваши кредиты'}">${guest && ph >= 1 ? ph + ' ' + postSl(ph) + ' · 0 ₸' : c + ' кр' + (guest ? '<small>сегодня</small>' : '')}</a>${guest ? '<a class="mh-in" href="#/kabinet">Войти</a>' : ''}<button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
   }
   document.addEventListener('click', (e) => { if (e.target.closest('#mhelp')) { const f = $('#fab'); if (f) f.click(); } });
   // Первый вход: один экран «Выберите язык», пока не выбран — приложение не показываем. Язык влияет на тексты результатов, кнопки пока русские.
@@ -527,7 +522,7 @@
       // третий результат — момент предложить «Каждый день»: счёт выставляется здесь же, без похода в тарифы
       const el = document.createElement('div'); el.className = 'invite rv den';
       const p = (me.ceny_oplaty || {}).podpiska || { tenge: 3990, v_den: 45 };
-      el.innerHTML = `<div><b>Понравилось? Делайте так каждый день</b><p>«Каждый день» — ${esc(denStroka(p.v_den))}. ${podIdyot() ? 'Идут на посты, афиши, карусели и картинки. ' : ''}${esc(tng(p.tenge))} за 30 дней, оплата в Kaspi.</p></div><div class="ib"><button class="btn sm accent" type="button" data-den>Выставить счёт</button><button class="btn sm quiet" type="button" data-skip>Не сейчас</button></div>`;
+      el.innerHTML = `<div><b>Понравилось? Делайте так каждый день</b><p>«Каждый день» — ${esc(denStroka(p))}. ${podIdyot() ? 'Идут на посты, афиши, карусели и картинки. ' : ''}${esc(tng(p.tenge))} за 30 дней, оплата в Kaspi.</p></div><div class="ib"><button class="btn sm accent" type="button" data-den>Выставить счёт</button><button class="btn sm quiet" type="button" data-skip>Не сейчас</button></div>`;
       el.querySelector('[data-skip]').addEventListener('click', () => { store.set('skip_den', S.made + 3); el.remove(); });
       el.querySelector('[data-den]').addEventListener('click', async (e) => { e.target.disabled = true; try { const r = await api('/api/schet', { tip: 'podpiska' }); toast('Счёт ' + r.schet.id + ' выставлен — он в кабинете'); location.hash = '#/kabinet'; } catch (er) { toast(er.message); e.target.disabled = false; } });
       return el;
@@ -1461,7 +1456,7 @@
   // БИБЛИОТЕКА, ТАРИФЫ
   // =====================================================================
   function biblioteka() {
-    main.innerHTML = topbar('Библиотека', '<a class="pill" href="#/kabinet">Кабинет →</a> <a class="pill" href="#/tarify">Тарифы →</a>') + `
+    main.innerHTML = topbar('Библиотека', '<a class="pill" href="#/kabinet">Кабинет →</a> <a class="pill" href="#/tarify">Цены →</a>') + `
       <section style="max-width:760px"><h2>Мои посты</h2><p class="muted" style="margin-top:10px">Последние тексты, картинки и ролики — хранятся в этом браузере${S.me && !S.me.guest ? '; то, что отправляли себе в Telegram, лежит и там' : ''}.</p></section>
       <div class="feed" style="margin-top:22px;margin-bottom:34px" id="lib"></div>
       <section class="depo" id="depo">
@@ -1578,7 +1573,7 @@
     const c = m.ceny_oplaty || {}; const p = c.podpiska || { tenge: 3990, dnej: 30, v_den: 45 }; const pod = m.podpiska;
     const pak = Object.entries(c.pakety || { 500: 5990, 2000: 19990, 10000: 89990 });
     return `<div class="card" id="popolnit"><span class="caps">Купить</span>
-      <div class="kupit-pod ${pod && pod.aktivna ? 'on' : ''}"><div><b>«Каждый день»</b><p class="small muted">${esc(denStroka(p.v_den))}. ${podIdyot() ? 'Идут на посты, афиши, карусели и картинки; видео, презентации и кино — с личных кредитов. ' : ''}${esc(p.dnej)} дней.</p></div>
+      <div class="kupit-pod ${pod && pod.aktivna ? 'on' : ''}"><div><b>«Каждый день»</b><p class="small muted">${esc(denStroka(p))}. ${podIdyot() ? 'Идут на посты, афиши, карусели и картинки; видео, презентации и кино — с личных кредитов. ' : ''}${esc(p.dnej)} дней.</p></div>
         <button class="btn sm accent" data-kupit="podpiska">${pod && pod.aktivna ? 'Продлить' : 'Выставить счёт'} · ${tng(p.tenge)}</button></div>
       <span class="caps" style="display:block;margin-top:14px">Пакеты · не сгорают</span>
       <div class="chips pakety">${pak.map(([n, t]) => `<button class="chip ${podsvet() === n || podsvet() === n.replace(/(\d)(?=(\d{3})$)/, '$1 ') ? 'on' : ''}" data-kupit="paket" data-paket="${esc(n)}">${esc(n)} кр · ${tng(t)} <small class="dim">${(t / n).toFixed(1).replace('.', ',')} ₸/кр</small></button>`).join('')}</div>
@@ -1669,23 +1664,95 @@
     // ссылка со старым кодом на телефоне больше не годится — убираем её, и кнопка «Войти через Telegram» возвращается
     function loginSnova() { const o = $('.login-open'); if (o) o.remove(); btn.disabled = false; }
   }
-  // Тарифы — один список для кабинета и лендинга (site/index.html, блок «Цены»): тексты сверяет test_p1.TestTarify.
+  // Цены — один список тарифов для кабинета и лендинга (site/index.html, секция #ceny): строки, цены и числа постов сверяет test_tarify_sovpadenie.py.
   /*TARIFY*/const TARIFY = [
-    {"n": "Lite", "p": "0 ₸", "kto": "Попробовать", "li": ["50 кредитов в день без входа", "после входа — 135 пробных разово: 3 поста с картинками", "≈ 1 пост с картинками в день"], "knopka": "Попробовать бесплатно"},
-    {"n": "Creator", "p": "6 990 ₸", "kto": "Блогер, малый бизнес", "li": ["600 кредитов ≈ 13 постов с картинками", "голос бренда", "3 канала · автопубликация — скоро", "без водяных знаков"], "knopka": "Выбрать", "paket": "500", "hot": true},
-    {"n": "Pro", "p": "24 990 ₸", "kto": "SMM, агентство", "li": ["2 500 кредитов ≈ 55 постов с картинками", "до 10 брендов-клиентов", "команда 3 человека", "согласование и отчёты"], "knopka": "Выбрать", "paket": "2 000"},
-    {"n": "Studio", "p": "59 990 ₸", "kto": "Сценаристы, студии", "li": ["6 000 кредитов", "разбор сценария командой редакторов", "герои, локации, кадры, видео", "10 участников, 5 проектов"], "knopka": "Выбрать", "paket": "10 000"}
+    {"n": "Бесплатно", "p": "0 ₸", "per": "", "kto": "Попробовать", "li": ["2 поста с картинкой в день без входа", "после входа — ещё 6 постов в подарок", "внутри: 50 кредитов в день, после входа 135 пробных разово"], "knopka": "Попробовать бесплатно"},
+    {"n": "Каждый день", "p": "3 990 ₸", "per": "за 30 дней", "kto": "Кафе, салон, магазин", "li": ["{chto} каждый день", "посты, афиши, карусели, картинки", "внутри: {v_den} кредитов каждое утро, не копятся"], "li_zapas": ["пост с картинкой каждый день", "посты, афиши, карусели, картинки", "дневные кредиты не копятся"], "knopka": "Оформить", "podpiska": true, "hot": true},
+    {"n": "Студент", "p": "1 990 ₸", "per": "разово", "kto": "Учусь", "li": ["защита диплома со слайдами и речью — 99 кредитов", "и ещё 4 поста с картинкой", "внутри: 200 кредитов, не сгорают"], "knopka": "Выбрать", "paket": "200"},
+    {"n": "Pro", "p": "24 990 ₸", "per": "разово", "kto": "SMM, агентство", "li": ["119 постов с картинкой — или 55 с тремя вариантами", "до 10 брендов клиентов", "внутри: 2 500 кредитов, не сгорают"], "knopka": "Выбрать", "paket": "2500"}
   ];/*/TARIFY*/
-  function tarify() {
-    main.innerHTML = topbar('Тарифы') + `<section style="max-width:760px;margin-bottom:26px"><h2>Сколько это стоит</h2><p class="muted" style="margin-top:10px">Работа считается в кредитах. Пост с картинкой до ${esc((S.ceny.zadanie || {}).post || 21)} кр, с тремя картинками до ${esc((S.ceny.zadanie_3 || {}).post || 45)}, рилс или план на неделю до ${esc((S.ceny.zadanie || {}).rils || 6)}, ещё одна картинка ${esc(S.ceny.image || 12)}, видео 5 секунд ${esc((S.ceny.video || {})['720p'] || 131)}, разбор чужого ролика 10–12, разбор сценария ${S.ceny && S.ceny.kino ? esc(S.ceny.kino.razbor) + ' (повторный — ' + esc(S.ceny.kino.povtor) + ')' : '≈ 75–100 (держим 100, лишнее возвращаем)'}. Цена каждого действия видна на кнопке до запуска.</p>
-      <p class="muted" style="margin-top:8px">Как платить сейчас: в Кабинете выставляете счёт → переводите в Kaspi по реквизитам → мы подтверждаем вручную, и кредиты на балансе. Пакеты не сгорают.</p></section>
-      <div class="tiers">${TARIFY.map((t) => `<div class="tier ${t.hot ? 'hot' : ''} rv"><span class="caps">${esc(t.kto)}</span><h3>${esc(t.n)}</h3><div class="price">${esc(t.p)}<small> /мес</small></div><ul>${t.li.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><button type="button" class="btn ${t.hot ? 'accent' : 'quiet'}" data-tarif="${esc(t.n)}">${esc(t.knopka)}</button></div>`).join('')}</div>`;
-    $$('.rv', main).forEach((n, i) => (n.style.animationDelay = i * 80 + 'ms'));
+  // «Ваш месяц» по аудиториям (№273): что человеку обычно нужно за месяц. Числа — гипотеза до интервью; цены действий и пакетов берутся с сервера.
+  // tip — действие с ценой из /api/ceny (post, afisha, karusel, rils, plan, image); kr — действие с постоянной ценой (сверяет test_tarify_sovpadenie).
+  /*MESYAC*/const MESYAC = [
+    {"kod": "kafe", "chip": "Кафе, салон, студия", "kto": "кофейня у дома", "nishi": ["kofe", "pekarnya", "barber", "salon", "fitnes", "cvety", "uslugi"], "mes": [{"n": 12, "tip": "post", "t": "постов с картинкой", "s": "3 в неделю"}, {"n": 2, "tip": "afisha", "t": "афиши к акциям"}, {"n": 4, "tip": "plan", "t": "плана на неделю"}], "alt": "podpiska"},
+    {"kod": "shop", "chip": "Магазин в Instagram", "kto": "магазин подарков", "nishi": ["magazin"], "mes": [{"n": 8, "tip": "post", "t": "постов с картинкой", "s": "2 в неделю"}, {"n": 4, "tip": "karusel", "t": "карусели товара"}, {"n": 8, "tip": "image", "t": "картинок товара"}, {"n": 4, "tip": "plan", "t": "плана на неделю"}]},
+    {"kod": "smm", "chip": "Веду соцсети клиентов", "kto": "SMM, пять клиентов", "nishi": [], "delit": 5, "mes": [{"n": 60, "tip": "post", "t": "постов с картинкой", "s": "12 на клиента"}, {"n": 10, "tip": "afisha", "t": "афиш", "s": "2 на клиента"}, {"n": 20, "tip": "plan", "t": "планов на неделю"}], "rek": "2500"},
+    {"kod": "uch", "chip": "Учебный центр", "kto": "курсы и репетиторы", "nishi": ["ucheba", "deti"], "mes": [{"n": 12, "tip": "post", "t": "постов с картинкой", "s": "3 в неделю"}, {"n": 8, "tip": "afisha", "t": "афиш набора", "s": "4 на казахском, 4 на русском"}, {"n": 4, "tip": "rils", "t": "сценария рилсов"}]},
+    {"kod": "stud", "chip": "Учусь", "kto": "студент перед защитой", "nishi": [], "mes": [{"n": 1, "kr": 99, "t": "Защита диплома: слайды и речь"}, {"n": 4, "tip": "post", "t": "поста с картинкой"}], "rek": "200", "razovo": true}
+  ];/*/MESYAC*/
+  const PAKETY_ZAPAS = { 500: 5990, 2000: 19990, 10000: 89990 };   // если сервер ещё не ответил; свои цены он присылает в /api/ceny.oplata и /api/me
+  function tarify(povtor) {
+    if (!S.me && !povtor) loadMe().then(() => { if ((location.hash || '').startsWith('#/tarify')) tarify(true); });   // цены пакетов приходят с сервера: дорисуем, когда ответит
+    const opl = (S.ceny && S.ceny.oplata) || (S.me && S.me.ceny_oplaty) || {};
+    const pak = Object.assign({}, opl.pakety && Object.keys(opl.pakety).length ? opl.pakety : PAKETY_ZAPAS); let imena = opl.nazvaniya || {}; const pod = opl.podpiska || null;
+    let klyuchi = Object.keys(pak).map(Number).filter((k) => k > 0 && +pak[k] > 0).sort((x, y) => x - y);
+    if (!klyuchi.length) { Object.keys(pak).forEach((k) => delete pak[k]); Object.assign(pak, PAKETY_ZAPAS); imena = {}; klyuchi = Object.keys(pak).map(Number).sort((x, y) => x - y); }
+    const zd = S.ceny.zadanie || {}, cena = (tip) => (tip === 'image' ? +S.ceny.image || 12 : +zd[tip] || (tip === 'rils' || tip === 'plan' ? 6 : 21));
+    const p1 = cena('post'), p3 = +((S.ceny.zadanie_3 || {}).post) || 45;
+    const sp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const okr = (x) => Math.round(x / 100) * 100;   // «≈ 3 800 ₸»: расчёт, а не цена покупки — округляем до сотен
+    const vybor = (kr, rek) => { const bez = klyuchi.filter((k) => !imena[k]), obych = bez.length ? bez : klyuchi;   // сам подбираю только среди обычных пакетов: именные («Студент», Pro) — по своей аудитории
+      const r = rek && pak[rek] != null ? +rek : (obych.find((k) => k >= kr) || obych[obych.length - 1]); return { kr: r, tenge: +pak[r], imya: imena[r] || '' }; };
+    const naSkolko = (m) => (m < 1.25 ? 'на месяц' : m < 1.75 ? 'на полтора месяца' : m < 2.5 ? 'на два месяца' : m < 3.5 ? 'на три месяца' : m >= 12 ? 'больше чем на год' : 'на ' + Math.floor(m) + (Math.floor(m) < 5 ? ' месяца' : ' месяцев'));
+    const svoj = Object.assign({ post: 3, af: 2, rl: 4 }, store.get('cenySvoj', null) || {});
+    ['post', 'af', 'rl'].forEach((k) => { svoj[k] = Math.max(0, Math.min(k === 'post' ? 14 : 40, Math.floor(+svoj[k]) || 0)); });
+    const nishaId = String(S.nisha || '');
+    let kto = store.get('cenyKto', '') || (nishaId === 'drugoe' ? 'svoj' : (MESYAC.find((m) => m.nishi.includes(nishaId)) || MESYAC[0]).kod);
+    if (kto !== 'svoj' && !MESYAC.some((m) => m.kod === kto)) kto = nishaId === 'drugoe' ? 'svoj' : (MESYAC.find((m) => m.nishi.includes(nishaId)) || MESYAC[0]).kod;   // в памяти чужое — берём по делу человека
+    const D = SG && SG.dannye(), moya = D && D.nishi.find((x) => x.id === nishaId);
+    if (SG && !D && nishaId && !povtor) SG.obnovit(() => { if ((location.hash || '').startsWith('#/tarify')) tarify(true); });   // имя дела — из povody.json
+
+    const panel = () => {
+      const m = MESYAC.find((x) => x.kod === kto);
+      const stroki = m ? m.mes.map((x) => ({ t: x.n === 1 ? x.t : x.n + ' ' + x.t, s: x.s || '', kr: x.n * (x.kr || cena(x.tip)) }))
+        : [{ t: svoj.post * 4 + ' ' + postSl(svoj.post * 4) + ' с картинкой', s: svoj.post + ' в неделю', kr: svoj.post * 4 * p1 }, { t: 'Афиши и карусели: ' + svoj.af, s: '', kr: svoj.af * cena('afisha') }, { t: 'Сценарии рилсов и планы: ' + svoj.rl, s: '', kr: svoj.rl * cena('rils') }].filter((x) => x.kr > 0);
+      const kr = stroki.reduce((a, x) => a + x.kr, 0), v = vybor(kr, m && m.rek), za = v.tenge / v.kr;
+      const mesyac = okr(kr * za), itog = m && m.razovo ? tng(v.tenge) : '≈ ' + tng(m && m.delit ? okr(kr * za / m.delit) : mesyac);
+      const itogS = m && m.razovo ? 'разово' : m && m.delit ? 'на клиента в месяц' : 'в месяц';
+      const zagol = 'Ваш месяц' + (m ? ': ' + (moya && m.nishi.includes(nishaId) ? sgKorotko(moya).toLowerCase() : m.kto) : '');
+      const rekZ = kr <= 0 ? 'Пока нечего считать' : v.imya ? '«' + v.imya + '» — ' + tng(v.tenge) : 'Пакет на ' + Math.floor(v.kr / p1) + ' ' + postSl(Math.floor(v.kr / p1)) + ' — ' + tng(v.tenge);
+      const hvatit = kr > 0 && v.kr >= kr ? sp(v.kr) + ' кредитов не сгорают: хватит ' + (m && m.razovo ? 'на всё из списка' : naSkolko(v.kr / kr)) + '.' : kr > v.kr ? 'Самого большого пакета на такой месяц не хватит — возьмите два или напишите нам, подберём.' : 'Выберите, сколько постов нужно в неделю.';
+      const alt = m && m.alt === 'podpiska' && pod ? ' Постите каждый день — тогда «Каждый день» за ' + tng(pod.tenge) + '.' : '';
+      const schet = (k, n, podp) => `<div class="cn-st"><span>${podp}</span><span class="cn-pm"><button type="button" data-sv="${k}" data-d="-1" aria-label="Меньше">−</button><b>${n}</b><button type="button" data-sv="${k}" data-d="1" aria-label="Больше">+</button></span></div>`;
+      return `<div class="cn-mes"><h3>${esc(zagol)}</h3>
+          ${m ? '' : schet('post', svoj.post, 'Постов с картинкой в неделю') + schet('af', svoj.af, 'Афиш и каруселей в месяц') + schet('rl', svoj.rl, 'Сценариев рилсов и планов в месяц')}
+          <ul>${stroki.map((x) => `<li><span>${esc(x.t)}</span><span>${esc(x.s)}</span></li>`).join('')}</ul>
+          <div class="cn-itog"><b>${esc(itog)}</b><span>${esc(itogS)}</span></div></div>
+        <div class="cn-rek"><span class="caps">Что взять</span><b>${esc(rekZ)}</b><p>${esc(hvatit + alt)}</p>
+          ${kr > 0 ? `<button type="button" class="btn accent" data-paket="${v.kr}">${esc((v.imya ? 'Взять «' + v.imya + '»' : 'Взять пакет') + ' · ' + tng(v.tenge))}</button>
+          <small>внутри: ${sp(kr)} из ${sp(v.kr)} кредитов · цена каждого действия видна на кнопке до запуска</small>` : ''}</div>`;
+    };
+    // сетка №213: цена — с сервера; пакетный тариф виден, только если сервер такой пакет продаёт
+    const vidno = TARIFY.filter((t) => !t.paket || pak[t.paket] != null);
+    const liT = (t) => (!t.podpiska ? t.li : pod && typeof pod.chto === 'string' && pod.chto && +pod.v_den > 0 ? t.li.map((x) => x.split('{chto}').join(pod.chto).split('{v_den}').join(String(Math.round(+pod.v_den)))) : (t.li_zapas || []));   // «Каждый день»: фраза и число с сервера
+    const cenaT = (t) => (t.paket && pak[t.paket] != null ? tng(pak[t.paket]) : t.podpiska && pod && pod.tenge ? tng(pod.tenge) : t.p);
+    const prochie = klyuchi.filter((k) => !TARIFY.some((t) => t.paket === String(k)));
+    const bazaKr = pak[500] ? 500 : klyuchi[0], za500 = +pak[bazaKr] / bazaKr;
+    const kT = (kr) => { const t = kr * za500; return '≈ ' + tng(t >= 1000 ? okr(t) : Math.round(t / 10) * 10); };
+    const dejstviya = [['Пост с картинкой', p1], ['Пост с тремя вариантами картинки', p3], ['Афиша или карусель', cena('afisha')], ['Сценарий рилса или план на неделю', cena('rils')], ['Ещё одна картинка', cena('image')]].concat(S.ceny.video && S.ceny.video['720p'] ? [['Видео 5 секунд', +S.ceny.video['720p']]] : [], S.ceny.kino && S.ceny.kino.razbor ? [['Разбор сценария кино', +S.ceny.kino.razbor]] : []);
+    const gostPostov = Math.floor((+S.ceny.gost_den || 50) / p1);
+    main.innerHTML = `<div class="cn">
+      <div class="cn-top"><h1>Цены</h1><span class="stik cn-stik"><b>${gostPostov} ${postSl(gostPostov)} в день</b><small>без входа — бесплатно</small></span></div>
+      <p class="cn-lead">Выберите, кто вы, — покажем ваш месяц в тенге.</p>
+      <div class="cn-kto" role="group" aria-label="Кто вы">${MESYAC.map((m) => `<button type="button" class="chip ${m.kod === kto ? 'on' : ''}" data-kto="${m.kod}" aria-pressed="${m.kod === kto}">${esc(m.chip)}</button>`).join('')}<button type="button" class="chip ${kto === 'svoj' ? 'on' : ''}" data-kto="svoj" aria-pressed="${kto === 'svoj'}">Другое: посчитать самому</button></div>
+      <div class="cn-pan" id="cnpan">${panel()}</div>
+      <h2 class="cn-h2">Все варианты</h2>
+      <div class="tiers">${vidno.map((t) => `<div class="tier ${t.hot ? 'hot' : ''}"><span class="caps">${esc(t.kto)}</span><h3>${esc(t.n)}</h3><div class="price">${esc(cenaT(t))}${t.per ? `<small> ${esc(t.per)}</small>` : ''}</div><ul>${liT(t).map((l) => `<li>${esc(l)}</li>`).join('')}</ul><button type="button" class="btn ${t.hot ? 'accent' : 'quiet'}" data-tarif="${esc(t.n)}">${esc(t.knopka)}</button></div>`).join('')}</div>
+      ${prochie.length ? `<p class="muted cn-pak">Пакеты кредитов, не сгорают: ${esc(prochie.map((k) => Math.floor(k / p1) + ' ' + postSl(Math.floor(k / p1)) + ' (' + sp(k) + ' кр) — ' + tng(pak[k])).join(' · '))}. Купить — в Кабинете.</p>` : ''}
+      <details class="cn-det"><summary>Сколько стоит одно действие</summary><ul>${dejstviya.map(([t, kr]) => `<li><span>${esc(t)}</span><span>до ${kr} кр · ${esc(kT(kr))}</span></li>`).join('')}</ul><p class="small muted">В тенге — по пакету на ${sp(bazaKr)} кредитов. Цена стоит на кнопке до запуска; больше этой суммы не спишем.</p></details>
+      <p class="muted cn-kak">Как платить сейчас: в Кабинете выставляете счёт, переводите в Kaspi по реквизитам, мы подтверждаем вручную — и кредиты на балансе.</p></div>`;
     main.onclick = (e) => {
+      const ch = e.target.closest('[data-kto]');
+      if (ch) { hap('sel'); kto = ch.dataset.kto; store.set('cenyKto', kto); $$('[data-kto]', main).forEach((x) => { x.classList.toggle('on', x === ch); x.setAttribute('aria-pressed', x === ch); }); $('#cnpan').innerHTML = panel(); return; }
+      const sv = e.target.closest('[data-sv]');
+      if (sv) { hap('sel'); const k = sv.dataset.sv, lim = k === 'post' ? 14 : 40; svoj[k] = Math.max(0, Math.min(lim, (+svoj[k] || 0) + (+sv.dataset.d))); store.set('cenySvoj', svoj); $('#cnpan').innerHTML = panel(); const f = $(`[data-sv="${k}"][data-d="${sv.dataset.d}"]`, main); if (f) f.focus({ preventScroll: true }); return; }
+      const pk = e.target.closest('[data-paket]');
+      if (pk) { hap('medium'); S.podsvetPaket = pk.dataset.paket; S.podsvetDo = Date.now() + 300000; S.podsvetSkroll = true; location.hash = '#/kabinet'; return; }   // Кабинет → «Пополнить» с подсвеченным пакетом
       const b = e.target.closest('[data-tarif]'); if (!b) return;
       const t = TARIFY.find((x) => x.n === b.dataset.tarif); if (!t) return;
+      if (t.podpiska) { location.hash = '#/kabinet'; return; }   // «Каждый день» оформляется в Кабинете
       if (!t.paket) { location.hash = '#/sozdat'; return; }
-      S.podsvetPaket = t.paket; S.podsvetDo = Date.now() + 300000; S.podsvetSkroll = true; location.hash = '#/kabinet';   // Кабинет → «Пополнить» с подсвеченным пакетом
+      S.podsvetPaket = t.paket; S.podsvetDo = Date.now() + 300000; S.podsvetSkroll = true; location.hash = '#/kabinet';
     };
   }
 

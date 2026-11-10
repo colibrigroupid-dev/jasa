@@ -1229,3 +1229,45 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 .mob .stik{display:none}
 .mob .mh-cr.gost{font-family:var(--body);font-weight:600;letter-spacing:-.01em}
 @media (max-height:720px){.mob .hero.first h1{font-size:clamp(3rem,14vw,3.3rem)}.mob .hero.sgon .sg{margin-top:9px}}
+
+/* 10.11 · «Цены» (№273, №213): кто вы → ваш месяц в тенге → что взять; сетка тарифов ниже. Числа — с сервера (app.js · tarify) */
+.cn{max-width:1080px}
+.cn-top{display:flex;align-items:center;gap:16px}
+.cn-top h1{font:800 clamp(4.4rem,3rem + 5vw,7.4rem)/.9 "Sofia Sans Extra Condensed",var(--disp);letter-spacing:-.005em;color:var(--ink);margin:0}
+.mob .cn-top h1{font-size:clamp(3.2rem,16vw,4rem)}
+.cn-stik{cursor:default}
+.mob .stik.cn-stik{display:flex;padding:8px 12px;border-radius:14px}
+.mob .cn-stik b{font-size:1.45rem}
+.mob .cn-stik small{font-size:11px}
+.cn-lead{font-size:var(--fs-lead);color:var(--text);margin:16px 0 14px}
+.cn-kto{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.cn-pan{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.mob .cn-pan{grid-template-columns:minmax(0,1fr);gap:12px}
+.cn-mes,.cn-rek{border-radius:var(--r);padding:22px;border:1px solid var(--line-soft);box-shadow:var(--shadow);min-width:0}
+.cn-mes{background:var(--surface)}
+.cn-mes h3{font:700 1.3rem/1.15 var(--disp);letter-spacing:-.02em;color:var(--ink);margin:0 0 10px}
+.cn-mes ul{list-style:none;margin:0;padding:0}
+.cn-mes li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-top:1px solid var(--line-soft);font-size:var(--fs-text);color:var(--ink)}
+.cn-mes li span:last-child{color:var(--dim);font-size:var(--fs-small);text-align:right}
+.cn-itog{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px;padding-top:16px;border-top:2px solid var(--ink)}
+.cn-itog b{font:800 clamp(3rem,2.2rem + 3vw,4.6rem)/.9 "Sofia Sans Extra Condensed",var(--disp);color:var(--accent-ink);background:var(--accent);padding:.05em .16em .02em;border-radius:.14em;transform:rotate(-1.5deg);white-space:nowrap}
+.cn-itog span{color:var(--muted);font-size:var(--fs-small)}
+.cn-rek{background:var(--ink);color:var(--ink-fg);display:flex;flex-direction:column;gap:10px}
+.cn-rek .caps{color:inherit;opacity:.7}
+.cn-rek>b{font:700 1.5rem/1.15 var(--disp);letter-spacing:-.02em}
+.cn-rek p{margin:0;font-size:var(--fs-small);line-height:1.45;color:inherit;opacity:.92;max-width:none}
+.cn-rek .btn{margin-top:auto;align-self:flex-start}
+.cn-rek small{font-size:12.5px;line-height:1.4;opacity:.72}
+.cn-st{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;font-size:var(--fs-small);color:var(--text)}
+.cn-pm{display:inline-flex;align-items:center;gap:4px;flex:none}
+.cn-pm button{width:42px;height:42px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:20px;line-height:1;color:var(--ink)}
+.cn-pm b{min-width:34px;text-align:center;font:600 16px var(--mono);color:var(--ink)}
+.cn-mes .cn-st+ul{margin-top:10px}
+.cn-h2{font:700 1.5rem/1.2 var(--disp);letter-spacing:-.02em;margin:36px 0 14px;color:var(--ink)}
+.cn-pak{margin-top:16px;font-size:var(--fs-small)}
+.cn-det{margin-top:18px;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:4px 0;max-width:720px}
+.cn-det summary{cursor:pointer;font-weight:600;color:var(--ink);padding:12px 0}
+.cn-det ul{list-style:none;margin:2px 0 10px;padding:0}
+.cn-det li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-top:1px solid var(--line-soft);font-size:var(--fs-small);color:var(--text)}
+.cn-det li span:last-child{font:500 13px var(--mono);color:var(--muted);text-align:right;flex:none}
+.cn-kak{margin-top:16px;font-size:var(--fs-small);max-width:70ch}
