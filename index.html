@@ -66,7 +66,6 @@ header nav{display:flex;gap:22px;font-size:.95rem;color:var(--muted)}header nav 
 @media (max-width:900px){.demo .sheet.kadr-sheet{grid-template-columns:minmax(0,1fr)}.demo .kadr{grid-row:auto;margin-bottom:12px;max-height:62vh}}
 .hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;align-items:center}.hero .cta .btn{white-space:normal;text-align:center}
 .hero .trust{margin-top:14px;font-size:.95rem;color:var(--night-muted)}
-header .ui-seg{display:inline-flex;gap:2px;padding:3px;border-radius:999px;border:1px solid rgba(255,255,255,.14);margin-left:auto;margin-right:12px}header .ui-seg button{min-width:36px;height:28px;padding:0 8px;border-radius:999px;font:600 12px/1 var(--mono);letter-spacing:.04em;color:var(--night-muted);background:none;border:0;cursor:pointer}header .ui-seg button.on{background:var(--night-text);color:var(--night)}@media (max-width:900px){header .ui-seg{margin-right:8px}}
 .hero .gr-line{margin-top:16px;font-size:1rem}.hero .gr-line a{color:var(--night-text);font-weight:600;text-decoration:underline;text-decoration-color:var(--night-accent);text-underline-offset:4px;text-decoration-thickness:2px}
 /* живой лист */
 .demo{background:var(--surface);border-radius:26px;box-shadow:var(--shadow);padding:18px;position:relative}
@@ -218,18 +217,18 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 </style>
 </head>
 <body>
-<header class="night"><div class="wrap"><a class="logo" href="#"><i></i>JASA</a><nav aria-label="Разделы"><a href="#kak" data-i="nav1">Как работает</a><a href="#chto" data-i="nav2">Что получаете</a><a href="#eshche" data-i="nav3">Презентации и кино</a><a href="#ceny" data-i="nav4">Цены</a></nav><span class="ui-seg" role="group" aria-label="Язык"><button type="button" data-ui="ru">RU</button><button type="button" data-ui="kz" title="Қазақша · аударма тексерілуде">KZ</button><button type="button" data-ui="en">EN</button></span><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site" style="padding:10px 20px" data-i="vhod">Войти</a></div></header>
+<header class="night"><div class="wrap"><a class="logo" href="#"><i></i>JASA</a><nav aria-label="Разделы"><a href="#kak">Как работает</a><a href="#chto">Что получаете</a><a href="#eshche">Презентации и кино</a><a href="#ceny">Цены</a></nav><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site" style="padding:10px 20px">Войти</a></div></header>
 
 <main>
 <section class="hero"><div class="wrap grid">
   <div>
-    <span class="caps caps-d" data-i="capsd">Казахстан · по-русски, по-казахски и по-английски · в тенге</span><span class="caps caps-m" data-i="capsm">RU · KZ · EN · в тенге</span>
-    <h1 style="margin-top:14px" data-i="h1">Пост с картинкой — <em>за минуту</em>.</h1>
-    <p class="lead" style="margin-top:18px" data-i="lead1">Скажите, что нужно, голосом или текстом. JASA напишет пост и нарисует картинку с вашим заголовком. Ещё две минуты — проверить и выложить.</p>
-    <p class="lead" style="margin-top:10px;font-size:1rem" data-i="lead2"><b>Не знаете, о чём писать?</b> Выберите дело один раз — дальше JASA подсказывает, о чём писать сегодня: три повода с датами казахстанского календаря.</p>
-    <div class="cta"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site" data-i="cta1">Попробовать бесплатно</a><a class="btn quiet" href="#chto" data-i="cta2">Посмотреть примеры</a></div>
-    <p class="gr-line"><a href="https://t.me/jasa_asia" target="_blank" rel="noopener" data-i="gr">Учимся в Telegram → группа JASA</a></p>
-    <p class="trust" data-i="trust"><b>2 поста в день — бесплатно, без входа.</b> Дальше пост с картинкой — около 250 ₸. Цена стоит на кнопке до запуска.</p>
+    <span class="caps caps-d">Казахстан · по-русски, по-казахски и по-английски · в тенге</span><span class="caps caps-m">RU · KZ · EN · в тенге</span>
+    <h1 style="margin-top:14px">Пост с картинкой — <em>за минуту</em>.</h1>
+    <p class="lead" style="margin-top:18px">Скажите, что нужно, голосом или текстом. JASA напишет пост и нарисует картинку с вашим заголовком. Ещё две минуты — проверить и выложить.</p>
+    <p class="lead" style="margin-top:10px;font-size:1rem"><b>Не знаете, о чём писать?</b> Выберите дело один раз — дальше JASA подсказывает, о чём писать сегодня: три повода с датами казахстанского календаря.</p>
+    <div class="cta"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Попробовать бесплатно</a><a class="btn quiet" href="#chto">Посмотреть примеры</a></div>
+    <p class="gr-line"><a href="https://t.me/jasa_asia" target="_blank" rel="noopener">Учимся в Telegram → группа JASA</a></p>
+    <p class="trust"><b>2 поста в день — бесплатно, без входа.</b> Дальше пост с картинкой — около 250 ₸. Цена стоит на кнопке до запуска.</p>
   </div>
   <div class="demo" id="demo">
     <span class="meta">пост с картинкой · около 250 ₸</span>
@@ -342,7 +341,7 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
 
 </main>
 <footer><div class="wrap"><span>© 2026 JASA — платформа ТОО «Digital Taurus Asia», БИН 221240018919 · Республика Казахстан, г. Алматы, ул. Масанчи, 23/8 · <a href="mailto:support@jasa.asia">support@jasa.asia</a> · <a href="https://t.me/jasa_asia_bot">@jasa_asia_bot</a> · <a href="/privacy/">Политика данных</a> · <a href="/ai/">Маркировка ИИ</a> · <a href="/obnovleniya/">Что нового</a></span><span>«Жаса» по-казахски — «создай». Контент с ИИ маркируется в тексте и в файлах — Закон РК № 230-VIII «Об искусственном интеллекте», ст. 21. Условия использования — скоро.</span></div></footer>
-<div class="sticky"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site" data-i="cta1">Попробовать бесплатно</a></div>
+<div class="sticky"><a class="btn accent vhod" href="https://t.me/jasa_asia_bot?start=site">Попробовать бесплатно</a></div>
 
 <script>
 (function(){
@@ -395,32 +394,6 @@ footer{padding:32px 0 48px;border-top:1px solid var(--line-soft);font-size:.9rem
     a.addEventListener('ended',function(){i.style.width='0';tm.textContent=mmss(a.duration)});
     tr.addEventListener('click',function(e){if(!a.duration)return;var r=tr.getBoundingClientRect();a.currentTime=(e.clientX-r.left)/r.width*a.duration;if(a.paused)a.play().catch(function(){})});
   });
-})();
-</script>
-<script>
-/* 11.11 · язык первого экрана: RU · KZ · EN. Выбор общий с кабинетом (localStorage jasa:ui), по умолчанию — язык устройства.
-   Переводится первый экран и меню; остальная страница пока на русском. Казахский проверяется носителем. */
-(function(){
-  var T={
-    nav1:['Қалай жұмыс істейді','How it works'],nav2:['Не аласыз','What you get'],nav3:['Презентациялар мен кино','Presentations and film'],nav4:['Бағалар','Prices'],vhod:['Кіру','Sign in'],
-    capsd:['Қазақстан · орысша, қазақша және ағылшынша · теңгемен','Kazakhstan · Russian, Kazakh and English · in tenge'],capsm:['RU · KZ · EN · теңгемен','RU · KZ · EN · in tenge'],
-    h1:['Суретті пост\u00a0— <em>бір\u00a0минутта</em>.','A post with an image\u00a0— <em>in\u00a0a\u00a0minute</em>.'],
-    lead1:['Не керек екенін дауыспен немесе мәтінмен айтыңыз. JASA пост жазып, тақырыбыңызбен сурет салады. Тағы екі минут — тексеріп, жариялау.','Say what you need, by voice or text. JASA writes the post and draws an image with your headline. Two more minutes to check it and post.'],
-    lead2:['<b>Не туралы жазарыңызды білмейсіз бе?</b> Ісіңізді бір рет таңдаңыз — JASA бүгін не туралы жазуды айтып отырады: қазақстандық күнтізбе күндерімен үш себеп.','<b>Not sure what to post?</b> Pick your business once — JASA then suggests what to post today: three reasons with Kazakhstan calendar dates.'],
-    cta1:['Тегін байқап көру','Try for free'],cta2:['Мысалдарды қарау','See examples'],gr:['Telegram-да оқимыз → JASA тобы','Learn on Telegram → JASA group'],
-    trust:['<b>Күніне 2 пост — тегін, кірусіз.</b> Одан әрі суретті пост — шамамен\u00a0250\u00a0₸. Баға іске қосқанға дейін түймеде тұрады.','<b>2 posts a day — free, no sign-in.</b> After that a post with an image is about\u00a0250\u00a0₸. The price is on the button before you run it.']
-  };
-  var Y=['ru','kz','en'],els=[].slice.call(document.querySelectorAll('[data-i]'));
-  els.forEach(function(e){e.setAttribute('data-ru',e.innerHTML)});
-  function ustr(){var c=String((navigator.languages&&navigator.languages[0])||navigator.language||'ru').slice(0,2).toLowerCase();return c==='kk'||c==='kz'?'kz':c==='en'?'en':'ru'}
-  function vzyat(){try{var v=JSON.parse(localStorage.getItem('jasa:ui'));if(Y.indexOf(v)>-1)return v}catch(e){}return ustr()}
-  function primenit(y){
-    els.forEach(function(e){var k=e.getAttribute('data-i');e.innerHTML=y==='ru'||!T[k]?e.getAttribute('data-ru'):T[k][y==='kz'?0:1]});
-    document.documentElement.lang=y==='kz'?'kk':y;
-    [].forEach.call(document.querySelectorAll('header .ui-seg button'),function(b){var on=b.getAttribute('data-ui')===y;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
-  }
-  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('header .ui-seg [data-ui]');if(!b)return;var y=b.getAttribute('data-ui');try{localStorage.setItem('jasa:ui',JSON.stringify(y))}catch(er){}try{document.cookie='jasa_ui='+y+'; max-age=31536000; path=/; SameSite=Lax'}catch(er){}primenit(y)});
-  primenit(vzyat());
 })();
 </script>
 <script src="app/lupa.js?v=3" defer></script>

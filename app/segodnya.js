@@ -10,8 +10,6 @@
   // «ГГГГ-ММ-ДД» как есть, «ММ-ДД» — в заданном году; несуществующая дата (29 февраля) → null
   const data = (s, god) => { const p = String(s).split('-').map(Number); return p.length === 3 ? nomer(p[0], p[1], p[2]) : nomer(god, p[0], p[1]); };
 
-  // переводы рядом с полем: z_kz, z_en, p_kz… — экран берёт их по языку интерфейса
-  const perevody = (o) => { const r = {}; for (const k in o) if (/^[a-z]+_(kz|en)$/.test(k) && typeof o[k] === 'string') r[k] = o[k]; return r; };
   /** Три карточки на дату. den — {g, m, d}; nisha — id из povody.json (неизвестная → «drugoe»). */
   function calc(D, den, nisha) {
     const n = D.nishi.find((x) => x.id === nisha) || D.nishi.find((x) => x.id === 'drugoe');
@@ -34,19 +32,19 @@
     if (luchshij) {
       const k = luchshij.k, d = luchshij.do;
       const q = k.q[id] || String(k.q['*']).split('{dlya}').join(n.dlya);
-      out.push({ ...perevody(k), metka: d ? 'Через ' + d + ' дн. · ' + k.n : k.n, tip: k.tip, z: k.z, q, d: k.d, p: k.p || '', vid: 'povod', do: d, n: k.n, s: luchshij.s, po: luchshij.po, dn });   // s, po, dn — номера дней: начало, конец, сегодня
+      out.push({ metka: d ? 'Через ' + d + ' дн. · ' + k.n : k.n, tip: k.tip, z: k.z, q, d: k.d, p: k.p || '', vid: 'povod', do: d, n: k.n, s: luchshij.s, po: luchshij.po, dn });   // s, po, dn — номера дней: начало, конец, сегодня
     }
     const wd = (new Date(dn * DEN).getUTCDay() + 6) % 7;   // понедельник = 0
     const x = D.nedelya[id][wd];
-    out.push({ ...perevody(x), metka: DNI[wd], tip: x.tip, z: x.z, q: x.q, d: x.d, vid: 'den', wd });
+    out.push({ metka: DNI[wd], tip: x.tip, z: x.z, q: x.q, d: x.d, vid: 'den', wd });
     const i = dn - nomer(den.g, 1, 1) + 1;   // день года
     for (let sdvig = 0; sdvig < 8; sdvig++) {   // идея дня не повторяет уже показанные карточки
       const y = D.vsegda[id][(i + sdvig) % 8];
-      if (out.every((c) => c.q !== y.q)) { out.push({ ...perevody(y), metka: 'Идея дня', tip: y.tip, z: y.z, q: y.q, d: y.d, vid: 'ideya' }); break; }
+      if (out.every((c) => c.q !== y.q)) { out.push({ metka: 'Идея дня', tip: y.tip, z: y.z, q: y.q, d: y.d, vid: 'ideya' }); break; }
     }
     if (out.length < 3) {   // нет повода в календаре — вторая идея из вечных
       const y = D.vsegda[id][(i + 4) % 8];
-      if (out.every((c) => c.q !== y.q)) out.unshift({ ...perevody(y), metka: 'Всегда работает', tip: y.tip, z: y.z, q: y.q, d: y.d, vid: 'vsegda' });
+      if (out.every((c) => c.q !== y.q)) out.unshift({ metka: 'Всегда работает', tip: y.tip, z: y.z, q: y.q, d: y.d, vid: 'vsegda' });
     }
     return out;
   }

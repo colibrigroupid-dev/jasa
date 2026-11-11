@@ -26,7 +26,6 @@
     yazyk: 'ru',   // ниже подставляется выбранный при первом запуске
     job: store.get('job', null),
     fkZapomnit: !!store.get('fkZapomnit', false),
-    yazykSvoj: !!store.get('yazykSvoj', false),
     nisha: store.get('nisha', ''),
     brandFakty: store.get('brandFakty', null),
     status: { key: false, images: false },
@@ -98,12 +97,12 @@
   // язык текстов выбирается один раз при первом запуске, дальше его можно сменить только в Кабинете
   const langGuess = () => { const c = String((TG && TG.initDataUnsafe && TG.initDataUnsafe.user && TG.initDataUnsafe.user.language_code) || navigator.language || 'ru').slice(0, 2).toLowerCase(); return c === 'kk' ? 'kz' : (c === 'en' ? 'en' : 'ru'); };
   const yazykCookie = () => { const m = /(?:^|; )jasa_yazyk=(ru|kz|en)/.exec(document.cookie || ''); return m ? m[1] : null; };
-  S.yazyk = store.get('yazyk', null) || yazykCookie() || (window.JASA_I18N ? window.JASA_I18N.ui : langGuess());   // 11.11: язык текстов по умолчанию = язык интерфейса
+  S.yazyk = store.get('yazyk', null) || yazykCookie() || langGuess();
   if (yazykCookie()) S.yazykChosen = true;
   // выбор языка — первое действие нового пользователя: сервер выдаёт пробные кредиты, поэтому баланс перечитываем
   // после /api/yazyk баланс мог вырасти на пробные: перечитать профиль и, если открыт Кабинет, перерисовать его цифры
   function posleYazyka() { return loadMe().then(() => { if (/^#\/kabinet/.test(location.hash) && typeof kabinet === 'function') kabinet(); }); }
-  const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); try { document.cookie = 'jasa_yazyk=' + l + '; max-age=31536000; path=/; SameSite=Lax'; } catch (e) { /* без cookie */ } return api('/api/yazyk', { yazyk: l }).then(posleYazyka).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
+  const setLang = (l) => { S.yazyk = l; S.yazykChosen = true; store.set('yazyk', l); try { document.cookie = 'jasa_yazyk=' + l + '; max-age=31536000; path=/; SameSite=Lax'; } catch (e) { /* без cookie */ } api('/api/yazyk', { yazyk: l }).then(posleYazyka).catch(() => {}); };   // и в профиль на сервере: бот и Mini App знают
   const S_KART = () => (store.get('kartinki', 1) === 3 ? 3 : 1);   // сколько картинок рисовать сразу: 1 по умолчанию, 3 — по выбору (+24 кр)
   const priceOf = (tip) => { const z = (S_KART() === 3 && S.ceny.zadanie_3) || S.ceny.zadanie; return (z && z[tip]) || 3; };
   // 10.11: что даёт день подписки — фраза и число только с сервера (podpiska.chto считается там из числа кредитов и цены поста).
@@ -119,7 +118,7 @@
   const dostupno = (tip) => { const k = S.me && S.me.koshelki; return vnePodpiski(tip) ? (+k.dar || 0) + (+k.lichnye || 0) : (+S.credits || 0); };
   const priceLabel = (tip, extra) => 'до ' + (priceOf(tip) + (extra || 0)) + ' кр';
   const LINK_RE = /https?:\/\/\S*(instagram\.com|tiktok\.com|youtu|vk\.com)\S*/;
-  function loadMe() { return api('/api/me').then((m) => { S.me = m; if (m.yazyk && !store.get('yazyk', null)) { S.yazyk = m.yazyk; S.yazykChosen = true; store.set('yazyk', m.yazyk); } else if (!m.guest && !m.yazyk && S.yazyk) { api('/api/yazyk', { yazyk: S.yazyk }).then(posleYazyka).catch(() => {}); } S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); { const sc = document.getElementById('script'); if (sc) sc.dispatchEvent(new Event('input')); } const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
+  function loadMe() { return api('/api/me').then((m) => { S.me = m; if (m.yazyk && !store.get('yazyk', null)) { S.yazyk = m.yazyk; S.yazykChosen = true; store.set('yazyk', m.yazyk); } else if (!m.guest && !m.yazyk && store.get('yazyk', null)) { api('/api/yazyk', { yazyk: store.get('yazyk', 'ru') }).then(posleYazyka).catch(() => {}); } S.credits = m.kredity; store.set('credits', S.credits); drawCredits(); { const sc = document.getElementById('script'); if (sc) sc.dispatchEvent(new Event('input')); } const n = $('#acctname'); if (n) n.textContent = m.guest ? 'Гость' : (m.name || 'Вы'); const sub = n && n.nextElementSibling; if (sub) sub.textContent = m.guest ? 'войти через Telegram →' : 'первая волна · ' + (m.username ? '@' + m.username : 'Telegram'); return m; }).catch(() => null); }
   S.meP = loadMe();
 
   // ---------- тема ----------
@@ -248,13 +247,12 @@
     const slot = (S.brandId || S.brend) && name ? `<a class="mh-proj" id="mproj" href="#/brend"><span class="av">${esc(name.trim().charAt(0).toUpperCase())}</span><span class="n">${esc(name)}</span></a>` : `<a class="mh-proj" id="mproj" href="#/sozdat"><span class="av logo"></span><span class="n">JASA</span></a>`;
     const c = Math.floor(+S.credits || 0);
     const guest = S.me && S.me.guest, ph = guest ? postovHvatit() : 0;   // S.me приходит после запуска, поэтому цены и кошельки к этому мигу уже объявлены
-    const sig = slot + c + (guest ? 'g' + ph : '') + UI(); if (headSig === sig) return; headSig = sig;
-    h.innerHTML = slot + `<span class="sp"></span>${window.JASA_I18N ? `<button type="button" class="mh-lang" id="mlang" data-no-i18n aria-label="${esc(window.JASA_I18N.t('Язык'))}: ${window.JASA_I18N.NAZV[UI()]}" title="RU · KZ · EN">${window.JASA_I18N.KOD[UI()]}</button>` : ''}<a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Подарок: ' + Math.floor(S.ceny.gost_den || 50) + ' кредитов в день без входа. Пост с картинкой — до ' + priceOf('post') + ' кр' : 'Ваши кредиты'}">${guest && ph >= 1 ? ph + ' ' + postSl(ph) + ' · 0 ₸' : c + ' кр' + (guest ? '<small>сегодня</small>' : '')}</a>${guest ? '<a class="mh-in" href="#/kabinet">Войти</a>' : ''}<button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
+    const sig = slot + c + (guest ? 'g' + ph : ''); if (headSig === sig) return; headSig = sig;
+    h.innerHTML = slot + `<span class="sp"></span><a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Подарок: ' + Math.floor(S.ceny.gost_den || 50) + ' кредитов в день без входа. Пост с картинкой — до ' + priceOf('post') + ' кр' : 'Ваши кредиты'}">${guest && ph >= 1 ? ph + ' ' + postSl(ph) + ' · 0 ₸' : c + ' кр' + (guest ? '<small>сегодня</small>' : '')}</a>${guest ? '<a class="mh-in" href="#/kabinet">Войти</a>' : ''}<button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
   }
   document.addEventListener('click', (e) => { if (e.target.closest('#mhelp')) { const f = $('#fab'); if (f) f.click(); } });
   // Первый вход: один экран «Выберите язык», пока не выбран — приложение не показываем. Язык влияет на тексты результатов, кнопки пока русские.
   function langAsk() {
-    if (window.JASA_I18N) return;   // 11.11: переключатель языка в шапке с первого экрана — окно на весь экран не нужно
     if (store.get('yazyk', null) || S.yazykChosen || $('#langfirst')) return;
     Promise.race([S.meP, new Promise((r) => setTimeout(r, 1500))]).then(() => {
       if (store.get('yazyk', null) || S.yazykChosen || $('#langfirst')) return;
@@ -282,20 +280,8 @@
   }
   window.addEventListener('hashchange', route);
 
-  // 11.11: язык интерфейса — компьютер: три кнопки в верхней строке; телефон: одна кнопка в шапке, нажатие — следующий язык
-  function UI() { return window.JASA_I18N ? window.JASA_I18N.ui : 'ru'; }   // объявление функцией: шапка рисуется раньше этой строки
-  function uiSeg() { return (window.JASA_I18N ? `<span class="ui-seg" role="group" aria-label="Язык интерфейса" data-no-i18n>${window.JASA_I18N.YAZ.map((y) => `<button type="button" data-ui="${y}" class="${y === UI() ? 'on' : ''}" aria-pressed="${y === UI()}" title="${window.JASA_I18N.NAZV[y]}${y === 'kz' ? ' · аударма тексерілуде' : ''}">${window.JASA_I18N.KOD[y]}</button>`).join('')}</span>` : ''); }
-  function smenitUi(y) {
-    const I = window.JASA_I18N; if (!I || !I.YAZ.includes(y) || y === I.ui) return;
-    hap('sel'); I.set(y);
-    const ushlo = !S.yazykSvoj ? setLang(y) : null;   // язык текстов идёт за интерфейсом, пока человек не выбрал его отдельно в Кабинете
-    try { sessionStorage.setItem('jasa:uiToast', y); } catch (e) { /* без тоста */ }
-    Promise.race([ushlo || Promise.resolve(), new Promise((r) => setTimeout(r, 800))]).then(() => location.reload());   // сначала язык уходит в профиль (бот пишет на нём же); меню, подвал и окна рисуются один раз при запуске — перезагрузка переводит всё разом, без остатков прошлого языка
-  }
-  try { const ty = sessionStorage.getItem('jasa:uiToast'); if (ty) { sessionStorage.removeItem('jasa:uiToast'); setTimeout(() => toast(ty === 'kz' ? 'Интерфейс қазақша. Аударма тексерілуде — қате көрсеңіз, жазыңыз.' : ty === 'en' ? 'Interface in English.' : 'Интерфейс на русском.'), 600); } } catch (e) { /* без тоста */ }
-  document.addEventListener('click', (e) => { const b = e.target.closest('[data-ui]'); if (b) { e.preventDefault(); smenitUi(b.dataset.ui); return; } const c = e.target.closest('#mlang'); if (c && window.JASA_I18N) { const Y = window.JASA_I18N.YAZ; smenitUi(Y[(Y.indexOf(UI()) + 1) % Y.length]); } });
   function topbar(title, right, cls) {
-    return `<div class="topbar ${cls || ''}"><div class="crumbs"><span>JASA</span><span>·</span><b>${esc(title)}</b></div><div class="tb-r">${right || ''}${uiSeg()}</div></div>`;
+    return `<div class="topbar ${cls || ''}"><div class="crumbs"><span>JASA</span><span>·</span><b>${esc(title)}</b></div><div>${right || ''}</div></div>`;
   }
 
   // =====================================================================
@@ -372,7 +358,7 @@
     const drawPrice = () => {
       const { link, p, n, d, vne } = priceNow(); const has = !!ta.value.trim(); const low = n < 1;
       comp.classList.toggle('has', has); comp.classList.toggle('low', low);
-      $('#price').innerHTML = UI() === 'ru' ? `<span class="du">до </span>${p} кр` : esc(window.JASA_I18N.t('до ' + p + ' кр'));   // в других языках порядок слов свой: «21 кр дейін», «up to 21 cr»
+      $('#price').innerHTML = `<span class="du">до </span>${p} кр`;
       $('#cwarntx').textContent = vne ? `С подписки ${(TIPS_SHORT[S.tip] || 'это').toLowerCase()} не идёт: нужно до ${p} личных кр, у вас ${Math.floor(d)}` : `Не хватает: нужно до ${p} кр, у вас ${Math.floor(d)}`;
       $('#go').firstChild.textContent = low ? 'Пополнить ' : 'Сделать ';
       $('#go').classList.toggle('low', low);
@@ -424,18 +410,17 @@
       const dm = (nomer) => { const t = new Date(nomer * 864e5); return [t.getUTCDate(), SG_MES3[t.getUTCMonth()]]; };
       const vis = (c) => {
         if (c.vid !== 'povod' && nf < foto.length) { const f = foto[(den.d + nf++) % foto.length]; return `<img src="${esc(f)}" alt="" width="800" height="993" decoding="async"><span class="sg-pr">пример</span>`; }
-        if (c.vid === 'povod') { const [d1, m1] = dm(c.s), [d2, m2] = dm(c.po); return c.do ? `<span class="sg-gl">${d1}<small>${m1}</small></span>` : (c.po > c.dn ? (UI() === 'kz' ? `<span class="sg-gl">${d2}<small>${window.JASA_I18N.t(m2)} дейін</small></span>` : `<span class="sg-gl"><small class="pre">до</small>${d2}<small>${m2}</small></span>`) : '<span class="sg-gl w">сегодня</span>'); }
+        if (c.vid === 'povod') { const [d1, m1] = dm(c.s), [d2, m2] = dm(c.po); return c.do ? `<span class="sg-gl">${d1}<small>${m1}</small></span>` : (c.po > c.dn ? `<span class="sg-gl"><small class="pre">до</small>${d2}<small>${m2}</small></span>` : '<span class="sg-gl w">сегодня</span>'); }
         if (c.vid === 'den') return `<span class="sg-gl">${SG_DN2[wd]}</span>`;
         return `<span class="sg-gl ic">${ico('i-idea')}</span>`;
       };
-      const metka = (c) => { if (c.vid !== 'povod') return c.metka; const pered = c.do === 1 ? 'Завтра' : c.do ? 'Через ' + c.do + ' дн.' : 'Уже идёт'; return c.n === c.z ? pered : (c.do ? pered + ' · ' : '') + tr(c, 'n'); };
-      const tr = (o, k) => (window.JASA_I18N ? window.JASA_I18N.pole(o, k) : o[k]);
+      const metka = (c) => { const m = c.vid === 'povod' && c.n === c.z ? (c.do ? 'Через ' + c.do + ' дн.' : 'Уже идёт') : c.metka; return c.vid === 'povod' && c.do === 1 ? m.replace('Через 1 дн.', 'Завтра') : m; };
       const tipN = (t) => TIPS_SHORT[t] || 'Пост';
       sgBox.className = 'sg' + (sprosit ? ' ask' : '') + (first ? '' : ' compact') + (anim ? ' anim' : '');
       sgBox.innerHTML = `<div class="sg-head"><span class="sg-list" aria-hidden="true"><i>${SG_MES3[den.m - 1]}</i><b>${den.d}</b></span><span class="sg-tx"><b>Сегодня, ${SG.DNI[wd].toLowerCase()}</b><span>${den.d} ${SG_MES[den.m - 1]}${sprosit ? '' : ` · <button type="button" class="sg-kto" id="sgkto" title="Сменить дело">${esc(n ? n.dlya : 'выбрать дело')}${ico('i-chevr')}</button>`}</span></span></div>
         ${sprosit ? `<div class="sg-q"><b>Чем занимаетесь?</b><span>Покажем три повода для поста на сегодня</span></div>
         <div class="sg-nishi" role="group" aria-label="Чем занимаетесь">${D.nishi.map((x) => `<button type="button" class="sg-n ${n && n.id === x.id ? 'on' : ''}" data-n="${esc(x.id)}" aria-pressed="${!!(n && n.id === x.id)}"><i aria-hidden="true">${SG_ZNAK[x.id] || '•'}</i><span>${esc(sgKorotko(x))}</span></button>`).join('')}<button type="button" class="sg-n skip" data-n="">${sgVybor ? 'Оставить как есть' : 'Пропустить'}</button></div>` : ''}
-        <div class="sg-cards" id="sgcards">${sgKart.map((c, i) => `<button type="button" class="sg-card v-${esc(c.vid)}" data-i="${i}" aria-pressed="false" title="${esc(c.q)}"><span class="sg-vis">${vis(c)}<span class="sg-met">${esc(metka(c))}</span></span><span class="sg-body"><b class="sg-z">${esc(tr(c, 'z'))}</b><span class="sg-qq${c.p ? ' pp' : ''}">${esc(c.p ? tr(c, 'p') : c.q)}</span><span class="sg-go"><b>${esc(tipN(c.tip))}</b><em data-sgp="${esc(TIPS[c.tip] ? c.tip : 'post')}">до ${priceOf(TIPS[c.tip] ? c.tip : 'post')} кр</em>${ico('i-chevr')}</span></span></button>`).join('')}</div>`;
+        <div class="sg-cards" id="sgcards">${sgKart.map((c, i) => `<button type="button" class="sg-card v-${esc(c.vid)}" data-i="${i}" aria-pressed="false" title="${esc(c.q)}"><span class="sg-vis">${vis(c)}<span class="sg-met">${esc(metka(c))}</span></span><span class="sg-body"><b class="sg-z">${esc(c.z)}</b><span class="sg-qq${c.p ? ' pp' : ''}">${esc(c.p || c.q)}</span><span class="sg-go"><b>${esc(tipN(c.tip))}</b><em data-sgp="${esc(TIPS[c.tip] ? c.tip : 'post')}">до ${priceOf(TIPS[c.tip] ? c.tip : 'post')} кр</em>${ico('i-chevr')}</span></span></button>`).join('')}</div>`;
     };
     if (sgBox) {
       sgDraw(true);
@@ -448,7 +433,7 @@
         const cb = e.target.closest('.sg-card'); const c = cb && sgKart[+cb.dataset.i]; if (!c) return;
         hap('light'); setTip(c.tip); ta.value = c.q; grow();
         $$('.sg-card', sgBox).forEach((x) => { x.classList.toggle('on', x === cb); x.setAttribute('aria-pressed', x === cb); });
-        const dp = $('#cdop'); if (dp) { dp.textContent = c.d ? 'Допишите: ' + (window.JASA_I18N ? window.JASA_I18N.pole(c, 'd') : c.d) + ' — ' + (TIPS_SHORT[S.tip] || 'пост').toLowerCase() + ' выйдет точнее' : ''; dp.hidden = !c.d; }
+        const dp = $('#cdop'); if (dp) { dp.textContent = c.d ? 'Допишите: ' + c.d + ' — ' + (TIPS_SHORT[S.tip] || 'пост').toLowerCase() + ' выйдет точнее' : ''; dp.hidden = !c.d; }
         ta.focus(); try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (er) { /* старый браузер */ }
       });
     } else exZapas();
@@ -1671,8 +1656,8 @@
   }
   function drawKab(m) {
     const k = $('#kab'); if (!k) return;
-    const langCard = () => '<div class="card" style="margin-top:22px"><span class="caps">Язык</span><div class="bs-seg" id="langseg" style="margin-top:10px;max-width:420px">' + Object.entries(LANG_LABEL).map(([key, v]) => `<button type="button" data-l="${key}" class="${key === S.yazyk ? 'on' : ''}" aria-pressed="${key === S.yazyk}">${v}</button>`).join('') + '</div><p class="small dim" style="margin-top:8px">Язык текстов. Язык меню — переключатель вверху.</p></div>';
-    const langBind = () => { const sg = $('#langseg'); if (sg) sg.addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; setLang(b.dataset.l); S.yazykSvoj = b.dataset.l !== UI(); store.set('yazykSvoj', S.yazykSvoj); $$('#langseg button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); hap('sel'); }); };
+    const langCard = () => '<div class="card" style="margin-top:22px"><span class="caps">Язык</span><div class="bs-seg" id="langseg" style="margin-top:10px;max-width:420px">' + Object.entries(LANG_LABEL).map(([key, v]) => `<button type="button" data-l="${key}" class="${key === S.yazyk ? 'on' : ''}" aria-pressed="${key === S.yazyk}">${v}</button>`).join('') + '</div><p class="small dim" style="margin-top:8px">Язык текстов. Меню пока на русском.</p></div>';
+    const langBind = () => { const sg = $('#langseg'); if (sg) sg.addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; setLang(b.dataset.l); $$('#langseg button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); hap('sel'); }); };
     if (!m) { k.innerHTML = '<div class="warn">Сервер не отвечает. Попробуйте через минуту.</div>'; return; }
     if (m.guest && !TG) {
       k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите в аккаунт</h2><p class="muted" style="margin-top:10px">Без паролей, через Telegram. Посты, бренд и кредиты будут и в приложении, и на компьютере.</p></section>
