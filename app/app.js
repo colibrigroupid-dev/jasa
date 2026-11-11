@@ -95,7 +95,7 @@
     return j;
   }
   api('/api/status').then((s) => { S.status = s; }).catch(() => {});
-  api('/api/ceny').then((c) => { S.ceny = c; drawHead(); { const hh = document.getElementById('cmphint'); if (hh) hh.textContent = rechTxt(); } if ((location.hash || '').startsWith('#/tarify') && routes.tarify) routes.tarify(true); ['ask', 'script'].forEach((id) => { const ta = document.getElementById(id); if (ta) ta.dispatchEvent(new Event('input')); }); }).catch(() => {});
+  api('/api/ceny').then((c) => { S.ceny = c; drawHead(); if (/^#\/kabinet/.test(location.hash) && S.me && S.me.guest && !TG && c.vhod_pochta === true && !$('#vp') && typeof kabinet === 'function') kabinet(); /* форма почты — только когда сервер сказал, что вход по почте открыт */ { const hh = document.getElementById('cmphint'); if (hh) hh.textContent = rechTxt(); } if ((location.hash || '').startsWith('#/tarify') && routes.tarify) routes.tarify(true); ['ask', 'script'].forEach((id) => { const ta = document.getElementById(id); if (ta) ta.dispatchEvent(new Event('input')); }); }).catch(() => {});
   api('/api/recepty').then((r) => { S.recepty = arr(r.recepty); const box = $('#recepty'); if (box) box.innerHTML = receptyHtml(); }).catch(() => {});
   // цена до запуска = тем же расчётом, что резерв на сервере (Plumar: «цена под кнопкой совпадает со счётом»)
   const LANG_LABEL = { ru: 'Русский', kz: 'Қазақша', en: 'English' };
@@ -1683,8 +1683,8 @@
     if (m.guest && !TG) {
       k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите в аккаунт</h2><p class="muted" style="margin-top:10px">Без паролей, через Telegram. Посты, бренд и кредиты будут и в приложении, и на компьютере.</p></section>
         ${podsvet() ? `<p class="skoro" style="margin:0 0 16px">Пакет ${esc(S.podsvetPaket)} кр — войдите через Telegram, и мы откроем «Пополнить» с ним.</p>` : ''}
-        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div>${S.ceny && S.ceny.vhod_pochta === false ? '' : pochtaHtml()}</div>
-        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сейчас у вас ${esc(Math.floor(m.kredity))} кр. Без входа — ${esc(gostKr())} кредитов один раз. После входа через Telegram — ещё ${esc(m.trial)} пробных: три поста с тремя картинками или шесть с одной.</p></div></div>`;
+        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div>${S.ceny && S.ceny.vhod_pochta === true ? pochtaHtml() : ''}</div>
+        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сейчас у вас ${esc(Math.floor(m.kredity))} кр. Без входа — ${esc(gostKr())} кредитов один раз. После входа через Telegram — ещё ${esc(m.trial)} пробных: три поста с тремя картинками или шесть с одной.${S.ceny && S.ceny.vhod_pochta === true && +S.ceny.trial_pochta > 0 ? ' По почте — ещё ' + esc(Math.floor(+S.ceny.trial_pochta)) + '.' : ''}</p></div></div>`;
       k.insertAdjacentHTML('beforeend', langCard()); langBind();
       $('#login').addEventListener('click', startLogin);
       pochtaBind();
@@ -1737,7 +1737,7 @@
       tajmer = setInterval(() => { n--; if (!$('#vpre')) { clearInterval(tajmer); return; } if (n <= 0) { clearInterval(tajmer); b.disabled = false; b.textContent = 'Отправить ещё раз'; } else b.textContent = 'Отправить ещё раз · ' + n + ' с'; }, 1000); };
     const otpravit = async () => {
       const m2 = $('#vpm').value.trim().toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m2)) { st('Проверьте адрес почты', true); $('#vpm').focus(); return; }
+      if (!/^[a-z0-9._+\-]{1,64}@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.[a-z]{2,24}$/.test(m2)) { /* как на сервере (pochta.ADRES_RE), без «%» */ st('Проверьте адрес почты', true); $('#vpm').focus(); return; }
       const b = $('#vpgo'); b.disabled = true; st('');
       try {
         const r = await api('/api/pochta/kod', { pochta: m2 }, { 'X-Login-Key': klyuch });
