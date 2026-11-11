@@ -225,7 +225,7 @@
   function gruppaZov() {
     if (!zovMozhno()) return;
     const ta = document.getElementById('ask'), pishet = ta && document.activeElement === ta && ta.value.trim();
-    if (overlays.length || pishet || document.hidden) { if (!zovZhdyot) { zovZhdyot = true; setTimeout(() => { zovZhdyot = false; gruppaZov(); }, 5000); } return; }   // подождём, пока закроет окно или допишет
+    if (overlays.length || pishet || document.hidden || document.querySelector('#feed .working')) { if (!zovZhdyot) { zovZhdyot = true; setTimeout(() => { zovZhdyot = false; gruppaZov(); }, 5000); } return; }   // подождём, пока закроет окно или допишет
     try { sessionStorage.setItem('jasa:gruppaZov', '1'); } catch (e) { /* приватное окно */ }
     let vybor = false;
     const b = bsheet(`${bsHead('Учимся в Telegram')}<p class="gr-zov">Как выжать из JASA максимум — показываем в Telegram: короткие уроки, разборы постов, ответы на вопросы. Бесплатно.</p>
@@ -529,15 +529,26 @@
       $('#feed').prepend(el);
       ta.value = ''; grow(); ta.blur();
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const t0 = Date.now(), ZHDAT = 5 * 60e3;   // обычно до минуты; в скрытой вкладке таймеры редкие, поэтому сверяем по часам
+      const strazh = setInterval(() => {
+        if (item.state !== 'working' || !el.isConnected) { clearInterval(strazh); return; }
+        if (Date.now() - t0 < ZHDAT || el.querySelector('.zhdali')) return;
+        clearInterval(strazh);
+        const h = el.querySelector('.wait-hint'); const box = document.createElement('div'); box.className = 'warn zhdali';
+        box.innerHTML = '<p><b>Не дождались ответа за 5 минут.</b> Если пост готов, он появится в Библиотеке. Можно подождать ещё или вернуть текст в поле и запустить заново.</p><div class="zh-knopki"><a class="btn sm" href="#/biblioteka">Открыть Библиотеку</a><button type="button" class="btn sm quiet" data-vernut>Вернуть текст в поле</button></div>';
+        box.querySelector('[data-vernut]').addEventListener('click', () => { const t2 = $('#ask'); if (!t2) return; setTip(item.tip); t2.value = text; grow(); t2.focus(); t2.scrollIntoView({ block: 'center' }); });   // только подставляем: запуск — кнопкой «Сделать»
+        if (h) h.replaceWith(box); else el.appendChild(box);
+      }, 15000);
       try {
         const res = await api('/api/ask', { tip: item.tip, tema: text, kartinok: S_KART(), aspect: S.aspect === 'auto' ? undefined : S.aspect, hudozhnik: S.hud === 'auto' ? undefined : S.hud, kartinka_opisanie: S.kartOpis || undefined, yazyk: S.yazyk, fakty: fkTelo(), zapomnit: fkTelo() && S.fkZapomnit && S.useBrend && S.brandId ? true : undefined, brand_id: S.useBrend ? (S.brandId || null) : 'net', brend: S.useBrend && !S.brandId && S.brend ? S.brend : null, ploshchadka: opts.ploshchadka || (item.tip === 'rils' ? 'Instagram Reels / TikTok' : 'Instagram'), primer, depo: S.stil.length ? S.stil : undefined, besplatno: opts.besplatno || undefined });
-        Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, promty: res.promty, brand: res.brand || null, zid: res.zid || '', besplatno: !!res.besplatno });
+        Object.assign(item, { state: 'done', result: res.result, kredity: res.kredity, imgJob: res.img_job, imgError: res.img_error || '', promty: res.promty, brand: res.brand || null, zid: res.zid || '', besplatno: !!res.besplatno });
         spend(res.kredity, res.ostatok);
         S.made += 1; store.set('made', S.made);
         if (!TG) setTimeout(gruppaZov, 4000);
       } catch (e) {
         Object.assign(item, { state: 'error', error: e.message }); S.lastError = e.message;
       }
+      clearInterval(strazh);
       S.feed.push(item); S.feed = S.feed.slice(-20); store.set('feed', S.feed);
       comp.classList.add('has-feed');   // поле сворачивается, как только появился первый результат
       const done = sheet(item);
@@ -729,7 +740,7 @@
     const R = { post: renderPost, rils: renderRils, afisha: renderAfisha, karusel: renderKarusel, plan: renderPlan }[item.tip] || renderRaw;
     el.innerHTML = head + R(r, item) + fbBlock(item);
     $$('.rv', el).forEach((n, i) => { n.style.animationDelay = Math.min(i * 90, 1200) + 'ms'; });
-    if (item.imgJob && !item.imgItems) pollImages(item, el);
+    if (item.imgJob && !item.imgItems && !item.imgZhdali) pollImages(item, el);
     if (item.videoJob) pollVideo(item, el);
     el.addEventListener('click', (e) => {
       const h = e.target.closest('.hooks button'); if (h) { $$('.hooks button', el).forEach((b) => b.classList.toggle('on', b === h)); return; }
@@ -737,6 +748,14 @@
       if (e.target.closest('[data-pub]')) { if (utStop(item, el, postText(item))) return; hap('light'); publish(item, el); return; }
       if (e.target.closest('[data-edit]')) { hap('light'); editor(item, el); return; }
       if (e.target.closest('[data-svoya]')) { hap('light'); svoyaKartinka(item, el); return; }
+      const pn = e.target.closest('[data-perenarisovat]');
+      if (pn) {
+        hap('medium'); pn.disabled = true; pn.textContent = 'Рисую, около минуты…';
+        (async () => { try { await narisovatPoOpisaniyu(item, String(item.tema || ''), S.hud !== 'auto' && S.hud !== 'vse' ? S.hud : (item.tip === 'afisha' ? 'gpt' : 'nb'), S.aspect !== 'auto' ? S.aspect : '4:5'); hap('success'); const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); }
+          catch (er) { hap('error'); toast(er.message); pn.disabled = false; pn.textContent = 'Нарисовать ещё раз · до ' + cenaSvoya() + ' кр'; } })();
+        return;
+      }
+      if (e.target.closest('[data-proverit]')) { hap('light'); item.imgZhdali = false; const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); return; }
       const fin = e.target.closest('[data-fin]'); if (fin) { if (utStop(item, el, (item.final || {}).text)) return; hap('light'); finalAct(fin.dataset.fin, item, fin); return; }
       const wl = e.target.closest('.withlogo'); if (wl) { withLogo(wl); return; }
       const vg = e.target.closest('.vgo'); if (vg) { startVideo(vg, item, el); return; }
@@ -759,8 +778,8 @@
     return el;
   }
   async function pollImages(item, el) {
-    const token = S.pollToken;
-    for (let i = 0; i < 80; i++) {
+    const token = S.pollToken, t0 = Date.now();
+    while (Date.now() - t0 < 6 * 60e3) {   // по часам, а не по числу опросов: в скрытой вкладке таймеры срабатывают раз в минуту
       await new Promise((r) => setTimeout(r, 4000));
       if (token !== S.pollToken) return;
       let j; try { j = await api('/api/img/' + item.imgJob); } catch (e) { continue; }
@@ -769,6 +788,8 @@
         store.set('feed', S.feed); const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); return;
       }
     }
+    if (token !== S.pollToken || item.imgItems) return;
+    item.imgZhdali = true; const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh);   // задание на сервере живо: «Проверить ещё раз» снова спросит его
   }
   const warnBlock = (w) => (w && w.length ? `<div class="warn rv"><b>Проверьте:</b> ${w.map(esc).join(' · ')}</div>` : '');
   // 10.11: «[уточнить]» — место, где сервис не знал факта (адрес, запись, цена). Подсвечиваем и не даём опубликовать как есть.
@@ -791,7 +812,9 @@
     const its = arr(item.imgItems);
     const logo = item.brand && item.brand.logo;
     if (its.length) return `<div class="caps rv" style="margin-top:16px">Выберите картинку${logo ? ' · лого поставим без искажений' : ''}</div><div class="imgs three">${its.map((it) => it.url ? `<div class="img rv"><img src="${esc(absUrl(it.url))}" alt="" loading="lazy" crossorigin="anonymous"><div class="cap">вариант ${esc(it.variant)}${it.svoya ? ' · по вашему описанию' : ''}</div>${logo ? `<button class="btn sm accent withlogo" data-src="${esc(absUrl(it.url))}" data-logo="${esc(absUrl(logo.url))}" data-ugol="${esc(logo.ugol)}" style="position:absolute;top:8px;right:8px">С лого</button>` : ''}</div>` : it.dorisovat ? `<div class="img dor rv" data-v="${esc(it.variant)}" data-kod="${esc(it.kod || '')}" data-prompt="${esc(it.prompt || '')}" data-aspect="${esc(it.aspect || '4:5')}"><div class="ph"></div><button class="btn sm accent draw" type="button">Нарисовать · 12 кр</button><div class="cap">вариант ${esc(it.variant)} · другой художник</div></div>` : `<div class="img rv"><div class="ph"></div><div class="cap">вариант ${esc(it.variant)}: ${esc(it.error || 'не вышло')}</div></div>`).join('')}</div>`;
+    if (item.imgJob && item.imgZhdali) return `<div class="warn img-err rv"><p><b>Картинка рисуется дольше обычного.</b> Она появится здесь, когда будет готова; кредиты за неё спишем только за готовую.</p><div class="zh-knopki"><button type="button" class="btn sm accent" data-proverit>Проверить ещё раз</button></div></div>`;
     if (item.imgJob) return `<div class="working rv" style="margin-top:16px"><span class="spin"></span><span>Рисую, 1–2 минуты…</span></div>`;
+    if (item.imgError && ['post', 'afisha', 'karusel'].includes(item.tip)) return `<div class="warn img-err rv"><p><b>Картинка не нарисовалась.</b> Кредиты за неё не списаны. Текст поста готов — картинку можно нарисовать ещё раз.</p><div class="zh-knopki"><button type="button" class="btn sm accent" data-perenarisovat>Нарисовать ещё раз · до ${esc(cenaSvoya())} кр</button><button type="button" class="btn sm quiet" data-svoya>Описать картинку самому</button></div></div>`;
     if (item.imgError) return `<div class="warn rv">Картинки: ${esc(item.imgError)}</div>`;
     return '';
   }
@@ -809,8 +832,18 @@
     const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); fresh.scrollIntoView({ behavior: 'smooth', block: 'start' }); hap('success');
   }
   // «Своя картинка»: описание голосом или текстом → «Улучшить с ИИ» → выбранный художник рисует (12 кр + промпт ≤ 1)
+  const cenaSvoya = () => (S.ceny && S.ceny.kartinka_svoya) || 13;
+  // нарисовать по описанию (своя картинка) или по тексту задания (повтор после сбоя): текст объявления на картинке сохраняется
+  async function narisovatPoOpisaniyu(item, opisanie, hud, aspect) {
+    const nk = (item.result && item.result.na_kartinke) || {}, pb = (item.promty && item.promty.banner) || {};
+    const bn = { zagolovok: pb.zagolovok || nk.zagolovok || (item.result && (item.result.headline || (item.result.cover && item.result.cover.text))) || '', podzagolovok: pb.podzagolovok || nk.stroka || '' };
+    const r = await api('/api/kartinka_svoya', { opisanie, hudozhnik: hud, aspect, zid: item.zid || '', brand_id: item.brand ? item.brand.id : null, zagolovok: bn.zagolovok || '', podzagolovok: bn.podzagolovok || '' });
+    spend(r.kredity, r.ostatok);
+    const its = arr(item.imgItems); const n = its.reduce((m, x) => Math.max(m, +x.variant || 0), 0) + 1;
+    its.push({ variant: n, kod: r.kod, url: r.image, svoya: true }); item.imgItems = its; item.imgError = ''; item.imgZhdali = false; store.set('feed', S.feed);
+  }
   function svoyaKartinka(item, el) {
-    const cena = (S.ceny && S.ceny.kartinka_svoya) || 13;
+    const cena = cenaSvoya();
     let hud = S.hud !== 'auto' ? S.hud : (item.tip === 'afisha' ? 'gpt' : 'nb'); let aspect = S.aspect !== 'auto' ? S.aspect : '4:5';
     const html = `${bsHead('Своя картинка')}
       <p class="small muted">Скажите или напишите, что должно быть на картинке. «Улучшить с ИИ» сделает из этого ясное описание кадра — вы его увидите и сможете поправить.</p>
@@ -829,12 +862,7 @@
         const ta = $('#svta', b.el); if (ta.value.trim().length < 5) { toast('Опишите, что должно быть на картинке'); return; }
         const btn = $('#svgo', b.el); btn.disabled = true; btn.textContent = 'Рисую, около минуты…';
         try {
-          const nk = (item.result && item.result.na_kartinke) || {}, pb = (item.promty && item.promty.banner) || {};   // текст объявления остаётся и на своей картинке, в том числе после переделки и у старых результатов
-          const bn = { zagolovok: pb.zagolovok || nk.zagolovok || (item.result && (item.result.headline || (item.result.cover && item.result.cover.text))) || '', podzagolovok: pb.podzagolovok || nk.stroka || '' };
-          const r = await api('/api/kartinka_svoya', { opisanie: ta.value, hudozhnik: hud, aspect, zid: item.zid || '', brand_id: item.brand ? item.brand.id : null, zagolovok: bn.zagolovok || '', podzagolovok: bn.podzagolovok || '' });
-          spend(r.kredity, r.ostatok);
-          const its = arr(item.imgItems); const n = its.reduce((m, x) => Math.max(m, +x.variant || 0), 0) + 1;
-          its.push({ variant: n, kod: r.kod, url: r.image, svoya: true }); item.imgItems = its; store.set('feed', S.feed);
+          await narisovatPoOpisaniyu(item, ta.value, hud, aspect);   // текст объявления остаётся и на своей картинке
           b.close(); hap('success'); const fresh = sheet(item); if (el.isConnected) el.replaceWith(fresh); fresh.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (err) { toast(err.message); hap('error'); btn.disabled = false; btn.textContent = `Нарисовать · до ${cena} кр`; }
       }

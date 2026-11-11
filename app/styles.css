@@ -1294,3 +1294,10 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 .kk-gr b{font-weight:600}
 .kk-gr span{font-size:var(--fs-small);color:var(--text)}
 .bs-panel:focus{outline:none}   /* окно получает фокус само при открытии — рамка вокруг всего окна не нужна; кнопки внутри свою рамку сохраняют */
+
+/* 11.11 · пост без картинки и долгое ожидание: что случилось и что нажать */
+.img-err{margin-top:16px}
+.img-err p,.zhdali p{margin:0 0 10px;max-width:none;line-height:1.45}
+.zh-knopki{display:flex;gap:8px;flex-wrap:wrap}
+.zhdali{margin-top:12px}
+
