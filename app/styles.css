@@ -1310,3 +1310,17 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 .mob .ui-seg{display:none}
 .mh-lang{flex:none;min-width:40px;height:36px;margin-right:4px;padding:0 8px;border-radius:999px;border:1px solid var(--line-soft);background:var(--surface);font:600 12.5px/1 var(--mono);letter-spacing:.04em;color:var(--ink)}
 .mob .mh-proj .av.logo + .n{display:none}   /* 11.11: на телефоне у JASA достаточно знака — место под кнопку языка; имя бренда клиента остаётся */
+
+/* 11.11 · вход по почте в Кабинете */
+.vp{margin-top:16px}
+.vp-ili{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:13px;margin-bottom:10px}
+.vp-ili::before,.vp-ili::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.vp-row{display:flex;gap:8px;flex-wrap:wrap}
+.vp-row input{flex:1 1 200px;min-width:0;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--field);color:var(--ink);font:inherit;font-size:16px}
+.vp-row input:focus{border-color:var(--ink);outline:none}
+#vpc{letter-spacing:.3em;font-family:var(--mono)}
+.vp-kod{margin-top:12px}
+.vp .bs-link{justify-content:flex-start;min-height:40px;padding:0}
+.vp .bs-link:disabled{opacity:.6}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
