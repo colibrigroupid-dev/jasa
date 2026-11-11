@@ -1301,3 +1301,12 @@ mark.ut{background:var(--warn-soft);color:var(--ink);border-radius:6px;padding:1
 .zh-knopki{display:flex;gap:8px;flex-wrap:wrap}
 .zhdali{margin-top:12px}
 
+/* 11.11 · язык интерфейса: три кнопки в верхней строке компьютера, одна кнопка в шапке телефона */
+.tb-r{display:flex;align-items:center;gap:10px}
+.ui-seg{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-soft)}
+.ui-seg button{min-width:38px;height:30px;padding:0 8px;border-radius:999px;font:600 12px/1 var(--mono);letter-spacing:.04em;color:var(--muted)}
+.ui-seg button.on{background:var(--ink);color:var(--ink-fg)}
+@media (hover:hover){.ui-seg button:not(.on):hover{color:var(--ink)}}
+.mob .ui-seg{display:none}
+.mh-lang{flex:none;min-width:40px;height:36px;margin-right:4px;padding:0 8px;border-radius:999px;border:1px solid var(--line-soft);background:var(--surface);font:600 12.5px/1 var(--mono);letter-spacing:.04em;color:var(--ink)}
+.mob .mh-proj .av.logo + .n{display:none}   /* 11.11: на телефоне у JASA достаточно знака — место под кнопку языка; имя бренда клиента остаётся */
