@@ -78,19 +78,15 @@
     document.addEventListener('focusin', () => setTimeout(upd, 60)); document.addEventListener('focusout', () => setTimeout(() => { if (!typing()) base = window.innerHeight; upd(); }, 60));
   })();
 
-  // 11.11: метка устройства для гостевых 50 кредитов (сервер: X-Ustrojstvo, 16–64 знака A–Z a–z 0–9 _ -). Не личные данные: случайная строка.
-  const sluchajnyj = (n) => { const a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'; let s2 = ''; try { const b = new Uint8Array(n); crypto.getRandomValues(b); b.forEach((x) => { s2 += a[x % 64]; }); } catch (e) { for (let i = 0; i < n; i++) s2 += a[Math.floor(Math.random() * 64)]; } return s2; };
-  const USTR = (() => { let v = store.get('ustr', ''); if (!/^[A-Za-z0-9_-]{16,64}$/.test(String(v))) { v = sluchajnyj(32); store.set('ustr', v); } return v; })();
   // ---------- API ----------
   async function api(path, body, extra) {   // extra — дополнительные заголовки (X-Login-Key при входе с компьютера, B-06 09.11)
     const headers = Object.assign({ 'Content-Type': 'application/json' }, extra || {});
     if (TG) headers['X-Tg-Init'] = TG.initData;
     else if (S.session) headers['X-Session'] = S.session;
-    headers['X-Ustrojstvo'] = USTR;
     const r = await fetch(API_BASE + path, body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers });
     if (r.status === 429) throw new Error('Слишком много запросов — подождите минуту и попробуйте снова');
     const j = await r.json().catch(() => ({ error: 'Сервис временно недоступен, попробуйте через минуту' }));
-    if (!r.ok) { const er = new Error(j.error || ('Сервис временно недоступен (' + r.status + ')')); er.status = r.status; throw er; }   // 402 у гостя — пробные кончились: экран предлагает войти
+    if (!r.ok) throw new Error(j.error || ('Сервис временно недоступен (' + r.status + ')'));
     setTimeout(drawHead, 0);   // бренд или кредиты могли смениться: шапка догоняет
     return j;
   }
@@ -114,7 +110,6 @@
   // Старый сервер фразы не шлёт: тогда говорим без числа, чтобы не пообещать лишнего.
   // 10.11: голос — по минутам записи (/api/ceny.rech); старый сервер — прежняя цена за запись
   const rechTxt = (dlyaKnopki) => { const r = S.ceny && S.ceny.rech; if (r && +r.kr_za_minutu > 0) { const m = Math.round((+r.max_sek || 300) / 60); return dlyaKnopki ? 'Голос — ' + r.kr_za_minutu + ' кр за минуту записи, до ' + m + ' мин' : 'Говорите · ' + r.kr_za_minutu + ' кр за минуту, до ' + m + ' мин'; } const k = +S.ceny.transcribe || 1; return dlyaKnopki ? 'Голос стоит ' + k + ' кр отдельно' : 'Говорите · ' + k + ' кр'; };
-  const gostKr = () => Math.floor(+(S.ceny && (S.ceny.gost_razovo || S.ceny.gost_den)) || 50);   // 11.11: гостю — один раз, без пополнения на новый день
   const postSl = (x) => { const a = x % 10, b = x % 100; return a === 1 && b !== 11 ? 'пост' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'поста' : 'постов'; };
   const postovHvatit = () => Math.floor(dostupno('post') / (+((S.ceny.zadanie || {}).post) || 21));   // на сколько постов с одной картинкой хватает сейчас
   const denStroka = (pod) => (pod && typeof pod.chto === 'string' && pod.chto && +pod.v_den > 0 ? Math.round(+pod.v_den) + ' кредитов каждое утро: ' + pod.chto : 'Кредиты каждое утро на посты и картинки');
@@ -254,7 +249,7 @@
     const c = Math.floor(+S.credits || 0);
     const guest = S.me && S.me.guest, ph = guest ? postovHvatit() : 0;   // S.me приходит после запуска, поэтому цены и кошельки к этому мигу уже объявлены
     const sig = slot + c + (guest ? 'g' + ph : '') + UI(); if (headSig === sig) return; headSig = sig;
-    h.innerHTML = slot + `<span class="sp"></span>${window.JASA_I18N ? `<button type="button" class="mh-lang" id="mlang" data-no-i18n aria-label="${esc(window.JASA_I18N.t('Язык'))}: ${window.JASA_I18N.NAZV[UI()]}" title="RU · KZ · EN">${window.JASA_I18N.KOD[UI()]}</button>` : ''}<a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Подарок: ' + gostKr() + ' кредитов один раз, без входа. Пост с картинкой — до ' + priceOf('post') + ' кр' : 'Ваши кредиты'}">${guest && ph >= 1 ? ph + ' ' + postSl(ph) + ' · 0 ₸' : c + ' кр' + (guest ? '<small>сегодня</small>' : '')}</a>${guest ? '<a class="mh-in" href="#/kabinet">Войти</a>' : ''}<button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
+    h.innerHTML = slot + `<span class="sp"></span>${window.JASA_I18N ? `<button type="button" class="mh-lang" id="mlang" data-no-i18n aria-label="${esc(window.JASA_I18N.t('Язык'))}: ${window.JASA_I18N.NAZV[UI()]}" title="RU · KZ · EN">${window.JASA_I18N.KOD[UI()]}</button>` : ''}<a class="mh-cr ${c < 10 ? 'low' : ''} ${guest ? 'gost' : ''}" id="mcred" href="#/kabinet" title="${guest ? 'Подарок: ' + Math.floor(S.ceny.gost_den || 50) + ' кредитов в день без входа. Пост с картинкой — до ' + priceOf('post') + ' кр' : 'Ваши кредиты'}">${guest && ph >= 1 ? ph + ' ' + postSl(ph) + ' · 0 ₸' : c + ' кр' + (guest ? '<small>сегодня</small>' : '')}</a>${guest ? '<a class="mh-in" href="#/kabinet">Войти</a>' : ''}<button type="button" class="mh-help" id="mhelp" aria-label="Помощь"><svg class="ic"><use href="#i-help"/></svg></button>`;
   }
   document.addEventListener('click', (e) => { if (e.target.closest('#mhelp')) { const f = $('#fab'); if (f) f.click(); } });
   // Первый вход: один экран «Выберите язык», пока не выбран — приложение не показываем. Язык влияет на тексты результатов, кнопки пока русские.
@@ -378,9 +373,8 @@
       const { link, p, n, d, vne } = priceNow(); const has = !!ta.value.trim(); const low = n < 1;
       comp.classList.toggle('has', has); comp.classList.toggle('low', low);
       $('#price').innerHTML = UI() === 'ru' ? `<span class="du">до </span>${p} кр` : esc(window.JASA_I18N.t('до ' + p + ' кр'));   // в других языках порядок слов свой: «21 кр дейін», «up to 21 cr»
-      const gostKonec = low && S.me && S.me.guest && !TG;
-      $('#cwarntx').textContent = gostKonec ? `Пробные ${gostKr()} кредитов закончились. Войдите через Telegram — ещё ${Math.floor(+S.me.trial || +(S.ceny && S.ceny.trial) || 135)} пробных.` : vne ? `С подписки ${(TIPS_SHORT[S.tip] || 'это').toLowerCase()} не идёт: нужно до ${p} личных кр, у вас ${Math.floor(d)}` : `Не хватает: нужно до ${p} кр, у вас ${Math.floor(d)}`;
-      $('#go').firstChild.textContent = gostKonec ? 'Войти ' : low ? 'Пополнить ' : 'Сделать ';
+      $('#cwarntx').textContent = vne ? `С подписки ${(TIPS_SHORT[S.tip] || 'это').toLowerCase()} не идёт: нужно до ${p} личных кр, у вас ${Math.floor(d)}` : `Не хватает: нужно до ${p} кр, у вас ${Math.floor(d)}`;
+      $('#go').firstChild.textContent = low ? 'Пополнить ' : 'Сделать ';
       $('#go').classList.toggle('low', low);
       $('#price').style.display = low ? 'none' : '';
       $$('#tips .chip[data-tip] .cp').forEach((c) => { c.textContent = priceOf(c.parentElement.dataset.tip); });
@@ -388,7 +382,7 @@
       const st = $('#stik');   // наклейка: на сколько постов с картинкой хватает прямо сейчас — в постах, не в кредитах
       if (st) {
         const p1 = +((S.ceny.zadanie || {}).post) || 21, k = postovHvatit(), gost = S.me ? !!S.me.guest : !(S.session || TG);
-        st.innerHTML = k >= 1 ? `<b>${k} ${postSl(k)}</b><small>${gost ? 'бесплатно, без входа' : 'с картинкой на счету'}</small>` : `<b>${p1} кр</b><small>пост с картинкой</small>`;
+        st.innerHTML = k >= 1 ? `<b>${k} ${postSl(k)}</b><small>${gost ? 'сегодня бесплатно' : 'с картинкой на счету'}</small>` : `<b>${p1} кр</b><small>пост с картинкой</small>`;
         st.hidden = false;
       }
       $('#modetx').textContent = TIPS_SHORT[S.tip] + ' · до ' + priceOf(S.tip) + ' кр';
@@ -567,7 +561,7 @@
         S.made += 1; store.set('made', S.made);
         if (!TG) setTimeout(gruppaZov, 4000);
       } catch (e) {
-        Object.assign(item, { state: 'error', error: e.message, status: e.status || 0 }); S.lastError = e.message;
+        Object.assign(item, { state: 'error', error: e.message }); S.lastError = e.message;
       }
       clearInterval(strazh);
       S.feed.push(item); S.feed = S.feed.slice(-20); store.set('feed', S.feed);
@@ -756,7 +750,7 @@
       const tick = setInterval(() => { if (!el.isConnected) { clearInterval(tick); return; } sp.forEach((s, k) => s.classList.toggle('on', k <= i)); if (i < sp.length - 1) i++; else clearInterval(tick); }, 1400);   // последний шаг горит, пока сервер не ответил: «готово» раньше времени не показываем
       return el;
     }
-    if (item.state === 'error') { el.innerHTML = head + `<div class="warn"><b>Не получилось:</b> ${esc(item.error)}${item.status === 402 && S.me && S.me.guest && !TG ? '<div class="zh-knopki" style="margin-top:10px"><a class="btn sm accent" href="#/kabinet">Войти</a></div>' : ''}</div>`; return el; }
+    if (item.state === 'error') { el.innerHTML = head + `<div class="warn"><b>Не получилось:</b> ${esc(item.error)}</div>`; return el; }
     const r = item.result || {};
     const R = { post: renderPost, rils: renderRils, afisha: renderAfisha, karusel: renderKarusel, plan: renderPlan }[item.tip] || renderRaw;
     el.innerHTML = head + R(r, item) + fbBlock(item);
@@ -1683,16 +1677,15 @@
     if (m.guest && !TG) {
       k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите в аккаунт</h2><p class="muted" style="margin-top:10px">Без паролей, через Telegram. Посты, бренд и кредиты будут и в приложении, и на компьютере.</p></section>
         ${podsvet() ? `<p class="skoro" style="margin:0 0 16px">Пакет ${esc(S.podsvetPaket)} кр — войдите через Telegram, и мы откроем «Пополнить» с ним.</p>` : ''}
-        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div>${S.ceny && S.ceny.vhod_pochta === false ? '' : pochtaHtml()}</div>
-        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сейчас у вас ${esc(Math.floor(m.kredity))} кр. Без входа — ${esc(gostKr())} кредитов один раз. После входа через Telegram — ещё ${esc(m.trial)} пробных: три поста с тремя картинками или шесть с одной.</p></div></div>`;
+        <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div></div>
+        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сегодня у вас ${esc(Math.floor(m.kredity))} кр. Без входа — 50 кредитов в день, после входа — ${esc(m.trial)} пробных разово: три поста с тремя картинками или шесть с одной.</p></div></div>`;
       k.insertAdjacentHTML('beforeend', langCard()); langBind();
       $('#login').addEventListener('click', startLogin);
-      pochtaBind();
       return;
     }
     const ist = arr(m.istoriya);
     k.innerHTML = `<div class="two">
-      <div class="card"><span class="caps">Профиль</span><h3 style="margin:6px 0 4px">${esc(m.name || 'Вы')}</h3><p class="small muted">${m.username ? '@' + esc(m.username) : /^em:/.test(String(m.uid || '')) ? 'вход по почте' : 'Telegram'}${m.since ? ' · с ' + esc(dataRu(m.since)) : ''}${TG ? ' · в Telegram' : ' · на компьютере'}</p>
+      <div class="card"><span class="caps">Профиль</span><h3 style="margin:6px 0 4px">${esc(m.name || 'Вы')}</h3><p class="small muted">${m.username ? '@' + esc(m.username) : 'Telegram'}${m.since ? ' · с ' + esc(dataRu(m.since)) : ''}${TG ? ' · в Telegram' : ' · на компьютере'}</p>
         <div class="balans"><b>${esc(m.kredity)}</b><span class="muted">кредитов</span></div>
         ${koshelkiHtml(m)}
         <p class="small dim" style="margin-top:8px">потрачено ${esc(m.spent || 0)} · пробных было ${esc(m.trial)}</p>
@@ -1722,44 +1715,6 @@
   // 1 минуту · 2 минуты · 5 минут
   const dataRu = (x) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(x || '')); if (!m) return x; const M = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']; return +m[3] + ' ' + M[+m[2] - 1] + ' ' + m[1]; };
   function plural(n, one, few, many) { const a = Math.abs(n) % 100, b = a % 10; return a > 10 && a < 20 ? many : b === 1 ? one : b > 1 && b < 5 ? few : many; }
-  // 11.11: вход по почте одноразовым кодом. Ключ этой попытки (X-Login-Key) один на «код» и «войти»: код из письма действует только здесь.
-  const pochtaHtml = () => `<div class="vp" id="vp"><div class="vp-ili"><span>или по почте</span></div>
-      <form id="vpf" class="vp-row" novalidate><label class="sr" for="vpm">Почта</label><input id="vpm" type="email" inputmode="email" autocomplete="email" placeholder="name@gmail.com" maxlength="254" required><button class="btn" id="vpgo" type="submit">Отправить код</button></form>
-      <form id="vpk" class="vp-kod" hidden novalidate><p class="small muted" id="vpkuda"></p><div class="vp-row"><label class="sr" for="vpc">Код из письма</label><input id="vpc" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6 цифр"><button class="btn accent" id="vpvh" type="submit">Войти</button></div>
-      <button type="button" class="bs-link" id="vpre" disabled>Отправить ещё раз</button></form><p class="small" id="vpst" role="status" aria-live="polite"></p></div>`;
-  function pochtaBind() {
-    const f = $('#vpf'); if (!f) return;
-    let klyuch = ''; try { klyuch = sessionStorage.getItem('jasa:vpk') || ''; } catch (e) { /* без хранилища */ }
-    if (!/^[A-Za-z0-9_-]{16,64}$/.test(klyuch)) { klyuch = sluchajnyj(32); try { sessionStorage.setItem('jasa:vpk', klyuch); } catch (e) { /* без хранилища */ } }
-    const st = (t, plokho) => { const p2 = $('#vpst'); if (p2) { p2.textContent = t || ''; p2.style.color = plokho ? 'var(--bad)' : ''; } };
-    let adres = '', tajmer = null;
-    const pauza = (sek) => { const b = $('#vpre'); if (!b) return; clearInterval(tajmer); let n = sek; b.disabled = true; b.textContent = 'Отправить ещё раз · ' + n + ' с';
-      tajmer = setInterval(() => { n--; if (!$('#vpre')) { clearInterval(tajmer); return; } if (n <= 0) { clearInterval(tajmer); b.disabled = false; b.textContent = 'Отправить ещё раз'; } else b.textContent = 'Отправить ещё раз · ' + n + ' с'; }, 1000); };
-    const otpravit = async () => {
-      const m2 = $('#vpm').value.trim().toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m2)) { st('Проверьте адрес почты', true); $('#vpm').focus(); return; }
-      const b = $('#vpgo'); b.disabled = true; st('');
-      try {
-        const r = await api('/api/pochta/kod', { pochta: m2 }, { 'X-Login-Key': klyuch });
-        adres = m2; $('#vpk').hidden = false; $('#vpkuda').textContent = 'Код отправили на ' + (r.kuda || m2) + '. Он действует 10 минут. Нет письма — загляните в «Спам».';
-        pauza(60); const c = $('#vpc'); if (c) c.focus();
-      } catch (e) { if (/скоро откроется/i.test(e.message)) { $('#vp').innerHTML = '<p class="small muted" style="margin-top:14px">' + esc(e.message) + '</p>'; return; } st(e.message, true); }
-      b.disabled = false;
-    };
-    f.addEventListener('submit', (e) => { e.preventDefault(); otpravit(); });
-    $('#vpre').addEventListener('click', () => { $('#vpm').value = adres || $('#vpm').value; otpravit(); });
-    $('#vpk').addEventListener('submit', async (e) => {
-      e.preventDefault(); const kod = $('#vpc').value.replace(/\D/g, '');
-      if (kod.length !== 6) { st('В коде 6 цифр', true); $('#vpc').focus(); return; }
-      const b = $('#vpvh'); b.disabled = true; st('');
-      try {
-        const r = await api('/api/pochta/vhod', { pochta: adres, kod }, { 'X-Login-Key': klyuch });
-        S.session = r.token; store.set('session', r.token); try { sessionStorage.removeItem('jasa:vpk'); } catch (er) { /* без хранилища */ }
-        clearInterval(tajmer); toast('Вход выполнен' + (r.kuda ? ', ' + r.kuda : '')); await loadMe(); kabinet();
-      } catch (er) { st(er.message, true); b.disabled = false; $('#vpc').select(); }
-    });
-    $('#vpc').addEventListener('input', (e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 6); if (v !== e.target.value) e.target.value = v; if (v.length === 6) $('#vpk').requestSubmit(); });   // вставили код из письма — входим сразу
-  }
   async function startLogin() {
     const box = $('#loginbox'); const btn = $('#login'); btn.disabled = true;
     const token = S.pollToken;
@@ -1786,7 +1741,7 @@
   }
   // Цены — один список тарифов для кабинета и лендинга (site/index.html, секция #ceny): строки, цены и числа постов сверяет test_tarify_sovpadenie.py.
   /*TARIFY*/const TARIFY = [
-    {"n": "Бесплатно", "p": "0 ₸", "per": "", "kto": "Попробовать", "li": ["2 поста с картинкой без входа, один раз", "после входа — ещё 6 постов в подарок", "внутри: 50 кредитов один раз без входа, после входа ещё 135 пробных"], "knopka": "Попробовать бесплатно"},
+    {"n": "Бесплатно", "p": "0 ₸", "per": "", "kto": "Попробовать", "li": ["2 поста с картинкой в день без входа", "после входа — ещё 6 постов в подарок", "внутри: 50 кредитов в день, после входа 135 пробных разово"], "knopka": "Попробовать бесплатно"},
     {"n": "Каждый день", "p": "3 990 ₸", "per": "за 30 дней", "kto": "Кафе, салон, магазин", "li": ["{chto} каждый день", "посты, афиши, карусели, картинки", "внутри: {v_den} кредитов каждое утро, не копятся"], "li_zapas": ["пост с картинкой каждый день", "посты, афиши, карусели, картинки", "дневные кредиты не копятся"], "knopka": "Оформить", "podpiska": true, "hot": true},
     {"n": "Студент", "p": "1 990 ₸", "per": "разово", "kto": "Учусь", "li": ["защита диплома со слайдами и речью — 99 кредитов", "и ещё 4 поста с картинкой", "внутри: 200 кредитов, не сгорают"], "knopka": "Выбрать", "paket": "200"},
     {"n": "Pro", "p": "24 990 ₸", "per": "разово", "kto": "SMM, агентство", "li": ["119 постов с картинкой — или 55 с тремя вариантами", "до 10 брендов клиентов", "внутри: 2 500 кредитов, не сгорают"], "knopka": "Выбрать", "paket": "2500"}
@@ -1850,9 +1805,9 @@
     const bazaKr = pak[500] ? 500 : klyuchi[0], za500 = +pak[bazaKr] / bazaKr;
     const kT = (kr) => { const t = kr * za500; return '≈ ' + tng(t >= 1000 ? okr(t) : Math.round(t / 10) * 10); };
     const dejstviya = [['Пост с картинкой', p1], ['Пост с тремя вариантами картинки', p3], ['Афиша или карусель', cena('afisha')], ['Сценарий рилса или план на неделю', cena('rils')], ['Ещё одна картинка', cena('image')]].concat(S.ceny.video && S.ceny.video['720p'] ? [['Видео 5 секунд', +S.ceny.video['720p']]] : [], S.ceny.kino && S.ceny.kino.razbor ? [['Разбор сценария кино', +S.ceny.kino.razbor]] : []);
-    const gostPostov = Math.floor(gostKr() / p1);
+    const gostPostov = Math.floor((+S.ceny.gost_den || 50) / p1);
     main.innerHTML = `<div class="cn">
-      <div class="cn-top"><h1>Цены</h1><span class="stik cn-stik"><b>${gostPostov} ${postSl(gostPostov)} бесплатно</b><small>без входа, один раз</small></span></div>
+      <div class="cn-top"><h1>Цены</h1><span class="stik cn-stik"><b>${gostPostov} ${postSl(gostPostov)} в день</b><small>без входа — бесплатно</small></span></div>
       <p class="cn-lead">Выберите, кто вы, — покажем ваш месяц в тенге.</p>
       <div class="cn-kto" role="group" aria-label="Кто вы">${MESYAC.map((m) => `<button type="button" class="chip ${m.kod === kto ? 'on' : ''}" data-kto="${m.kod}" aria-pressed="${m.kod === kto}">${esc(m.chip)}</button>`).join('')}<button type="button" class="chip ${kto === 'svoj' ? 'on' : ''}" data-kto="svoj" aria-pressed="${kto === 'svoj'}">Другое: посчитать самому</button></div>
       <div class="cn-pan" id="cnpan">${panel()}</div>
