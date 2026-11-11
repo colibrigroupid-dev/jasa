@@ -104,6 +104,31 @@
   const blok = (t, html, copy) => `<section class="card iz-b"><div class="iz-bh"><span class="caps">${esc(t)}</span>${copy != null ? `<button class="chip" data-copy="${esc(copy)}">Скопировать</button>` : ''}</div>${html}</section>`;
   const kv = (o, pary) => `<dl class="iz-kv">${pary.filter(([k]) => o[k]).map(([k, t]) => `<dt>${t}</dt><dd>${esc(o[k])}</dd>`).join('')}</dl>`;
 
+  // 11.11: после разбора — следующие шаги. Каждый подставляет готовый запрос и тип в «Создать»; запуск — кнопкой «Сделать» там.
+  const obrez = (t, n) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n).replace(/\s+\S*$/, '') + '…' : t; };
+  const cenaTip = (tip) => { const z = (S.ceny && S.ceny.zadanie) || {}; return +z[tip] || (tip === 'rils' || tip === 'plan' ? 6 : 21); };
+  function dalshe(j) {
+    const sm = j.smysl || {}, kk = j.kak || {};
+    const osnova = obrez(sm.o_chyom || (j.tekst && j.tekst.rech) || (j.scenarij && j.scenarij.ideya) || '', 160);
+    const pro = osnova ? ` (ролик: «${osnova}»)` : '';
+    const kryuchok = sm.kryuchok ? ` Крючок первых секунд: ${obrez(sm.kryuchok, 140)}.` : '';
+    const brend = S.useBrend && S.brandName ? ` в голосе бренда «${S.brandName}»` : '';
+    return [
+      { k: 'rils', tip: 'rils', n: 'Такой же ролик про моё дело', d: 'сценарий по кадрам в том же приёме',
+        q: `Сценарий рилса про моё дело${brend} в приёме разобранного ролика${pro}.${kryuchok} Повторить структуру и темп, а не текст и кадры автора.` },
+      { k: 'post', tip: 'post', n: 'Пост по мотивам', d: 'та же мысль — для вашей страницы',
+        q: `Пост для моего дела${brend} по мотивам ролика${pro}.${kryuchok}${sm.prizyv ? ` Призыв как у автора: ${obrez(sm.prizyv, 100)}.` : ''} Своими словами.` },
+      { k: 'karusel', tip: 'karusel', n: 'Карусель «Как повторить»', d: 'шаги, чтобы снять так же',
+        q: `Карусель для моего дела${brend}: как повторить приём ролика по шагам${pro}.${kk.kak_povtorit ? ` Опора: ${obrez(kk.kak_povtorit, 220)}.` : ''}` },
+      { k: 'plan', tip: 'rils', n: 'План съёмки на телефон', d: 'что снять, с какого ракурса, какой звук',
+        q: `План съёмки на телефон для моего дела${brend} по образцу ролика${pro}: кадры по секундам, ракурс, свет, звук, что сказать в кадре.${kk.chem_snyato ? ` Как снято у автора: ${obrez(kk.chem_snyato, 120)}.` : ''}` },
+    ];
+  }
+  const svoyRolik = (j) => /^https?:/.test(j.istochnik || '');
+  function otchetTekst(box) {   // весь отчёт текстом — для Telegram, где печати нет
+    const c = box.cloneNode(true); $$('.iz-noprint, button, video', c).forEach((x) => x.remove());
+    return c.innerText.replace(/\n{3,}/g, '\n\n').trim();
+  }
   function result(j) {
     const box = $('#izres'); if (!box) return;
     const src = /^https?:/.test(j.istochnik || '') ? `<a href="${esc(j.istochnik)}" target="_blank" rel="noopener noreferrer">${esc(short(j.istochnik))}</a>` : esc(j.istochnik || 'файл');
@@ -125,11 +150,35 @@
     if (j.perevod) h += blok('Перевод', [['ru', 'Русский'], ['kz', 'Қазақша'], ['en', 'English']].filter(([k]) => j.perevod[k]).map(([k, t]) => `<p class="small dim" style="margin-top:8px">${t}</p><p class="iz-pre">${esc(j.perevod[k])}</p>`).join(''), [j.perevod.ru, j.perevod.kz, j.perevod.en].filter(Boolean).join('\n\n'));
     if (j.depo != null) h += blok('В мои референсы', `<p>Добавлено кадров: <b>${j.depo}</b>. Они в «Библиотеке» → Депо — «Взять стиль» передаст их художникам.</p><a class="btn sm quiet" href="#/biblioteka">Открыть депо</a>`);
     h += `<p class="small dim" style="margin:6px 0 0">Разбор сделан с помощью ИИ · JASA. Источник: ${src}${j.avtor ? ', автор ' + esc(j.avtor) : ''}.</p>`;
+    const dl = dalshe(j);
+    h += `<section class="card iz-dalshe iz-noprint"><span class="caps">Что сделать дальше</span><div class="iz-dk">${dl.map((x) => `<button type="button" class="iz-d" data-dalshe="${x.k}"><b>${esc(x.n)}</b><small>${esc(x.d)}</small><em>до ${cenaTip(x.tip)} кр</em></button>`).join('')}</div>
+      <p class="small dim">Запрос подставится в «Создать» — его можно поправить. Кредиты спишем только после «Сделать».</p>
+      <div class="iz-row iz-skach"><button type="button" class="btn sm" data-otchet>${J.TG ? 'Скопировать отчёт' : 'Скачать отчёт (PDF)'}</button>${j.video || svoyRolik(j) ? `<button type="button" class="btn sm quiet" data-video>Скачать видео</button>` : ''}</div></section>`;
     box.innerHTML = h;
+    box.querySelector('.iz-dalshe').addEventListener('click', (e) => {
+      const d = e.target.closest('[data-dalshe]');
+      if (d) { const x = dl.find((y) => y.k === d.dataset.dalshe); if (!x) return; try { sessionStorage.setItem('jasa:prefill', JSON.stringify({ tip: x.tip, text: x.q })); } catch (er) { toast('Не получилось подставить запрос'); return; } location.hash = '#/sozdat'; return; }
+      if (e.target.closest('[data-otchet]')) {
+        if (J.TG) { const t = otchetTekst(box); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Отчёт скопирован — вставьте в чат или заметки'), () => toast('Не получилось скопировать')); return; }
+        document.documentElement.classList.add('iz-print'); const off = () => { document.documentElement.classList.remove('iz-print'); window.removeEventListener('afterprint', off); };
+        window.addEventListener('afterprint', off); window.print(); setTimeout(off, 1500);   // «Сохранить как PDF» — в окне печати браузера
+        return;
+      }
+      if (e.target.closest('[data-video]')) videoSkachat(j);
+    });
     $$('[data-copy]', box).forEach((b) => { b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast('Скопировано'); } catch (e) { toast('Не получилось скопировать'); } }; });
     const sd = $('#izsd'); if (sd) sd.onclick = () => { try { navigator.clipboard.writeText(arr(j.scenarij.plany).map((p) => p.tekst).filter(Boolean).join(' ')); } catch (e) { /* не страшно */ } toast('Текст сценария скопирован — вставьте в «Создать»'); };
   }
 
+  function videoSkachat(j) {
+    if (j.video) { const a = document.createElement('a'); a.href = J.absUrl(j.video); a.download = 'rolik.mp4'; document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 1000); return; }
+    const b = J.bsheet(`${J.bsHead('Скачать видео')}<p class="iz-sv">Скачать можно только свой ролик или тот, на который у вас есть права. Чужие ролики мы не раздаём: это нарушает права автора и правила площадок. Для разбора чужого ролика скачивать его не нужно — всё уже на экране.</p>
+      <label class="iz-moj"><input type="checkbox" id="svmoj"> Это мой ролик или у меня есть право на него</label>
+      <button type="button" class="bs-done" id="svgo" disabled>Скачать · бесплатно</button>`);
+    const ch = $('#svmoj', b.el), go2 = $('#svgo', b.el);
+    ch.onchange = () => { go2.disabled = !ch.checked; };
+    go2.onclick = () => { if (!ch.checked) return; b.close(); const u = $('#izu'), m = $('#izmojc'); if (!u || !m) return; const byl = vybor; u.value = j.istochnik; vybor = ['skachat']; m.checked = true; go(); vybor = byl; store.set('izVybor', vybor); };
+  }
   function style() {
     if (document.getElementById('iz-style')) return;
     const s = document.createElement('style'); s.id = 'iz-style';
@@ -141,7 +190,7 @@
 .iz-k small{grid-column:1;color:var(--dim);font-size:12px;line-height:1.3}.iz-k em{grid-column:2;grid-row:1;font-style:normal;color:var(--muted);font-size:13px}
 .iz-k.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}.iz-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .iz-wait{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;max-width:760px}
-#izres{max-width:760px}.iz-head{display:flex;gap:10px;align-items:baseline;justify-content:space-between;margin:22px 0 10px}
+.iz-dalshe{margin-top:16px}.iz-dk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 8px}.mob .iz-dk{grid-template-columns:minmax(0,1fr)}.iz-d{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 14px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line-soft);color:var(--ink)}@media (hover:hover){.iz-d:hover{border-color:var(--ink)}}.iz-d b{font-weight:600}.iz-d small{color:var(--muted);font-size:13px}.iz-d em{font:500 12px var(--mono);font-style:normal;color:var(--accent-text);margin-top:4px}.iz-skach{margin-top:10px;gap:8px;flex-wrap:wrap}.iz-sv{margin:0 0 12px;line-height:1.5;max-width:none}.iz-moj{display:flex;gap:8px;align-items:flex-start;margin-bottom:14px}@media print{html.iz-print body *{visibility:hidden!important}html.iz-print #izres,html.iz-print #izres *{visibility:visible!important}html.iz-print #izres{position:absolute;left:0;top:0;width:100%;max-width:none;color:#000}html.iz-print .iz-noprint,html.iz-print [data-copy],html.iz-print video{display:none!important}html.iz-print .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid;background:#fff}html.iz-print body,html.iz-print{background:#fff!important}}#izres{max-width:760px}.iz-head{display:flex;gap:10px;align-items:baseline;justify-content:space-between;margin:22px 0 10px}
 .iz-b{margin-bottom:12px}.iz-bh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .iz-b video{width:100%;max-height:480px;border-radius:var(--r-sm);background:#000;margin-bottom:8px}
 .iz-pre{white-space:pre-wrap}.iz-kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;margin:8px 0 0;font-size:var(--fs-small)}.iz-kv dt{color:var(--dim)}.iz-kv dd{margin:0}
