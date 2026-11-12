@@ -88,7 +88,7 @@
     else if (S.session) headers['X-Session'] = S.session;
     headers['X-Ustrojstvo'] = USTR;
     const r = await fetch(API_BASE + path, body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers });
-    if (r.status === 429) throw new Error('Слишком много запросов — подождите минуту и попробуйте снова');
+    if (r.status === 429) throw Object.assign(new Error('Слишком много запросов — подождите минуту и попробуйте снова'), { status: 429 });
     const j = await r.json().catch(() => ({ error: 'Сервис временно недоступен, попробуйте через минуту' }));
     if (!r.ok) { const er = new Error(j.error || ('Сервис временно недоступен (' + r.status + ')')); er.status = r.status; throw er; }   // 402 у гостя — пробные кончились: экран предлагает войти
     setTimeout(drawHead, 0);   // бренд или кредиты могли смениться: шапка догоняет
@@ -1016,6 +1016,23 @@
       <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn sm accent vgo">Снять · 5 с</button><span class="dim small">звук: шумы без музыки, 5 секунд</span></div>
     </div>`;
   }
+  /* Ключ операции платного запуска (bezopasnost 12.11, KAK-CHASY/VIDEO-DENGI-BEZOPASNOST.md). Новый — на осознанное нажатие,
+     тот же — при повторе после обрыва связи или тайм-аута: сервер по нему вернёт уже принятый заказ, второго списания нет.
+     Ключ лежит в localStorage рядом с ожиданием, пока сервер не ответил; cel — что запускаем и с какими входами
+     (другие входы — другой ключ, иначе сервер ответит 409 klyuch_drugoj). Тот же приём — в studio-app/studio.js. */
+  const OP_KL = 'opKlyuchi';
+  function opKlyuch(cel) {
+    const v = store.get(OP_KL, {}) || {};
+    const z = v[cel]; if (z && z.k && Date.now() - (+z.t || 0) < 864e5) return z.k;   // сервер помнит ключ сутки
+    for (const c of Object.keys(v)) if (!v[c] || Date.now() - (+v[c].t || 0) > 864e5) delete v[c];
+    const b = new Uint8Array(16); crypto.getRandomValues(b);
+    const k = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+    v[cel] = { k, t: Date.now() }; store.set(OP_KL, v); return k;
+  }
+  function opGotovo(cel) { const v = store.get(OP_KL, {}) || {}; if (v[cel]) { delete v[cel]; store.set(OP_KL, v); } }
+  const opOtvet = (e) => !!(e && e.status);   // сервер ответил (ошибкой) — следующее нажатие будет новым; без статуса — обрыв связи, ключ держим
+  const otpechatok = (s) => { let h = 5381; for (const ch of String(s)) h = ((h * 33) ^ ch.codePointAt(0)) >>> 0; return h.toString(36); };
+
   async function startVideo(btn, item, el) {
     const panel = btn.closest('.vidpanel');
     const res = ($('.chip.on[data-res]', panel) || {}).dataset.res || '720p';
@@ -1036,9 +1053,13 @@
     btn.disabled = true; btn.textContent = 'Отправляю…';
     try {
       const refs = []; for (const f of files) { if (f.size > 9e6) throw new Error('Файл больше 9 МБ: ' + f.name); refs.push({ b64: await toB64(f), mime: f.type }); }
-      const r = await api('/api/video', { prompt, resolution: res, ratio, duration: 5, refs });
-      item.videoJob = r.id; item.video = { resolution: res, duration: 5, kredity: r.kredity }; store.set('feed', S.feed);
-      const fresh = sheet(item); el.replaceWith(fresh); pollVideo(item, fresh);
+      const cel = ['video', item.id || '', res, ratio, otpechatok(prompt + '|' + files.map((f) => f.name + ':' + f.size).join(','))].join(':');
+      try {
+        const r = await api('/api/video', { prompt, resolution: res, ratio, duration: 5, refs }, { 'X-Operaciya': opKlyuch(cel) });
+        opGotovo(cel);
+        item.videoJob = r.id; item.video = { resolution: res, duration: 5, kredity: r.kredity }; store.set('feed', S.feed);
+        const fresh = sheet(item); el.replaceWith(fresh); pollVideo(item, fresh);
+      } catch (e) { if (opOtvet(e)) opGotovo(cel); throw e; }
     } catch (e) { toast(e.message); btn.disabled = false; btn.textContent = 'Снять · 5 с'; }
   }
   async function pollVideo(item, el) {
@@ -1941,7 +1962,7 @@
     try { const x = new URL(u); if (/^https?:$/.test(x.protocol) && SVOI_HOSTY.test(x.hostname)) return x.href; } catch (e) { /* не адрес */ }
     return '';
   }
-  window.JASA = { openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl, nishaIdei, GRUPPA_URL };
+  window.JASA = { opKlyuch, opGotovo, openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl, nishaIdei, GRUPPA_URL };
   window.addEventListener('jasa:ready', route);
   if (!window.JASA_DEFER) route();
 })();
