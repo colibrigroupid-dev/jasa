@@ -33,12 +33,13 @@
 
   const nishaN = (kod) => ((arr(D && D.nishi).find((x) => x.kod === kod) || {}).n || '');
   const zagol = (i) => [TIP[i.tip] || 'Пост', nishaN(i.nisha)].filter(Boolean).join(' · ');   // «Пост · Кофейня»; без ниши — просто «Пост»
+  const zagolHtml = (i) => [TIP[i.tip] || 'Пост', nishaN(i.nisha)].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join(' · ');   // части отдельными узлами — словарь переводит каждую
   const cena = (tip) => { const c = J.S && J.S.ceny && J.S.ceny.zadanie; return (c && c[tip]) || 21; };
   const imgUrl = (i) => (/^idei-[\w.\-]+\.(webp|jpg|png)$/.test(String(i.img || '')) ? i.img : '');   // только свои файлы рядом: idei-<имя>.webp
 
   function kartochka(i, n) {
     return `<button type="button" class="id-card rv" data-i="${n}"><img src="${esc(imgUrl(i))}" alt="${esc(i.podpis || i.na_kartinke || '')}" loading="${n < 4 ? 'eager' : 'lazy'}" decoding="async" width="800" height="1000">
-      <span class="id-cap"><b>${esc(zagol(i))}</b><small><span class="id-prim">Пример</span>${esc(i.na_kartinke || '')}</small></span></button>`;
+      <span class="id-cap"><b>${zagolHtml(i)}</b><small><span class="id-prim">Пример</span><span data-no-i18n>${esc(i.na_kartinke || '')}</span></small></span></button>`;   // надпись на картинке — данные примера, её язык — язык картинки
   }
 
   function risovat() {
