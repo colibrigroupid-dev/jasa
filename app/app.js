@@ -1448,6 +1448,27 @@
     return s0;
   };
   const scTxt = (x, tail) => { const l = blokName(x); return l ? (/^\d/.test(l) ? 'Сц. ' + l : l) + (tail || '') : ''; };
+  /* JASA Studio (12.11, STUDIO/ZADANIE-01 §2): «Работать в Studio» в отчёте разбора — только тем, кто в списке своих (GET /api/kino/dostup).
+     Переход по одноразовому коду (POST /api/login/perehod, API-01 §9): сессия в адрес не кладётся. Ручки нет — кнопки нет. */
+  function studioKnopka(j) {
+    if (!j || !j.id || !$('#newrun')) return;   /* гостя и человека не из списка сервер не пускает: dostup = false */
+    api('/api/kino/dostup').then((d) => {
+      if (!d || d.dostup !== true || !$('#newrun') || $('#studio-go')) return;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn sm accent'; b.id = 'studio-go'; b.textContent = 'Работать в Studio'; b.title = 'Сцены, кадры и промпты по этому сценарию';
+      $('#newrun').before(b);
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        const w = TG ? null : window.open('', '_blank');   /* окно — сразу по нажатию, иначе браузер его заблокирует после ожидания */
+        try {
+          const r = await api('/api/login/perehod', { razbor: j.id });
+          const adres = String(r.adres || '');
+          if (!/^https:\/\/studio\.jasa\.asia\/#perehod=/.test(adres) && adres.indexOf(location.origin + '/studio/#perehod=') !== 0) throw new Error('Сервис временно недоступен, попробуйте через минуту');
+          if (TG && TG.openLink) TG.openLink(adres); else if (w) { w.opener = null; w.location.href = adres; } else location.href = adres;
+        } catch (e) { if (w) w.close(); toast(e.message); }
+        b.disabled = false;
+      });
+    }).catch(() => {});
+  }
   function renderReport(j) {
     const sr = j.showrunner || {}; const R = j.results || {};
     // «P15» в тексте правок → подсказка с сутью замечания (реестр j.problemy)
@@ -1508,6 +1529,7 @@
     $$('.rv', $('#sc')).forEach((n, i) => (n.style.animationDelay = Math.min(i * 120, 1500) + 'ms'));
     setTimeout(() => $$('.lay .bar i').forEach((i) => (i.style.width = i.dataset.w + '%')), 300);
     if (window.JASA_ULUCHSHIT) window.JASA_ULUCHSHIT.knopka(j, $('#uluch-akcii'));   // «Улучшить сценарий» — модуль uluchshit.js, цена по хронометражу
+    studioKnopka(j);
     $('#sc').addEventListener('click', (e) => { const a = e.target.closest('abbr.pref'); if (a && a.dataset.tip) toast(a.dataset.tip.slice(0, 260)); });
     $('#newrun').addEventListener('click', () => { S.kinoPovtor = null; S.job = null; store.set('job', null); renderIntake(); });
     const kp2 = S.ceny && S.ceny.kino && +S.ceny.kino.povtor ? S.ceny.kino : null;
