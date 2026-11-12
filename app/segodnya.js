@@ -34,7 +34,8 @@
     if (luchshij) {
       const k = luchshij.k, d = luchshij.do;
       const q = k.q[id] || String(k.q['*']).split('{dlya}').join(n.dlya);
-      out.push({ ...perevody(k), metka: d ? 'Через ' + d + ' дн. · ' + k.n : k.n, tip: k.tip, z: k.z, q, d: k.d, p: k.p || '', vid: 'povod', do: d, n: k.n, s: luchshij.s, po: luchshij.po, dn });   // s, po, dn — номера дней: начало, конец, сегодня
+      const qk = k.q_kz && typeof k.q_kz === 'object' ? (k.q_kz[id] || (k.q_kz['*'] ? String(k.q_kz['*']).split('{dlya}').join(n.dlya_kz || n.dlya) : '')) : '';   // казахский запрос — тем же правилом, ниша — своим словом
+      out.push({ ...perevody(k), ...(qk ? { q_kz: qk } : {}), metka: d ? 'Через ' + d + ' дн. · ' + k.n : k.n, tip: k.tip, z: k.z, q, d: k.d, p: k.p || '', vid: 'povod', do: d, n: k.n, s: luchshij.s, po: luchshij.po, dn });   // s, po, dn — номера дней: начало, конец, сегодня
     }
     const wd = (new Date(dn * DEN).getUTCDay() + 6) % 7;   // понедельник = 0
     const x = D.nedelya[id][wd];

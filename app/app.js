@@ -324,7 +324,7 @@
   const SG_DN2 = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
   const SG_IDEI = { kofe: 'kofejnya', fitnes: 'studiya' };   // ниша «Сегодня» → ниша раздела «Идеи», если коды разные
   const sgNisha = () => { const D = SG && SG.dannye(); const id = String(S.nisha || ''); return D && D.nishi.find((x) => x.id === id) || null; };
-  const sgKorotko = (n) => String(n.n || '').split(',')[0].trim();   // «Кофейня, кафе» → «Кофейня»
+  const sgKorotko = (n) => String((window.JASA_I18N ? window.JASA_I18N.pole(n, 'n') : n.n) || '').split(',')[0].trim();   // «Кофейня, кафе» → «Кофейня»; по-казахски — n_kz из povody.json
   const nishaIdei = () => { const id = String(S.nisha || ''); return id ? (SG_IDEI[id] || id) : ''; };
   const sgFoto = () => {   // картинки настоящих работ этой ниши из «Идей» — на карточки; список помним, чтобы блок рисовался сразу
     const k = nishaIdei(); const vse = store.get('ideiFoto', null) || {};
@@ -438,10 +438,10 @@
       const tr = (o, k) => (window.JASA_I18N ? window.JASA_I18N.pole(o, k) : o[k]);
       const tipN = (t) => TIPS_SHORT[t] || 'Пост';
       sgBox.className = 'sg' + (sprosit ? ' ask' : '') + (first ? '' : ' compact') + (anim ? ' anim' : '');
-      sgBox.innerHTML = `<div class="sg-head"><span class="sg-list" aria-hidden="true"><i>${SG_MES3[den.m - 1]}</i><b>${den.d}</b></span><span class="sg-tx"><b>Сегодня, ${SG.DNI[wd].toLowerCase()}</b><span>${den.d} ${SG_MES[den.m - 1]}${sprosit ? '' : ` · <button type="button" class="sg-kto" id="sgkto" title="Сменить дело">${esc(n ? n.dlya : 'выбрать дело')}${ico('i-chevr')}</button>`}</span></span></div>
+      sgBox.innerHTML = `<div class="sg-head"><span class="sg-list" aria-hidden="true"><i>${SG_MES3[den.m - 1]}</i><b>${den.d}</b></span><span class="sg-tx"><b>Сегодня, ${SG.DNI[wd].toLowerCase()}</b><span>${den.d} ${SG_MES[den.m - 1]}${sprosit ? '' : ` · <button type="button" class="sg-kto" id="sgkto" title="Сменить дело">${esc(n ? (window.JASA_I18N ? window.JASA_I18N.pole(n, 'dlya') : n.dlya) : 'выбрать дело')}${ico('i-chevr')}</button>`}</span></span></div>
         ${sprosit ? `<div class="sg-q"><b>Чем занимаетесь?</b><span>Покажем три повода для поста на сегодня</span></div>
         <div class="sg-nishi" role="group" aria-label="Чем занимаетесь">${D.nishi.map((x) => `<button type="button" class="sg-n ${n && n.id === x.id ? 'on' : ''}" data-n="${esc(x.id)}" aria-pressed="${!!(n && n.id === x.id)}"><i aria-hidden="true">${SG_ZNAK[x.id] || '•'}</i><span>${esc(sgKorotko(x))}</span></button>`).join('')}<button type="button" class="sg-n skip" data-n="">${sgVybor ? 'Оставить как есть' : 'Пропустить'}</button></div>` : ''}
-        <div class="sg-cards" id="sgcards">${sgKart.map((c, i) => `<button type="button" class="sg-card v-${esc(c.vid)}" data-i="${i}" aria-pressed="false" title="${esc(c.q)}"><span class="sg-vis">${vis(c)}<span class="sg-met">${esc(metka(c))}</span></span><span class="sg-body"><b class="sg-z">${esc(tr(c, 'z'))}</b><span class="sg-qq${c.p ? ' pp' : ''}">${esc(c.p ? tr(c, 'p') : c.q)}</span><span class="sg-go"><b>${esc(tipN(c.tip))}</b><em data-sgp="${esc(TIPS[c.tip] ? c.tip : 'post')}">до ${priceOf(TIPS[c.tip] ? c.tip : 'post')} кр</em>${ico('i-chevr')}</span></span></button>`).join('')}</div>`;
+        <div class="sg-cards" id="sgcards">${sgKart.map((c, i) => `<button type="button" class="sg-card v-${esc(c.vid)}" data-i="${i}" aria-pressed="false" title="${esc(tr(c, 'q'))}"><span class="sg-vis">${vis(c)}<span class="sg-met">${esc(metka(c))}</span></span><span class="sg-body"><b class="sg-z">${esc(tr(c, 'z'))}</b><span class="sg-qq${c.p ? ' pp' : ''}">${esc(c.p ? tr(c, 'p') : tr(c, 'q'))}</span><span class="sg-go"><b>${esc(tipN(c.tip))}</b><em data-sgp="${esc(TIPS[c.tip] ? c.tip : 'post')}">до ${priceOf(TIPS[c.tip] ? c.tip : 'post')} кр</em>${ico('i-chevr')}</span></span></button>`).join('')}</div>`;
     };
     if (sgBox) {
       sgDraw(true);
@@ -452,7 +452,7 @@
         if (nb) { hap('medium'); if (nb.dataset.n) { S.nisha = nb.dataset.n; store.set('nisha', S.nisha); } else if (!sgVybor) store.set('nishaSkip', true); sgVybor = false; sgDraw(true); const k = $('#sgkto'); if (k) k.focus({ preventScroll: true }); return; }
         if (e.target.closest('#sgkto')) { hap('light'); sgVybor = true; sgDraw(false); const on = $('.sg-n.on', sgBox) || $('.sg-n', sgBox); if (on) on.focus({ preventScroll: true }); return; }
         const cb = e.target.closest('.sg-card'); const c = cb && sgKart[+cb.dataset.i]; if (!c) return;
-        hap('light'); setTip(c.tip); ta.value = c.q; grow();
+        hap('light'); setTip(c.tip); ta.value = window.JASA_I18N ? window.JASA_I18N.pole(c, 'q') : c.q; grow();   // запрос на языке интерфейса: человек его видит и дописывает
         $$('.sg-card', sgBox).forEach((x) => { x.classList.toggle('on', x === cb); x.setAttribute('aria-pressed', x === cb); });
         const dp = $('#cdop'); if (dp) { dp.textContent = c.d ? 'Допишите: ' + (window.JASA_I18N ? window.JASA_I18N.pole(c, 'd') : c.d) + ' — ' + (TIPS_SHORT[S.tip] || 'пост').toLowerCase() + ' выйдет точнее' : ''; dp.hidden = !c.d; }
         ta.focus(); try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (er) { /* старый браузер */ }
