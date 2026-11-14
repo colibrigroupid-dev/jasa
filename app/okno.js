@@ -10,7 +10,7 @@
   const J = window.JASA; if (!J) return;
   const { api, esc, $, $$, arr, toast, S, store } = J;
   const main = $('#main');
-  const VER = '5';
+  const VER = '6';
   const d = (s) => `<span data-no-i18n>${esc(s)}</span>`;
   const ico = (n) => `<svg class="ok-i" aria-hidden="true"><use href="#${n}"/></svg>`;
   const klyuch = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'k' + Date.now() + Math.random().toString(16).slice(2));
@@ -30,7 +30,8 @@
   // ---- состояние: лента разговора и нынешняя работа; живёт в хранилище — вкладка выгружается, пока человек в Telegram ----
   // Запись в хранилище — с номером человека: на общем планшете следующий не видит чужой разговор (находка bezopasnost Э2, 14.11).
   // Восстанавливается только своя запись и только после ответа /api/me; чужая и запись при выходе стираются.
-  const KART_ZHIVET = 15 * 60e3;   // ненажатая карточка старше — знак уже мёртв, из хранилища не восстанавливается
+  const KART_ZHIVET = 15 * 60e3;
+  const ZNAK_ZHIVET = 24 * 3600e3;   // использованный знак сервер помнит сутки — столько же можно спросить, что стало с работой   // ненажатая карточка старше — знак уже мёртв, из хранилища не восстанавливается
   const pustoe = () => ({ uid: '', lenta: [], post: null, vid: 'okno', list: null, kanal: null, pole: '', otschet: null, golos: null, ochered: null, perenos: null, kanaly: null, podskazka: null });
   const O = pustoe();
   const kto = () => (S.me && !S.me.guest && S.me.uid) || '';
@@ -49,7 +50,7 @@
     O.lenta = arr(z.lenta); O.post = z.post || null;
     const t = Date.now();
     for (const m of O.lenta) { const k = m.kartochka; if (k && k.sost === 'zhdet' && !(k.ts && t - k.ts < KART_ZHIVET)) { k.sost = 'ustarela'; delete k.znak; delete k.telo; } }
-    for (const m of O.lenta) { const k = m.kartochka; if (!k) continue; if (k.sost === 'idet') k.sost = 'proverit'; if (k.sost !== 'zhdet') { delete k.znak; delete k.telo; } }   /* «Делаю…» после выгрузки вкладки не висит; мёртвых знаков не держим (Н9, Н10) */
+    for (const m of O.lenta) { const k = m.kartochka; if (!k) continue; if (k.sost === 'idet') k.sost = 'proverit'; if (k.sost === 'proverit' && !(k.ts && t - k.ts < ZNAK_ZHIVET)) k.sost = 'ne_vyshlo'; if (k.sost !== 'zhdet' && k.sost !== 'proverit') { delete k.znak; delete k.telo; } }   /* «Делаю…» после выгрузки вкладки не висит; знак держим только у нажатой без ответа — по нему сервер отдаст работу (Н9, Н10) */
     if (O.post && O.post.ruchnoe) delete O.post.ruchnoe;
     sohranit();
   }
@@ -110,9 +111,41 @@
       k.sost = 'sdelano'; delete k.znak; delete k.telo; posle(k, r);
     } catch (e) {
       if (g !== pok) return;
-      if (e.kod === 'znak_ispolzovan') { k.sost = 'uzhe'; delete k.znak; delete k.telo; }   /* карточка уже сработала — второй раз не платим (Н10) */
+      if (e.kod === 'znak_ispolzovan') otvetPoZnaku(k, iz409(e));   /* карточка уже сработала — второй раз не платим, работу показываем (Н10) */
       else if (e.kod === 'znak_negoden') { k.sost = 'ustarela'; delete k.znak; delete k.telo; }
-      else { k.sost = 'zhdet'; k.oshibka = e.status ? e.message : tr('Связь прервалась. Нажмите ещё раз — дважды за одну карточку не спишем.'); }   /* знак карточки одноразовый: повтор не платный */
+      else if (!e.status) { k.sost = 'proverit'; k.proverkaSboj = true; clearTimeout(sverkaT); sverkaT = setTimeout(sverit, 1500); }   /* связь оборвалась (и при перезагрузке вкладки): дошло ли нажатие, знает сервер — спрашиваем по знаку */
+      else { k.sost = 'zhdet'; k.oshibka = e.message; }
+    }
+    sohranit(); risovat(true);
+  }
+  // ---- что стало с нажатой карточкой: ответ ручки знаков или 409 повтора ----
+  const iz409 = (e) => { const b = e.telo || {}; if (b.itog) return { status: 'gotovo', otvet: b.itog.image ? { image: b.itog.image } : { zid: b.itog.zid, result: { text: b.itog.tekst || '' } } }; if (b.idet) return { status: 'idet' }; return { status: 'ne_poluchilos', slova: e.message }; };
+  let sverkaT = null;
+  function otvetPoZnaku(k, z) {
+    const st = z && z.status;
+    if (st === 'gotovo') { k.sost = 'sdelano'; delete k.znak; delete k.telo; posle(k, z.otvet || {}); }
+    else if (st === 'idet') { k.sost = 'proverit'; k.idet = true; clearTimeout(sverkaT); sverkaT = setTimeout(sverit, 18000); }
+    else if (st === 'ne_nazhata') { k.sost = 'zhdet'; k.ts = Date.now(); }
+    else if (st === 'ne_poluchilos') { k.sost = 'ne_vyshlo'; delete k.znak; delete k.telo; }
+    else if (st === 'nazhata') { k.sost = 'sdelano'; delete k.znak; delete k.telo; }
+    else { k.sost = 'ustarela'; delete k.znak; delete k.telo; }
+  }
+  // после перезагрузки: по нажатым карточкам без ответа спрашиваем сервер; списаний и запусков здесь нет
+  async function sverit() {
+    clearTimeout(sverkaT);
+    const ks = O.lenta.map((m) => m.kartochka).filter((k) => k && k.sost === 'proverit' && k.znak).slice(-20); if (!ks.length) return;
+    const g = pok;
+    try {
+      const r = await api('/api/agent/znaki', { znaki: ks.map((k) => k.znak) });
+      if (g !== pok) return;
+      ks.forEach((k, i) => otvetPoZnaku(k, arr(r.znaki)[i]));
+    } catch (e) {
+      if (g !== pok) return;
+      // ручки нет или сеть упала: то же нажатие с тем же знаком — второй раз сервер ничего не запускает и не списывает
+      for (const k of ks) {
+        try { const r = await api(k.put, k.telo || {}, { 'X-Operaciya': k.znak }); if (g !== pok) return; otvetPoZnaku(k, { status: 'gotovo', otvet: r }); }
+        catch (e2) { if (g !== pok) return; if (e2.kod === 'znak_ispolzovan') otvetPoZnaku(k, iz409(e2)); else if (e2.kod === 'znak_negoden') otvetPoZnaku(k, { status: 'net' }); else { k.proverkaSboj = true; clearTimeout(sverkaT); sverkaT = setTimeout(sverit, 18000); } }
+      }
     }
     sohranit(); risovat(true);
   }
@@ -292,8 +325,8 @@
   }
   function kartochkaHtml(k, i) {
     if (k.sost === 'sdelano') return `<div class="ok-kart sdelano">${ico('i-check')}<span>${d(k.nadpis_korotko || k.nadpis)}</span></div>`;
-    if (k.sost === 'uzhe') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Эта карточка уже сработала — второй раз за неё не спишем. Если результата не видно, значит, вкладка закрывалась, пока шла работа: напишите нам — найдём.</p></div>`;
-    if (k.sost === 'proverit') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Вкладка закрывалась, пока шла работа. Нажимать ещё раз не нужно — второй раз не спишем. Если результата не видно, напишите нам — найдём.</p></div>`;
+    if (k.sost === 'ne_vyshlo') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Работа по этой карточке не получилась — кредиты не списаны или возвращены. Скажите ещё раз — пришлю новую карточку.</p></div>`;
+    if (k.sost === 'proverit') return `<div class="ok-kart idet" role="status"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">${k.idet ? 'Работа ещё делается — покажу, как только будет готова. Нажимать ещё раз не нужно.' : k.proverkaSboj ? 'Связь прервалась, пока шла работа. Проверяю, дошло ли нажатие, — второй раз не спишем.' : 'Вкладка закрывалась, пока шла работа. Проверяю, что получилось…'}</p></div>`;
     if (k.sost === 'ustarela') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Карточка устарела. Скажите ещё раз — пришлю новую.</p></div>`;
     const net = k.vid === 'platnoe' && k.hvataet === false;
     return `<div class="ok-kart ${k.sost}"><b class="ok-kart-chto">${d(k.nadpis)}</b>
@@ -536,6 +569,7 @@
     main.innerHTML = J.topbar('Создать', '', 'only-desk') + '<div class="okw" id="okw-mesto"></div>';
     risovat(true);
     if (O.post && O.post.imgJob && !O.post.kartinka && !O.post.imgOshibka) kartinkaZhdat();
+    sverit();
   }
 
   // «Создать» становится разговором, когда сервер включил агента этому человеку; иначе — прежний экран без изменений
