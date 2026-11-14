@@ -248,8 +248,9 @@
   .okw .ok-povody{flex-direction:row;flex-wrap:wrap} .okw .ok-povody .ok-caps{flex-basis:100%} .okw .ok-povod{flex:1 1 30%}
 }
 @media (prefers-reduced-motion:reduce){.okw *{animation:none!important;transition:none!important}}
-@media (max-width:900px){.okw .ok-pole{bottom:calc(62px + env(safe-area-inset-bottom));margin:0 -16px;padding-left:16px;padding-right:16px}}
+/* поле без своего нижнего отступа: на телефоне .main (overflow-x:hidden) — область прилипания, её нижний отступ уже держит место под панелью;
+   прибавка сверху поднимала поле на последнюю строку действий (приёмка координатора 15.11) */
+@media (max-width:900px){.okw .ok-pole{margin:0 -16px;padding-left:16px;padding-right:16px}}
 .okw .ok-mini[aria-pressed="true"]{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .okw .ok-pods .ok-mini{min-height:44px}
-.tg .okw .ok-pole{bottom:calc(62px + env(safe-area-inset-bottom))}
 body.okw-list .tabbar{display:none!important}

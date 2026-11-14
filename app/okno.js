@@ -10,7 +10,7 @@
   const J = window.JASA; if (!J) return;
   const { api, esc, $, $$, arr, toast, S, store } = J;
   const main = $('#main');
-  const VER = '3';
+  const VER = '4';
   const d = (s) => `<span data-no-i18n>${esc(s)}</span>`;
   const ico = (n) => `<svg class="ok-i" aria-hidden="true"><use href="#${n}"/></svg>`;
   const klyuch = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'k' + Date.now() + Math.random().toString(16).slice(2));
@@ -397,6 +397,15 @@
   function verh() {
     return `<div class="ok-ekr-top"><button type="button" class="ok-mini" data-vid="okno" aria-pressed="${O.vid === 'okno'}">Разговор</button><button type="button" class="ok-mini" data-vid="ochered" aria-pressed="${O.vid === 'ochered'}">Что выйдет</button><button type="button" class="ok-link ok-staryj" data-staryj>Прежний «Создать»</button></div>`;
   }
+  // Последний ответ целиком на виду: сначала до конца (кнопки действий выше поля ввода), затем, если ответ помещается
+  // между шапкой и полем, поднимаем его начало под шапку — видны и пост, и все кнопки под ним.
+  function pokazatPosl() {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    const el = [...document.querySelectorAll('.okw .ok-razgovor .ok-a')].pop(); const pole = document.querySelector('.okw .ok-pole'); if (!el || !pole) return;
+    const sh = document.querySelector('.topbar, .mtop, header'); const verh = Math.max(sh ? sh.getBoundingClientRect().bottom : 0, 0) + 8;
+    const r = el.getBoundingClientRect(); const niz = pole.getBoundingClientRect().top;
+    if (r.top < verh && r.bottom - r.top <= niz - verh) window.scrollBy(0, r.top - verh);
+  }
   function risovat(vniz) {
     if (!vkl() || !main || !document.getElementById('okw-mesto')) return;
     if (O.uid !== kto()) svoe();   /* человек сменился без перезагрузки — чужое не показываем */
@@ -405,7 +414,7 @@
     document.body.classList.toggle('okw-list', !!(O.list || O.kanal));   /* лист поверх нижней панели кабинета: панель прячется, пока он открыт */
     svyazat();
     if (fok === 'ok-t' || fok === 'ok-nik') { const x = $('#' + fok); if (x) { x.focus(); x.setSelectionRange(x.value.length, x.value.length); } }
-    if (vniz && O.vid === 'okno') window.scrollTo(0, document.body.scrollHeight);
+    if (vniz && O.vid === 'okno') pokazatPosl();
   }
   function svyazat() {
     const ta = $('#ok-t');
