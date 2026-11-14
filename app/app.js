@@ -93,7 +93,7 @@
     const r = await fetch(API_BASE + path, body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers });
     if (r.status === 429) throw Object.assign(new Error('Слишком много запросов — подождите минуту и попробуйте снова'), { status: 429 });
     const j = await r.json().catch(() => ({ error: 'Сервис временно недоступен, попробуйте через минуту' }));
-    if (!r.ok) { const er = new Error(j.error || ('Сервис временно недоступен (' + r.status + ')')); er.status = r.status; throw er; }   // 402 у гостя — пробные кончились: экран предлагает войти
+    if (!r.ok) { const er = new Error(j.error || ('Сервис временно недоступен (' + r.status + ')')); er.status = r.status; er.kod = j.kod || ''; er.telo = j; throw er; }   // kod и тело — экрану «одного окна» (znak_negoden, hesh_ustarel, golos_pusto)   // 402 у гостя — пробные кончились: экран предлагает войти
     setTimeout(drawHead, 0);   // бренд или кредиты могли смениться: шапка догоняет
     return j;
   }
