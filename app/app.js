@@ -977,7 +977,7 @@
     return `${finalBlock(item)}${threeImgs(item)}
       <div class="hooks rv">${(r.hooks || []).map((h, i) => `<button class="${i === (item.hook || 0) ? 'on' : ''}">${esc(h)}</button>`).join('')}</div>
       <div class="posttext rv" id="pt">${utMark(r.text || r._raw || '')}</div>${utHint(r.text)}
-      <div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>
+      <div class="tags rv" data-no-i18n>${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>
       ${tgPreview(r, item)}
       <dl class="kv rv"><dt>Когда</dt><dd>${esc(r.best_time || '—')}</dd></dl>
       ${r.kz_version ? `<details class="more rv"><summary>Қазақша нұсқа</summary><div class="kzbox">${esc(r.kz_version)}</div></details>` : ''}
@@ -1000,7 +1000,7 @@
   }
   function renderKarusel(r, item) {
     return `${finalBlock(item)}<div class="slides">${(r.slides || []).map((s) => `<div class="slide rv"><span class="n">${esc(s.n)} / ${(r.slides || []).length}</span><div><b>${esc(s.headline)}</b><p>${esc(s.text)}</p></div></div>`).join('')}</div>
-      <div class="posttext rv" style="margin-top:16px">${utMark(r.caption || '')}</div>${utHint(r.caption)}<div class="tags rv">${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>${threeImgs(item)}${warnBlock(r.warnings)}${actionsBlock(editBtn(item))}`;
+      <div class="posttext rv" style="margin-top:16px">${utMark(r.caption || '')}</div>${utHint(r.caption)}<div class="tags rv" data-no-i18n>${(r.hashtags || []).map((t) => `<span>#${esc(t)}</span>`).join('')}</div>${threeImgs(item)}${warnBlock(r.warnings)}${actionsBlock(editBtn(item))}`;
   }
   function renderPlan(r) {
     return `<p class="rv muted">${esc(r.goal || '')}</p><div class="days">${(r.days || []).map((d) => `<div class="day rv"><div class="d">${esc(d.day)}</div><div class="f">${esc(d.format)}</div><div><b>${esc(d.topic)}</b><p>${esc(d.hook)}</p><p class="dim small">${esc(d.why)}</p></div></div>`).join('')}</div>
