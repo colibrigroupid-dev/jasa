@@ -78,7 +78,17 @@
   /** Сегодняшняя дата по часам устройства. */
   const segodnya = () => { const t = new Date(); return { g: t.getFullYear(), m: t.getMonth() + 1, d: t.getDate() }; };
 
-  const api = { calc, dannye, obnovit, segodnya, DNI };
+  /** Дата по Алматы (UTC+5, без перевода часов) — для всего, что привязано к календарю Казахстана, а не к часам устройства. */
+  const segodnyaAlmaty = (ms) => { const t = new Date((ms == null ? Date.now() : ms) + 5 * 3600 * 1000); return { g: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() }; };
+  /** Месяц для «афиши-календаря»: текущий, а с 25-го числа — следующий (афишу на уходящий месяц уже не делают). → 1…12 */
+  const mesyacAfishi = (den) => (den.d >= 25 ? (den.m % 12) + 1 : den.m);
+  const MES = {
+    ru: ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'],
+    kz: ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым', 'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан'],
+    en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  };
+
+  const api = { calc, dannye, obnovit, segodnya, segodnyaAlmaty, mesyacAfishi, MES, DNI };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.JASA_SG = api;
 })(typeof window !== 'undefined' ? window : globalThis);

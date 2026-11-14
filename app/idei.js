@@ -44,7 +44,7 @@
 
   function risovat() {
     const box = $('#idbox'); if (!box) return;
-    const vse = arr(D && D.idei).filter((i) => imgUrl(i) && i.zapros);
+    const vse = arr(D && D.idei).filter((i) => imgUrl(i) && i.zapros && zhiva(i));
     if (!vse.length) { box.innerHTML = '<p class="muted">Идеи скоро появятся. А пока — напишите, что нужно, в «Создать».</p><p style="margin-top:12px"><a class="btn accent sm" href="#/sozdat">Создать</a></p>'; return; }
     const nishi = arr(D.nishi).filter((n) => vse.some((i) => i.nisha === n.kod));
     const spisok = vse.filter((i) => !filtr || i.nisha === filtr);
@@ -74,6 +74,9 @@
     };
   }
 
+  // В запросе идеи бывает календарная дата («старт 12 января»). Поле do: "ГГГГ-ММ-ДД" — последний день, когда идея уместна; после него плитка не показывается.
+  const segodnyaAlm = () => new Date(Date.now() + 5 * 3600 * 1000).toISOString().slice(0, 10);
+  const zhiva = (i) => !i.do || !/^\d{4}-\d{2}-\d{2}$/.test(i.do) || segodnyaAlm() <= i.do;
   async function screen() {
     stil();
     const main = $('#main');
@@ -84,7 +87,7 @@
     }
     /* 10.11: человек выбрал своё дело в «Сегодня» — открываем на его нише; выбор «Все» потом не сбиваем */
     const moya = J.nishaIdei ? J.nishaIdei() : '';
-    if (moya !== filtrPo) { filtrPo = moya; if (moya && arr(D.idei).some((i) => i.nisha === moya && imgUrl(i) && i.zapros)) filtr = moya; }
+    if (moya !== filtrPo) { filtrPo = moya; if (moya && arr(D.idei).some((i) => i.nisha === moya && imgUrl(i) && i.zapros && zhiva(i))) filtr = moya; }
     risovat();
   }
 
