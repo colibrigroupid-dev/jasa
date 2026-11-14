@@ -1322,7 +1322,7 @@
           ${[['О чём это и для кого?', 'q1', 'Подростковый триллер о правилах на льду, для 12–16'], ['Где это будут смотреть?', 'q2', 'YouTube и TikTok, потом школы'], ['Что в сценарии нельзя трогать?', 'q3', 'Голос диктора и честность про страх'], ['Кто автор и кому принадлежат права?', 'q4', 'Автор — я, права мои']].map(([l, id, ph], i) => `<div class="q4"><span class="n">${i + 1}</span><div><label for="${id}">${l}</label><div class="inrow"><input id="${id}" placeholder="${ph}"><button class="icobtn mic" data-for="${id}" title="Голосом"><svg><use href="#i-mic"/></svg></button></div></div></div>`).join('')}
         </div>
         <span class="caps" style="display:block;margin-top:18px">Что сделать</span>
-        <div class="modes" id="modes">${MODES.map((m, i) => `<button class="chip ${i === 0 ? 'on' : ''}">${m}</button>`).join('')}</div>
+        <div class="modes" id="modes">${MODES.map((m, i) => `<button class="chip ${i === 0 ? 'on' : ''}" data-m="${esc(m)}">${m}</button>`).join('')}</div>
         <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn accent" id="run">Разобрать сценарий</button><span class="dim small" id="scres">Держим до 100 кр, спишем по факту — обычно 80–90 % от этой суммы, лишнее вернём. Займёт 5–15 минут, можно уйти с экрана</span><span class="dim small hide" id="scpovtor"></span></div>
       </div></div>`;
     // резерв разбора по длине: ступени из /api/ceny.razbor [[до минут, кр], …, [null, кр]] (сервер держит ровно столько, факт не выше); запасной — 100
@@ -1337,7 +1337,7 @@
     $('#run').addEventListener('click', async () => {
       const text = ta.value.trim(); if (text.length < 300) { toast('Вставьте сценарий, хотя бы несколько сцен'); return; }
       const pasport = { o_chem: $('#q1').value, gde: $('#q2').value, ne_trogat: $('#q3').value, avtor_prava: $('#q4').value };
-      const rezhim = $('#modes .chip.on').textContent;
+      const rezhim = $('#modes .chip.on').dataset.m;   // значение — из атрибута: надпись чипа переводится (14.11)
       $('#run').disabled = true;
       try {
         const telo = { text, pasport, rezhim }; if (S.kinoPovtor) telo.povtor_ot = S.kinoPovtor;   // новая версия своего оплаченного разбора — по цене повтора
