@@ -1688,7 +1688,15 @@
   // пакет, выбранный в «Тарифах»: подсвечен, пока человек дошёл до «Пополнить» (с входом — до 5 минут)
   const podsvet = () => (S.podsvetPaket && S.podsvetDo > Date.now() ? S.podsvetPaket : null);
   // строка истории «Пост: тема задания»: вид задания — строка интерфейса, тема — слова человека (данные, не переводятся)
-  const istChto = (s) => { s = String(s || ''); const i = s.indexOf(': '); return i > 0 && i <= 40 ? `<span>${esc(s.slice(0, i))}</span>: <span data-no-i18n>${esc(s.slice(i + 2))}</span>` : esc(s); };
+  const istChto = (h) => {
+    const o = h && h.oplata; const dan = (x) => `<span data-no-i18n>${esc(x)}</span>`;
+    // оплаты сервер отдаёт ещё и полями (8ebec20): строка собирается на языке человека, числа и номер — данные
+    if (o && o.vid === 'popolnenie') return `<span>пополнение</span>: ${dan([o.kr + ' кр', tng(o.tenge), o.nomer].filter(Boolean).join(' · '))}`;
+    if (o && o.vid === 'podpiska') return `<span>${esc('подписка «Каждый день»' + (o.do ? ' до ' + o.do : ''))}</span>: ${dan([tng(o.tenge), o.nomer].filter(Boolean).join(' · '))}`;
+    if (o && o.vid === 'partnerskie') return `<span>партнёрские</span>: ${dan([o.kr + ' кр', tng(o.tenge)].join(' · '))}`;
+    const s = String((h && h.chto) || ''); const i = s.indexOf(': ');
+    return i > 0 && i <= 40 ? `<span>${esc(s.slice(0, i))}</span>: ${dan(s.slice(i + 2))}` : esc(s);
+  };
   const KAB_SKELET = '<div class="two"><div class="card skel"><i></i><i></i><i class="w60"></i></div><div class="card skel"><i></i><i class="w60"></i></div></div><div class="card skel" style="margin-top:22px"><i class="w60"></i></div>';
   // ---------- оплата: три кошелька, «Купить», счета ----------
   const tng = (n) => String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₸';
@@ -1752,7 +1760,7 @@
       </div>
       ${schetaHtml(m)}
       ${langCard()}
-      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:${h.vozvrat ? 'var(--ok)' : 'var(--accent-text)'}">${h.besplatno ? 'бесплатно' : (h.vozvrat ? '+' : '−') + esc(h.kr)}</span><span class="small">${istChto(h.chto)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто. Создайте первый пост.</p>'}</div>`;
+      <div class="card" style="margin-top:22px"><span class="caps">История</span>${ist.length ? `<div style="margin-top:10px">${ist.map((h) => `<div class="err" style="grid-template-columns:120px 60px 1fr"><span class="dim small">${esc(h.ts)}</span><span class="mono small" style="color:${h.vozvrat ? 'var(--ok)' : 'var(--accent-text)'}">${h.besplatno ? 'бесплатно' : (h.vozvrat ? '+' : '−') + esc(h.kr)}</span><span class="small">${istChto(h)}</span></div>`).join('')}</div>` : '<p class="small muted" style="margin-top:8px">Пока пусто. Создайте первый пост.</p>'}</div>`;
     langBind();
     const lo = $('#logout'); if (lo) lo.addEventListener('click', async () => { try { await api('/api/logout', {}); } catch (e) { /* и так выйдем */ } S.session = null; store.set('session', null); S.me = null; S.stil = []; store.set('stil', []); toast('Вы вышли'); loadMe(); kabinet(); });
     k.onclick = async (e) => {
