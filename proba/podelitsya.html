@@ -8,7 +8,10 @@
 <style>
   /* Служебная страница для пробы на живом телефоне (14.11.2026, dizajn-ux): «Поделиться» картинкой и запись с микрофона.
      Не экран продукта: только русский, без оформления кабинета, без ссылок с сайта. Ничего никуда не отправляет: сервер и API не вызываются,
-     запись с микрофона остаётся в памяти страницы и пропадает при закрытии. Открывать по https — иначе браузер не даст ни поделиться, ни записать. */
+     запись с микрофона остаётся в памяти страницы и пропадает при закрытии. Открывать по https — иначе браузер не даст ни поделиться, ни записать.
+     14.11, вечер — по списку «что проверить руками» из разведки напарника: файл JPEG, canShare({files}), скачивание средствами Telegram,
+     тип и размер записи в байтах без жёстко заданного типа, версия клиента Telegram, сколько раз спросили разрешение. Внутри Telegram страница
+     подгружает служебный сценарий Telegram — без него не узнать версию клиента и не вызвать скачивание. */
   body{margin:0;padding:20px 16px 48px;font:17px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;background:#F4EFE4;color:#15192A}
   h1{font-size:24px;line-height:1.15;margin:0 0 8px} h2{font-size:19px;line-height:1.2;margin:28px 0 6px} p{margin:0 0 12px} small{display:block;color:#575D6E;font-size:14px}
   img{display:block;width:150px;border-radius:14px;margin:12px 0}
@@ -21,20 +24,26 @@
 </head>
 <body>
 <h1>Проба телефона</h1>
-<p>Две пробы: «Поделиться» картинкой и запись с микрофона. Пройдите обе и пришлите снимок экрана с результатами. Сделать нужно дважды: открыв эту страницу в обычном браузере и по ссылке из Telegram.</p>
-<small>Страница ничего никуда не отправляет.</small>
+<p>Три пробы: «Поделиться» картинкой, скачивание внутри Telegram и запись с микрофона. Пройдите все и пришлите снимки экрана с результатами. Сделать нужно дважды: открыв эту страницу в обычном браузере и по ссылке из Telegram.</p>
+<small>Страница ничего не отправляет на сервер JASA. Внутри Telegram она подгружает служебный сценарий Telegram — чтобы узнать версию приложения.</small>
 
 <h2>1. Поделиться</h2>
-<p>Нажмите оранжевую кнопку. Должен открыться системный лист: выберите Instagram и вставьте подпись из буфера.</p>
-<img id="kart" src="../app/idei-kofejnya-latte-vspyshka.webp" alt="">
+<p>Нажмите оранжевую кнопку. Должен открыться системный лист: выберите Instagram (пост, историю или сообщение — выбираете вы) и вставьте подпись из буфера.</p>
+<img id="kart" src="post.jpg" alt="">
 <button id="go" type="button">Поделиться картинкой и скопировать текст</button>
 <button id="tolko" type="button" class="vtor">Только поделиться картинкой</button>
 <small>Текст для буфера: «Тыквенный латте уже у нас. До пятницы — минус 20 %. — создано с помощью ИИ · JASA»</small>
 <ul id="zh1"></ul>
 
-<h2>2. Микрофон</h2>
-<p>Нажмите кнопку, разрешите доступ и скажите что-нибудь. Запись идёт 3 секунды, потом её можно прослушать.</p>
-<button id="mik" type="button">Записать 3 секунды</button>
+<h2>2. Скачать внутри Telegram</h2>
+<p>Только если страница открыта из Telegram. Нажмите кнопку: должно появиться окно Telegram «скачать файл». Потом посмотрите, появилась ли картинка в «Фото».</p>
+<button id="tgs" type="button" class="vtor">Скачать картинку средствами Telegram</button>
+<ul id="zh3"></ul>
+
+<h2>3. Микрофон</h2>
+<p>Нажмите кнопку, разрешите доступ и скажите что-нибудь. Потом запись можно прослушать. Запишите три раза подряд и каждый раз отметьте, спросил ли телефон разрешение.</p>
+<button id="mik" type="button" data-sek="3">Записать 3 секунды</button>
+<button id="mik15" type="button" class="vtor" data-sek="15">Записать 15 секунд</button>
 <ul id="zh2"></ul>
 
 <script>
@@ -55,7 +64,9 @@
     pishi('zh1', 'Страница открыта внутри Telegram', /Telegram/i.test(navigator.userAgent) || !!(window.TelegramWebviewProxy || window.Telegram));
     pishi('zh1', 'Есть «Поделиться» (navigator.share)', typeof navigator.share === 'function');
     let fajly = false; try { fajly = !!(fajl && navigator.canShare && navigator.canShare({ files: [fajl] })); } catch (e) { /* нет */ }
-    pishi('zh1', 'Умеет отдавать картинку файлом (canShare)', fajly, fajl ? 'файл ' + Math.round(fajl.size / 1024) + ' КБ' : 'файл не собран');
+    pishi('zh1', 'Умеет отдавать картинку файлом — canShare({files}), JPEG', fajly, fajl ? 'файл ' + fajl.type + ', ' + fajl.size + ' байт' : 'файл не собран');
+    let png = false; try { png = !!(navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(8)], 'p.png', { type: 'image/png' })] })); } catch (e) { /* нет */ }
+    pishi('zh1', 'canShare({files}) для PNG', png);
     pishi('zh1', 'Есть запись в буфер (clipboard.writeText)', !!(navigator.clipboard && navigator.clipboard.writeText));
   }
   const delitsya = (sBuferom) => {
@@ -65,33 +76,58 @@
   document.getElementById('go').addEventListener('click', () => delitsya(true));
   document.getElementById('tolko').addEventListener('click', () => delitsya(false));
 
-  // ---- 2. Микрофон: тот же способ записи, что в кабинете (MediaRecorder) ----
-  const knopka = document.getElementById('mik');
+  // ---- 2. Telegram: версия клиента и скачивание файла его средствами (downloadFile, Bot API 8.0; нужен https-адрес файла) ----
+  const vTelegram = /Telegram/i.test(navigator.userAgent) || !!(window.TelegramWebviewProxy || window.Telegram);
+  const tgKnopka = document.getElementById('tgs');
+  const tgItog = () => { const W = window.Telegram && window.Telegram.WebApp;
+    pishi('zh3', 'Сценарий Telegram загрузился', !!W);
+    if (!W) return;
+    pishi('zh3', 'Telegram.WebApp.version', null, String(W.version || 'не названа') + ' · платформа ' + String(W.platform || '?'));
+    let v8 = false; try { v8 = !!(W.isVersionAtLeast && W.isVersionAtLeast('8.0')); } catch (e) { /* нет */ }
+    pishi('zh3', 'Версия не ниже 8.0 (есть downloadFile)', v8 && typeof W.downloadFile === 'function'); };
+  if (vTelegram) { const s = document.createElement('script'); s.src = 'https://telegram.org/js/telegram-web-app.js'; s.onload = tgItog; s.onerror = () => pishi('zh3', 'Сценарий Telegram загрузился', false); document.head.appendChild(s); }
+  else pishi('zh3', 'Страница открыта внутри Telegram', false, 'эта проба — только из Telegram');
+  tgKnopka.addEventListener('click', () => { const W = window.Telegram && window.Telegram.WebApp;
+    if (!W || typeof W.downloadFile !== 'function') { pishi('zh3', 'Скачивание средствами Telegram', false, 'downloadFile недоступен'); return; }
+    const adres = new URL('post.jpg', location.href).href;
+    try { W.downloadFile({ url: adres, file_name: 'jasa-post.jpg' }, (prinyato) => pishi('zh3', 'Окно «скачать файл» — человек согласился', !!prinyato, adres)); pishi('zh3', 'downloadFile вызван', true, adres); }
+    catch (e) { pishi('zh3', 'Скачивание средствами Telegram', false, oshibka(e)); } });
+
+  // ---- 3. Микрофон: тот же способ записи, что в кабинете (MediaRecorder). Тип записи не задаём — берём тот, что выбрал браузер ----
+  const knopka = document.getElementById('mik'), knopka15 = document.getElementById('mik15');
+  let zapisej = 0, sprosili = 0;
+  const schet = () => { let li = document.getElementById('schet'); if (!li) { li = pishi('zh2', 'Разрешение на микрофон', null, ''); li.id = 'schet'; } li.querySelector('span').textContent = 'спросили ' + sprosili + ' раз за ' + zapisej + ' записей'; };
+  const razreshenie = async () => { try { const r = await navigator.permissions.query({ name: 'microphone' }); return r.state; } catch (e) { return 'узнать нельзя'; } };
   pishi('zh2', 'Есть доступ к микрофону (getUserMedia)', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
   pishi('zh2', 'Есть запись (MediaRecorder)', typeof window.MediaRecorder === 'function');
   pishi('zh2', 'Есть распознавание речи в браузере', !!(window.SpeechRecognition || window.webkitSpeechRecognition));
-  knopka.addEventListener('click', async () => {
+  const zapisat = async (sek) => {
     if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || typeof window.MediaRecorder !== 'function') { pishi('zh2', 'Запись', false, 'не поддерживается этим браузером'); return; }
-    knopka.disabled = true; let potok;
+    knopka.disabled = knopka15.disabled = true; let potok; zapisej++;
+    pishi('zh2', 'Запись № ' + zapisej + ': разрешение до записи', null, await razreshenie());
     // браузер может не показать запрос доступа и не ответить вовсе — тогда через 15 секунд пишем об этом и возвращаем кнопку
     const zhdu = pishi('zh2', 'Жду разрешения на микрофон…', null, 'если окно с вопросом не появилось — запишите это как результат');
     const net = new Promise((_, otkaz) => setTimeout(() => otkaz(Object.assign(new Error('за 15 секунд браузер не ответил на запрос доступа'), { name: 'NetOtveta' })), 15000));
     try { potok = await Promise.race([navigator.mediaDevices.getUserMedia({ audio: true }), net]); zhdu.remove(); }
-    catch (e) { zhdu.remove(); pishi('zh2', 'Доступ к микрофону', false, (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'не дал доступ — ' : '') + oshibka(e)); knopka.disabled = false; return; }
+    catch (e) { zhdu.remove(); pishi('zh2', 'Доступ к микрофону', false, (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'не дал доступ — ' : '') + oshibka(e)); knopka.disabled = knopka15.disabled = false; return; }
     pishi('zh2', 'Доступ к микрофону', true);
     try {
-      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
-      const rec = new MediaRecorder(potok, mime ? { mimeType: mime } : undefined); const kuski = [];
-      rec.ondataavailable = (e) => { if (e.data && e.data.size) kuski.push(e.data); };
+      const rec = new MediaRecorder(potok); const kuski = []; let pustyh = 0;   // тип не задаём: берём recorder.mimeType
+      rec.ondataavailable = (e) => { if (e.data && e.data.size) kuski.push(e.data); else pustyh++; };
       rec.onerror = (e) => pishi('zh2', 'Запись', false, oshibka(e.error || e));
-      rec.onstop = () => { potok.getTracks().forEach((t) => t.stop()); const b = new Blob(kuski, { type: rec.mimeType || mime });
-        const li = pishi('zh2', 'Записал', b.size > 0, Math.round(b.size / 1024) + ' КБ · ' + (b.type || 'тип не назван'));
+      rec.onstop = () => { potok.getTracks().forEach((t) => t.stop()); const b = new Blob(kuski, { type: rec.mimeType });
+        const li = pishi('zh2', 'Запись № ' + zapisej + ', ' + sek + ' с', b.size > 0, (b.size > 0 ? b.size + ' байт' : 'пустая запись, 0 байт') + ' · recorder.mimeType: ' + (rec.mimeType || 'не назван') + (pustyh ? ' · пустых кусков: ' + pustyh : ''));
         if (b.size > 0) { const a = document.createElement('audio'); a.controls = true; a.src = URL.createObjectURL(b); li.appendChild(a); }
-        knopka.disabled = false; };
+        // сколько раз телефон спросил разрешение, страница узнать не может — отмечает человек
+        const vopros = pishi('zh2', 'Телефон спросил разрешение в этот раз?', null, '');
+        [['Да, спросил', 1], ['Нет', 0]].forEach(([nadpis, n]) => { const k = document.createElement('button'); k.type = 'button'; k.className = 'vtor'; k.textContent = nadpis; k.addEventListener('click', () => { sprosili += n; vopros.remove(); schet(); }); vopros.appendChild(k); });
+        knopka.disabled = knopka15.disabled = false; };
       rec.start(); knopka.textContent = 'Идёт запись…';
-      setTimeout(() => { try { rec.stop(); } catch (e) { pishi('zh2', 'Запись', false, oshibka(e)); knopka.disabled = false; } knopka.textContent = 'Записать 3 секунды'; }, 3000);
-    } catch (e) { potok.getTracks().forEach((t) => t.stop()); pishi('zh2', 'Запись', false, oshibka(e)); knopka.disabled = false; knopka.textContent = 'Записать 3 секунды'; }
-  });
+      setTimeout(() => { try { rec.stop(); } catch (e) { pishi('zh2', 'Запись', false, oshibka(e)); knopka.disabled = knopka15.disabled = false; } knopka.textContent = 'Записать 3 секунды'; }, sek * 1000);
+    } catch (e) { potok.getTracks().forEach((t) => t.stop()); pishi('zh2', 'Запись', false, oshibka(e)); knopka.disabled = knopka15.disabled = false; knopka.textContent = 'Записать 3 секунды'; }
+  };
+  knopka.addEventListener('click', () => zapisat(3));
+  knopka15.addEventListener('click', () => zapisat(15));
 })();
 </script>
 </body>
