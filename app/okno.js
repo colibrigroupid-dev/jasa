@@ -10,7 +10,7 @@
   const J = window.JASA; if (!J) return;
   const { api, esc, $, $$, arr, toast, S, store } = J;
   const main = $('#main');
-  const VER = '4';
+  const VER = '5';
   const d = (s) => `<span data-no-i18n>${esc(s)}</span>`;
   const ico = (n) => `<svg class="ok-i" aria-hidden="true"><use href="#${n}"/></svg>`;
   const klyuch = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'k' + Date.now() + Math.random().toString(16).slice(2));
@@ -35,18 +35,22 @@
   const O = pustoe();
   const kto = () => (S.me && !S.me.guest && S.me.uid) || '';
   const sohranit = () => { const u = kto(); if (u && O.uid === u) store.set('okno', { uid: u, lenta: O.lenta.slice(-40), post: O.post }); };
-  function sbrosit() { clearTimeout(kartT); Object.assign(O, pustoe()); store.set('okno', null); }
+  let pok = 0;   // поколение входа: ответ, пришедший после выхода или смены человека, к новому разговору не пишется (Н6)
+  function sbrosit() { pok += 1; clearTimeout(kartT); Object.assign(O, pustoe()); store.set('okno', null); }
   function svoe() {
     if (S.me === undefined || S.me === null) return;   // /api/me ещё не ответил или не дошёл: не восстанавливаем и не стираем
     const u = kto();
     if (O.uid && O.uid !== u) sbrosit();
     if (!u) { if (store.get('okno', null)) store.set('okno', null); return; }   // гость, истёкшая сессия: чужое не держим
     if (O.uid) return;
+    O.lenta = []; O.post = null;   /* разговор из памяти страницы до входа — не наследуем (Н6) */
     const z = store.get('okno', null); O.uid = u;
     if (!z || z.uid !== u) { if (z) store.set('okno', null); return; }
     O.lenta = arr(z.lenta); O.post = z.post || null;
     const t = Date.now();
     for (const m of O.lenta) { const k = m.kartochka; if (k && k.sost === 'zhdet' && !(k.ts && t - k.ts < KART_ZHIVET)) { k.sost = 'ustarela'; delete k.znak; delete k.telo; } }
+    for (const m of O.lenta) { const k = m.kartochka; if (!k) continue; if (k.sost === 'idet') k.sost = 'proverit'; if (k.sost !== 'zhdet') { delete k.znak; delete k.telo; } }   /* «Делаю…» после выгрузки вкладки не висит; мёртвых знаков не держим (Н9, Н10) */
+    if (O.post && O.post.ruchnoe) delete O.post.ruchnoe;
     sohranit();
   }
   document.addEventListener('click', (e) => { if (e.target && e.target.closest && e.target.closest('#logout')) sbrosit(); }, true);   /* выход из кабинета стирает разговор */
@@ -79,14 +83,17 @@
     const kontekst = {};
     if (O.post && O.post.zid) kontekst.rezultat = O.post.zid;
     if (O.post && O.post.post_id) kontekst.post = O.post.post_id;
-    const rab = { kto: 'dumaet' }; O.lenta.push(rab); risovat(true);
+    const rab = { kto: 'dumaet' }; O.lenta.push(rab); risovat(true); const g = pok;
+    const ubrat = () => { const i = O.lenta.indexOf(rab); if (i >= 0) O.lenta.splice(i, 1); };
     try {
       const o = await api('/api/agent', { tekst, istochnik: istochnik || 'tekst', kontekst });
-      O.lenta.splice(O.lenta.indexOf(rab), 1);
+      if (g !== pok) return;   /* человек вышел, пока шёл ответ */
+      ubrat();
       if (o.limit) O.limit = o.limit;
       otA({ otvet: o.otvet || '', rezultat: o.rezultat || null, kartochka: o.kartochka || null, podskazki: arr(o.podskazki).slice(0, 3) });
     } catch (e) {
-      O.lenta.splice(O.lenta.indexOf(rab), 1);
+      if (g !== pok) return;
+      ubrat();
       otA({ otvet: e.message, oshibka: true });
     }
     risovat(true);
@@ -96,28 +103,36 @@
   async function nazhat(k) {
     if (!k || k.sost !== 'zhdet') return;
     if (k.vid === 'platnoe' && k.hvataet === false) return;
-    k.sost = 'idet'; k.oshibka = ''; risovat(true);
+    k.sost = 'idet'; k.oshibka = ''; sohranit(); risovat(true); const g = pok;   /* «идёт» — в хранилище: вкладку могут выгрузить посреди платного */
     try {
       const r = await api(k.put, k.telo || {}, { 'X-Operaciya': k.znak });
-      k.sost = 'sdelano'; posle(k, r);
+      if (g !== pok) return;
+      k.sost = 'sdelano'; delete k.znak; delete k.telo; posle(k, r);
     } catch (e) {
-      k.sost = e.kod === 'znak_negoden' || e.kod === 'znak_ispolzovan' ? 'ustarela' : 'zhdet'; k.oshibka = e.message;
+      if (g !== pok) return;
+      if (e.kod === 'znak_ispolzovan') { k.sost = 'uzhe'; delete k.znak; delete k.telo; }   /* карточка уже сработала — второй раз не платим (Н10) */
+      else if (e.kod === 'znak_negoden') { k.sost = 'ustarela'; delete k.znak; delete k.telo; }
+      else { k.sost = 'zhdet'; k.oshibka = e.message; }
     }
     sohranit(); risovat(true);
   }
   function posle(k, r) {
-    if (k.put === '/api/ask' || k.put === '/api/kartinka') {
+    if (k.put === '/api/kartinka') {   /* своя картинка — отдельная работа: пост не трогаем (Н2) */
       if (typeof r.ostatok === 'number') J.spend(0, r.ostatok); else if (r.kredity) J.spend(r.kredity);
-      const prezhnij = O.post || {};
+      otA({ otvet: '', kartinka: r.image || '' });
+      return;
+    }
+    if (k.put === '/api/ask') {
+      if (typeof r.ostatok === 'number') J.spend(0, r.ostatok); else if (r.kredity) J.spend(r.kredity);
+      const prezhnij = O.post || {}; const pravka = !!(k.telo && k.telo.pravka);
       const res = r.result || {};
       O.post = {
         zid: r.zid || prezhnij.zid || '', tip: (k.telo && k.telo.tip) || prezhnij.tip || 'post',
         tekst: tekstIz(res) || prezhnij.tekst || '', imgJob: r.img_job || (k.telo && k.telo.pravka ? prezhnij.imgJob : null) || null,
         kartinka: k.telo && k.telo.pravka ? prezhnij.kartinka : '', imgOshibka: r.img_error || '',
-        post_id: (r.post && r.post.id) || (r.posty && r.posty[0] && r.posty[0].id) || prezhnij.post_id || null,
+        post_id: (r.post && r.post.id) || (r.posty && r.posty[0] && r.posty[0].id) || (pravka ? prezhnij.post_id : null) || null,   /* новая работа — свой черновик (Н1) */
         hesh: (r.post && r.post.hesh) || '', pravka_besplatno: !!r.pravka_besplatno, odobren: false,
       };
-      if (r.result && r.result.url && k.put === '/api/kartinka') O.post.kartinka = r.result.url;
       const soobsh = r.post_soobshchenie || '';
       otA({ otvet: soobsh, post: true, podskazki: [] });
       arr(r.kartochki_da).forEach((x) => otA({ otvet: '', kartochka: x.kartochka }));
@@ -145,7 +160,7 @@
       if (j && j.done) {
         const it = arr(j.items)[0]; P.kartinka = it && it.url ? it.url : ''; P.imgOshibka = j.error || (P.kartinka ? '' : tr('Картинка не получилась.')); P.imgBesplatno = !P.kartinka && j.kredity === 0;   /* «не списано» — только когда сервер сказал 0 */
         if (typeof j.ostatok === 'number') J.spend(0, j.ostatok);
-        sohranit(); return risovat();
+        sohranit(); if (O.listPosleKartinki && O.post === P) return otkrytList(false); return risovat();
       }
       if (Date.now() - t0 < 6 * 60e3) kartT = setTimeout(shag, 3000);
     };
@@ -153,23 +168,39 @@
   }
 
   // ---- лист «Опубликовать»: черновик из работы, когда, куда, «да» ----
+  const risuetsya = (P) => !!(P && P.imgJob && !P.kartinka && !P.imgOshibka);
+  // Черновик в очереди — ровно то, что человек видит в посте: текст и картинка. Лист показывает версию сервера, «да» — на её хеш.
+  function izServera(P, s) { P.post_id = s.id; P.hesh = s.hesh; P.problemy = arr(s.problemy); P.tekst = s.tekst; const f = arr(s.media)[0]; P.kartinka = f && f.fajl ? f.fajl : (P.kartinka && !P.imgJob ? P.kartinka : ''); }
+  async function chernovikKakNaEkrane(P) {
+    const media = P.imgJob && P.kartinka ? [{ rezultat: P.imgJob, n: 0 }] : [];
+    if (!P.post_id) {
+      const o = await api('/api/zavod/post', Object.assign({ tekst: P.tekst, media }, P.zid ? { rezultat: P.zid } : {}));
+      P.mediaJob = media.length ? P.imgJob : ''; return izServera(P, o.post);
+    }
+    const s = (await api('/api/zavod/post/' + P.post_id)).post;
+    const novayaKartinka = media.length && (P.mediaJob !== P.imgJob || !arr(s.media).length);   /* картинка на экране — не та, что в черновике */
+    if (s.tekst !== P.tekst || novayaKartinka) {   /* на экране новее (правка, дорисованная картинка): черновик догоняет экран */
+      const o = await api('/api/zavod/post/' + P.post_id + '/pravka', Object.assign({ tekst: P.tekst }, novayaKartinka ? { media } : {}));
+      if (novayaKartinka) P.mediaJob = P.imgJob; return izServera(P, o.post);
+    }
+    izServera(P, s);
+  }
   async function otkrytList(napomnit) {
     const P = O.post; if (!P) return;
+    if (risuetsya(P)) { O.listPosleKartinki = true; risovat(); return; }   /* без картинки черновик не создаём (Н4) */
+    O.listPosleKartinki = false;
     O.list = { zagr: true, kogda: napomnit ? 'podskazka' : (store.get('oknoProshloe', '') || 'sejchas'), den: den(), vremya: '19:00', oshibka: '', vybrany: [] };
-    risovat();
+    risovat(); const g = pok;
     try {
-      if (!P.post_id) {
-        const media = P.imgJob && P.kartinka ? [{ rezultat: P.imgJob, n: 0 }] : [];
-        const o = await api('/api/zavod/post', Object.assign({ tekst: P.tekst, media }, P.zid ? { rezultat: P.zid } : {}));
-        P.post_id = o.post.id; P.hesh = o.post.hesh; P.problemy = arr(o.post.problemy);
-      } else if (!P.hesh) {
-        const o = await api('/api/zavod/post/' + P.post_id); P.hesh = o.post.hesh; P.problemy = arr(o.post.problemy);
-      }
+      await chernovikKakNaEkrane(P);
+      if (g !== pok || O.post !== P) return;
+      sohranit();
       const [k, p] = await Promise.all([api('/api/zavod/kanaly'), api('/api/zavod/podskazka')]);
+      if (g !== pok || !O.list) return;
       O.kanaly = arr(k.kanaly); O.bot = k.bot || '@jasa_asia_bot'; O.podskazka = p.podskazka || null;
       O.list.vybrany = O.kanaly.filter((x) => x.status === 'podklyuchen' && (x.vybran || O.kanaly.length === 1)).map((x) => x.id);
       O.list.zagr = false; sohranit();
-    } catch (e) { O.list.zagr = false; O.list.oshibka = e.message; }
+    } catch (e) { if (g !== pok || !O.list) return; O.list.zagr = false; O.list.oshibka = e.message; }
     risovat();
   }
   const listKogda = () => { const L = O.list; if (L.kogda === 'sejchas') return 'seichas'; if (L.kogda === 'vybor') return isoAlm(L.den, L.vremya); return O.podskazka ? O.podskazka.kogda : 'seichas'; };
@@ -185,7 +216,9 @@
       otA({ otvet: kogda === 'seichas' ? (kz() ? 'Қабылданды. Жариялап жатырмын: ' : 'Принято. Публикую: ') + niki + '.' : (kz() ? 'Қабылданды. Шығады: ' + kogdaSlovami(tsIz(kogda)) + ', ' : 'Принято. Выйдет ' + kogdaSlovami(tsIz(kogda)) + ': ') + niki + '.', podskazki: [{ nadpis: tr('Что выйдет'), vid: 'otkryt', znachenie: '#ochered' }] });
     } catch (e) {
       L.idet = false; L.oshibka = e.message;
-      if (e.kod === 'hesh_ustarel') { P.hesh = ''; }   // текст меняли после показа: при следующем открытии листа возьмём новую версию
+      if (e.kod === 'hesh_ustarel') {   /* пост изменился: показываем новую версию сервера, «да» — уже на неё (Н5) */
+        try { izServera(P, (await api('/api/zavod/post/' + P.post_id)).post); L.oshibka = tr('Пост изменился. Проверьте новую версию и нажмите «да» ещё раз.'); sohranit(); } catch (e2) { P.hesh = ''; }
+      }
     }
     risovat(true);
   }
@@ -259,6 +292,8 @@
   }
   function kartochkaHtml(k, i) {
     if (k.sost === 'sdelano') return `<div class="ok-kart sdelano">${ico('i-check')}<span>${d(k.nadpis_korotko || k.nadpis)}</span></div>`;
+    if (k.sost === 'uzhe') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Эта карточка уже сработала — второй раз за неё не спишем. Если результата не видно, значит, вкладка закрывалась, пока шла работа: напишите нам — найдём.</p></div>`;
+    if (k.sost === 'proverit') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Вкладка закрывалась, пока шла работа. Нажимать ещё раз не нужно — второй раз не спишем. Если результата не видно, напишите нам — найдём.</p></div>`;
     if (k.sost === 'ustarela') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Карточка устарела. Скажите ещё раз — пришлю новую.</p></div>`;
     const net = k.vid === 'platnoe' && k.hvataet === false;
     return `<div class="ok-kart ${k.sost}"><b class="ok-kart-chto">${d(k.nadpis)}</b>
@@ -273,12 +308,17 @@
     const kart = P.kartinka ? `<img src="${esc(absUrl(P.kartinka))}" alt="" loading="lazy">` : P.imgJob && !P.imgOshibka ? `<div class="ok-risuyu" role="status"><i class="ok-puls"></i><span>Рисую картинку…</span></div>` : '';
     const ruki = O.pravkaRuki;
     return `<figure class="ok-post"><figcaption class="ok-caps">Так увидят пост</figcaption><div class="ok-post-telo">${kart}
-      ${P.imgOshibka ? `<p class="ok-small ok-err">${d(P.imgOshibka)}${P.imgBesplatno ? ' <span>Кредиты за картинку не списаны.</span>' : ''}</p><div class="ok-pods"><button type="button" class="ok-mini" data-skazat="${esc(tr('Нарисуй картинку к этому посту ещё раз'))}">Нарисовать картинку ещё раз</button></div>` : ''}
-      ${ruki ? `<div class="ok-ptekst"><textarea id="ok-ptekst" rows="7" aria-label="Изменить текст">${esc(P.tekst)}</textarea><div class="ok-pods"><button type="button" class="ok-btn acc sm" id="ok-ptekst-da">Сохранить</button><button type="button" class="ok-btn sm" id="ok-ptekst-net">Отмена</button><span class="ok-small">Править текст руками — бесплатно.</span></div></div>`
+      ${P.imgOshibka ? `<p class="ok-small ok-err">${d(P.imgOshibka)}${P.imgBesplatno ? ' <span>Кредиты за картинку не списаны.</span>' : ''}</p>` : ''}
+      ${ruki ? `<div class="ok-ptekst"><textarea id="ok-ptekst" rows="7" aria-label="Изменить текст">${esc(O.pravkaChernovik || P.tekst)}</textarea>${O.pravkaOshibka ? `<p class="ok-small ok-err">${d(O.pravkaOshibka)} <span>Текст не сохранён — на сервере прежний.</span></p>` : ''}<div class="ok-pods"><button type="button" class="ok-btn acc sm" id="ok-ptekst-da">Сохранить</button><button type="button" class="ok-btn sm" id="ok-ptekst-net">Отмена</button><span class="ok-small">Править текст руками — бесплатно.</span></div></div>`
         : `<p data-no-i18n>${esc(P.tekst).replace(/\n/g, '<br>')}</p><p class="ok-metka" data-no-i18n>— создано с помощью ИИ · JASA</p><div class="ok-post-niz"><button type="button" class="ok-link" data-ptekst>${ico('i-sliders')}Изменить текст</button></div>`}</div></figure>`;
+  }
+  function svoyaKartinka(u) {
+    const a = esc(absUrl(u));
+    return `<figure class="ok-post"><div class="ok-post-telo"><img src="${a}" alt="" loading="lazy"></div></figure><div class="ok-pods"><a class="ok-btn sm" href="${a}" download="jasa-kartinka.jpg" target="_blank" rel="noopener">Сохранить картинку</a></div>`;
   }
   function postKnopki() {
     const P = O.post; if (!P) return '';
+    if (risuetsya(P)) return `<div class="ok-pods"><button type="button" class="ok-btn acc" data-list disabled>Опубликовать</button><button type="button" class="ok-btn" data-popravit>${P.pravka_besplatno ? 'Поправить · первая бесплатно' : 'Поправить'}</button></div><p class="ok-small">${O.listPosleKartinki ? 'Откроем публикацию, как только дорисуется картинка.' : 'Опубликовать можно, когда дорисуется картинка.'}</p>`;
     return `<div class="ok-pods"><button type="button" class="ok-btn acc" data-list>Опубликовать</button><button type="button" class="ok-btn" data-zabrat>Забрать готовое</button><button type="button" class="ok-btn" data-popravit>${P.pravka_besplatno ? 'Поправить · первая бесплатно' : 'Поправить'}</button></div>`;
   }
   function zabratHtml() {
@@ -305,7 +345,7 @@
       const pod = m === posl ? arr(m.podskazki).slice(0, 3) : [];
       const postTut = m.post && m === poslPost;
       return `<div class="ok-a"><i class="ok-znak" aria-hidden="true"></i><div class="ok-a-t">${m.otvet ? `<p class="ok-otvet${m.oshibka ? ' ok-err' : ''}" data-no-i18n>${esc(m.otvet)}</p>` : ''}
-        ${rezultatHtml(m.rezultat)}${postTut ? postHtml() + (O.zabrat ? zabratHtml() : '') + (m === posl ? postKnopki() : '') : ''}${m.kartochka ? kartochkaHtml(m.kartochka, i) : ''}
+        ${rezultatHtml(m.rezultat)}${m.kartinka ? svoyaKartinka(m.kartinka) : ''}${postTut ? postHtml() + (O.zabrat ? zabratHtml() : '') + (m === posl ? postKnopki() : '') : ''}${m.kartochka ? kartochkaHtml(m.kartochka, i) : ''}
         ${pod.length ? `<div class="ok-pods">${pod.map((p, j) => `<button type="button" class="ok-mini ${j === 0 && !m.kartochka ? 'acc' : ''}" data-pod="${i}:${j}" data-no-i18n>${esc(p.nadpis)}</button>`).join('')}</div>` : ''}</div></div>`;
     }).join('')}</section>`;
   }
@@ -438,16 +478,21 @@
     on('[data-list]', () => otkrytList(false));
     on('[data-zabrat]', () => { O.zabrat = !O.zabrat; risovat(true); });
     on('[data-popravit]', () => { O.kChemu = true; risovat(true); const x = $('#ok-t'); if (x) x.focus(); });
-    on('[data-ptekst]', () => { O.pravkaRuki = true; risovat(); const x = $('#ok-ptekst'); if (x) x.focus(); });
-    on('#ok-ptekst-net', () => { O.pravkaRuki = false; risovat(); });
-    on('#ok-ptekst-da', async () => {
-      const v = $('#ok-ptekst').value.trim(); O.pravkaRuki = false; const P = O.post;
-      if (v && v !== P.tekst) {
-        P.tekst = v;
-        if (P.post_id) { try { const o = await api('/api/zavod/post/' + P.post_id + '/pravka', { tekst: v }); P.hesh = o.post.hesh; if (P.odobren) { P.odobren = false; otA({ otvet: tr('Правка сняла ваше «да» — пост не выйдет, пока не скажете «да» ещё раз.') }); } } catch (e) { toast(e.message); } }
-        sohranit(); toast('Сохранено');
-      }
-      risovat();
+    on('[data-ptekst]', () => { O.pravkaRuki = true; O.pravkaOshibka = ''; O.pravkaChernovik = ''; risovat(); const x = $('#ok-ptekst'); if (x) x.focus(); });
+    on('#ok-ptekst-net', () => { O.pravkaRuki = false; O.pravkaOshibka = ''; O.pravkaChernovik = ''; risovat(); });
+    on('#ok-ptekst-da', async (b) => {
+      const v = $('#ok-ptekst').value.trim(); const P = O.post; if (!P || b.disabled) return;
+      if (!v || v === P.tekst) { O.pravkaRuki = false; return risovat(); }
+      if (P.post_id) {   /* текст на экране меняется только после ответа сервера: иначе выйдет не то, что видно (Н3) */
+        b.disabled = true; O.pravkaOshibka = ''; O.pravkaChernovik = v; const g = pok;
+        try {
+          const o = await api('/api/zavod/post/' + P.post_id + '/pravka', { tekst: v });
+          if (g !== pok || O.post !== P) return;
+          izServera(P, o.post);
+          if (P.odobren) { P.odobren = false; otA({ otvet: tr('Правка сняла ваше «да» — пост не выйдет, пока не скажете «да» ещё раз.') }); }
+        } catch (e) { if (g !== pok) return; O.pravkaOshibka = e.message; return risovat(); }
+      } else P.tekst = v;
+      O.pravkaRuki = false; O.pravkaChernovik = ''; sohranit(); toast('Сохранено'); risovat();
     });
     on('[data-kopirovat]', () => { const t = (O.post ? O.post.tekst : '') + '\n\n— создано с помощью ИИ · JASA';
       let p; try { p = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject(new Error('нет')); } catch (e) { p = Promise.reject(e); }
@@ -464,15 +509,23 @@
     on('#ok-prov', () => { O.kanal.nik = ($('#ok-nik') || {}).value || ''; proveritKanal(); });
     on('[data-otmenit]', (b) => deystvieOcheredi('/api/zavod/post/' + b.dataset.otmenit + '/otmenit'));
     on('[data-vernut]', (b) => deystvieOcheredi('/api/zavod/post/' + b.dataset.vernut + '/vernut'));
-    on('[data-povtorit]', (b) => deystvieOcheredi('/api/zavod/post/' + b.dataset.povtorit + '/povtorit', { hesh: b.dataset.hesh }));
+    on('[data-povtorit]', async (b) => {   /* черновик (правка после «да», просрочка) — полный лист; ошибка выхода — повтор (Н13) */
+      let s = null; try { s = (await api('/api/zavod/post/' + b.dataset.povtorit)).post; } catch (e) { return toast(e.message); }
+      if (s.status === 'chernovik') return otkrytChernovik(s);
+      deystvieOcheredi('/api/zavod/post/' + b.dataset.povtorit + '/povtorit', { hesh: b.dataset.hesh });
+    });
     on('[data-perenos]', (b) => { O.perenos = O.perenos === +b.dataset.perenos ? null : +b.dataset.perenos; risovat(); });
     on('[data-na]', (b) => { const ts = +b.dataset.ts * 1000; const novoe = b.dataset.na === 'chas' ? ts + 3600e3 : ts + 864e5; deystvieOcheredi('/api/zavod/post/' + b.dataset.post + '/perenesti', { kogda: Math.round(novoe / 1000) }); });
     on('[data-nap]', (b) => deystvieOcheredi('/api/zavod/napominanie/' + b.dataset.napc + '/' + b.dataset.nap, b.dataset.nap === 'pozzhe' ? { cherez_min: 60 } : {}));
-    on('[data-chernovik]', async (b) => { try { const o = await api('/api/zavod/post/' + b.dataset.chernovik); const p = o.post; O.post = { zid: p.rezultat || '', tip: 'post', tekst: p.tekst, imgJob: null, kartinka: arr(p.media)[0] ? p.media[0].fajl : '', post_id: p.id, hesh: p.hesh, pravka_besplatno: false }; O.vid = 'okno'; sohranit(); otkrytList(false); } catch (e) { toast(e.message); } });
+    on('[data-chernovik]', async (b) => { try { otkrytChernovik((await api('/api/zavod/post/' + b.dataset.chernovik)).post); } catch (e) { toast(e.message); } });
     $$('input[name="ok-kogda"]').forEach((r) => r.addEventListener('change', () => { O.list.kogda = r.value; risovat(); }));
     $$('[data-kanal]').forEach((c) => c.addEventListener('change', () => { const id = +c.dataset.kanal; O.list.vybrany = c.checked ? O.list.vybrany.concat([id]) : O.list.vybrany.filter((x) => x !== id); risovat(); }));
     const vr = $('#ok-vr'); if (vr) vr.addEventListener('change', () => { if (/^\d\d:\d\d$/.test(vr.value)) { O.list.vremya = vr.value; risovat(); } });
     $$('[data-pauza]').forEach((c) => c.addEventListener('change', () => deystvieOcheredi('/api/zavod/pauza', { vkl: c.checked })));
+  }
+  function otkrytChernovik(p) {
+    O.post = { zid: p.rezultat || '', tip: 'post', tekst: p.tekst, imgJob: null, kartinka: arr(p.media)[0] ? p.media[0].fajl : '', post_id: p.id, hesh: p.hesh, pravka_besplatno: false };
+    O.vid = 'okno'; sohranit(); otkrytList(false);
   }
   function stil() {
     if ($('#okw-css')) return;
@@ -496,11 +549,25 @@
   };
   function knopkaNazad() {
     if (!(OKNO && OKNO.agent && store.get('oknoStaryj', false) && main && !$('#okw-nazad'))) return;
-    const b = document.createElement('button'); b.type = 'button'; b.id = 'okw-nazad'; b.className = 'btn sm quiet'; b.textContent = tr('Новый экран — разговор');
+    const b = document.createElement('button'); b.type = 'button'; b.id = 'okw-nazad'; b.className = 'btn sm quiet'; b.textContent = tr('Новый экран — разговор');   /* набранное в прежнем экране при переходе пропадёт — переход только по нажатию */
     b.addEventListener('click', () => { store.set('oknoStaryj', false); J.route(); }); main.prepend(b);
   }
   window.addEventListener('hashchange', () => document.body.classList.remove('okw-list'));
   J.okno = { priznak, vkl, O, vernutNovyj: () => { store.set('oknoStaryj', false); J.route(); } };
   const naSozdat = () => /^#?\/?(sozdat)?$/.test((location.hash || '').replace(/\?.*$/, '')) || (location.hash || '').startsWith('#/sozdat');
-  (S.meP || Promise.resolve()).then(() => { svoe(); return priznak(); }).then(() => { if (!naSozdat()) return; if (vkl()) J.route(); else knopkaNazad(); });   /* признак пришёл после первой отрисовки: новый экран или кнопка обратно */
+  // в прежнем «Создать» человек уже что-то набрал — поздний признак экран не перерисовывает, а предлагает кнопкой (Н11)
+  const nabrano = () => !!(main && [...main.querySelectorAll('textarea, input[type="text"], input:not([type])')].some((x) => String(x.value || '').trim()));
+  function posleProznaka() {
+    if (!naSozdat()) return;
+    if (vkl() && !document.getElementById('okw-mesto')) { if (nabrano()) { store.set('oknoStaryj', true); knopkaNazad(); store.set('oknoStaryj', false); } else J.route(); }
+    else if (!vkl() && document.getElementById('okw-mesto')) J.route();
+    else if (!vkl()) knopkaNazad();
+  }
+  (S.meP || Promise.resolve()).then(() => { svoe(); return priznak(); }).then(posleProznaka);
+  // вход и выход в другой вкладке: разговор прежнего человека стираем, признак спрашиваем заново — для нового человека
+  window.addEventListener('storage', (e) => {
+    if (e.key !== 'jasa:session' && e.key !== null) return;
+    sbrosit(); OKNO = null;
+    Promise.resolve(J.loadMe ? J.loadMe() : null).then(() => { svoe(); return priznak(); }).then(() => { if (naSozdat()) J.route(); });
+  });   /* признак пришёл после первой отрисовки: новый экран или кнопка обратно */
 })();
