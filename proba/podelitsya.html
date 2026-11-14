@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>JASA · проба телефона</title>
+<style>
+  /* Служебная страница для пробы на живом телефоне (14.11.2026, dizajn-ux): «Поделиться» картинкой и запись с микрофона.
+     Не экран продукта: только русский, без оформления кабинета, без ссылок с сайта. Ничего никуда не отправляет: сервер и API не вызываются,
+     запись с микрофона остаётся в памяти страницы и пропадает при закрытии. Открывать по https — иначе браузер не даст ни поделиться, ни записать. */
+  body{margin:0;padding:20px 16px 48px;font:17px/1.5 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;background:#F4EFE4;color:#15192A}
+  h1{font-size:24px;line-height:1.15;margin:0 0 8px} h2{font-size:19px;line-height:1.2;margin:28px 0 6px} p{margin:0 0 12px} small{display:block;color:#575D6E;font-size:14px}
+  img{display:block;width:150px;border-radius:14px;margin:12px 0}
+  button{display:block;width:100%;min-height:56px;margin:10px 0;border:0;border-radius:999px;background:#FF4D1F;color:#111;font:600 17px/1.2 inherit;padding:0 18px}
+  button.vtor{background:#FFFDF8;border:1px solid #DCD4C4;color:#15192A} button:disabled{background:#F2A98E}
+  ul{padding:0;margin:14px 0;list-style:none} li{padding:10px 12px;margin-bottom:6px;border-radius:12px;background:#FFFDF8;border:1px solid #E9E3D5;font-size:15px;word-break:break-word}
+  li.da{border-color:#149A74} li.net{border-color:#D8402C} li b{display:block}
+  audio{width:100%;margin-top:6px}
+</style>
+</head>
+<body>
+<h1>Проба телефона</h1>
+<p>Две пробы: «Поделиться» картинкой и запись с микрофона. Пройдите обе и пришлите снимок экрана с результатами. Сделать нужно дважды: открыв эту страницу в обычном браузере и по ссылке из Telegram.</p>
+<small>Страница ничего никуда не отправляет.</small>
+
+<h2>1. Поделиться</h2>
+<p>Нажмите оранжевую кнопку. Должен открыться системный лист: выберите Instagram и вставьте подпись из буфера.</p>
+<img id="kart" src="../app/idei-kofejnya-latte-vspyshka.webp" alt="">
+<button id="go" type="button">Поделиться картинкой и скопировать текст</button>
+<button id="tolko" type="button" class="vtor">Только поделиться картинкой</button>
+<small>Текст для буфера: «Тыквенный латте уже у нас. До пятницы — минус 20 %. — создано с помощью ИИ · JASA»</small>
+<ul id="zh1"></ul>
+
+<h2>2. Микрофон</h2>
+<p>Нажмите кнопку, разрешите доступ и скажите что-нибудь. Запись идёт 3 секунды, потом её можно прослушать.</p>
+<button id="mik" type="button">Записать 3 секунды</button>
+<ul id="zh2"></ul>
+
+<script>
+(() => {
+  const TEKST = 'Тыквенный латте уже у нас. До пятницы — минус 20 %.\n\n— создано с помощью ИИ · JASA';
+  const pishi = (kuda, chto, itog, podrobno) => { const li = document.createElement('li'); li.className = itog === true ? 'da' : itog === false ? 'net' : ''; const b = document.createElement('b'); b.textContent = chto + (itog === true ? ' — да' : itog === false ? ' — нет' : ''); const s = document.createElement('span'); s.textContent = podrobno || ''; li.append(b, s); document.getElementById(kuda).appendChild(li); return li; };
+  const oshibka = (e) => (e && e.name ? e.name + ': ' + e.message : String(e));
+
+  // ---- 1. «Поделиться» ----
+  let fajl = null;
+  const im = document.getElementById('kart');
+  const sobrat = () => { try { const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0);
+    c.toBlob((b) => { fajl = b ? new File([b], 'jasa-post.jpg', { type: 'image/jpeg' }) : null; proverit(); }, 'image/jpeg', 0.92); } catch (e) { proverit(); } };
+  if (im.complete && im.naturalWidth) sobrat(); else { im.onload = sobrat; im.onerror = () => { pishi('zh1', 'Картинка загрузилась', false); proverit(); }; }
+  function proverit() {
+    pishi('zh1', 'Устройство', null, navigator.userAgent);
+    pishi('zh1', 'Защищённое соединение', window.isSecureContext === true);
+    pishi('zh1', 'Страница открыта внутри Telegram', /Telegram/i.test(navigator.userAgent) || !!(window.TelegramWebviewProxy || window.Telegram));
+    pishi('zh1', 'Есть «Поделиться» (navigator.share)', typeof navigator.share === 'function');
+    let fajly = false; try { fajly = !!(fajl && navigator.canShare && navigator.canShare({ files: [fajl] })); } catch (e) { /* нет */ }
+    pishi('zh1', 'Умеет отдавать картинку файлом (canShare)', fajly, fajl ? 'файл ' + Math.round(fajl.size / 1024) + ' КБ' : 'файл не собран');
+    pishi('zh1', 'Есть запись в буфер (clipboard.writeText)', !!(navigator.clipboard && navigator.clipboard.writeText));
+  }
+  const delitsya = (sBuferom) => {
+    if (sBuferom) { try { navigator.clipboard.writeText(TEKST).then(() => pishi('zh1', 'Текст записан в буфер', true), (e) => pishi('zh1', 'Текст записан в буфер', false, oshibka(e))); } catch (e) { pishi('zh1', 'Текст записан в буфер', false, oshibka(e)); } }
+    try { navigator.share({ files: [fajl] }).then(() => pishi('zh1', 'Системный лист отработал', true, 'приложение выбрано'), (e) => pishi('zh1', 'Системный лист отработал', false, oshibka(e))); } catch (e) { pishi('zh1', 'Системный лист отработал', false, oshibka(e)); }
+  };
+  document.getElementById('go').addEventListener('click', () => delitsya(true));
+  document.getElementById('tolko').addEventListener('click', () => delitsya(false));
+
+  // ---- 2. Микрофон: тот же способ записи, что в кабинете (MediaRecorder) ----
+  const knopka = document.getElementById('mik');
+  pishi('zh2', 'Есть доступ к микрофону (getUserMedia)', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
+  pishi('zh2', 'Есть запись (MediaRecorder)', typeof window.MediaRecorder === 'function');
+  pishi('zh2', 'Есть распознавание речи в браузере', !!(window.SpeechRecognition || window.webkitSpeechRecognition));
+  knopka.addEventListener('click', async () => {
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || typeof window.MediaRecorder !== 'function') { pishi('zh2', 'Запись', false, 'не поддерживается этим браузером'); return; }
+    knopka.disabled = true; let potok;
+    // браузер может не показать запрос доступа и не ответить вовсе — тогда через 15 секунд пишем об этом и возвращаем кнопку
+    const zhdu = pishi('zh2', 'Жду разрешения на микрофон…', null, 'если окно с вопросом не появилось — запишите это как результат');
+    const net = new Promise((_, otkaz) => setTimeout(() => otkaz(Object.assign(new Error('за 15 секунд браузер не ответил на запрос доступа'), { name: 'NetOtveta' })), 15000));
+    try { potok = await Promise.race([navigator.mediaDevices.getUserMedia({ audio: true }), net]); zhdu.remove(); }
+    catch (e) { zhdu.remove(); pishi('zh2', 'Доступ к микрофону', false, (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'не дал доступ — ' : '') + oshibka(e)); knopka.disabled = false; return; }
+    pishi('zh2', 'Доступ к микрофону', true);
+    try {
+      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+      const rec = new MediaRecorder(potok, mime ? { mimeType: mime } : undefined); const kuski = [];
+      rec.ondataavailable = (e) => { if (e.data && e.data.size) kuski.push(e.data); };
+      rec.onerror = (e) => pishi('zh2', 'Запись', false, oshibka(e.error || e));
+      rec.onstop = () => { potok.getTracks().forEach((t) => t.stop()); const b = new Blob(kuski, { type: rec.mimeType || mime });
+        const li = pishi('zh2', 'Записал', b.size > 0, Math.round(b.size / 1024) + ' КБ · ' + (b.type || 'тип не назван'));
+        if (b.size > 0) { const a = document.createElement('audio'); a.controls = true; a.src = URL.createObjectURL(b); li.appendChild(a); }
+        knopka.disabled = false; };
+      rec.start(); knopka.textContent = 'Идёт запись…';
+      setTimeout(() => { try { rec.stop(); } catch (e) { pishi('zh2', 'Запись', false, oshibka(e)); knopka.disabled = false; } knopka.textContent = 'Записать 3 секунды'; }, 3000);
+    } catch (e) { potok.getTracks().forEach((t) => t.stop()); pishi('zh2', 'Запись', false, oshibka(e)); knopka.disabled = false; knopka.textContent = 'Записать 3 секунды'; }
+  });
+})();
+</script>
+</body>
+</html>
