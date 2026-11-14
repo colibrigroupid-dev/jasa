@@ -10,7 +10,7 @@
   const J = window.JASA; if (!J) return;
   const { api, esc, $, $$, arr, toast, S, store } = J;
   const main = $('#main');
-  const VER = '8';
+  const VER = '9';
   const d = (s) => `<span data-no-i18n>${esc(s)}</span>`;
   const ico = (n) => `<svg class="ok-i" aria-hidden="true"><use href="#${n}"/></svg>`;
   const klyuch = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'k' + Date.now() + Math.random().toString(16).slice(2));
@@ -49,7 +49,23 @@
     if (O.lenta.length) return;
     O.lenta.push({ kto: 'a', otvet: '', kartochka: { sost: 'proverit', znak: uk.znak, put: uk.put, nadpis: uk.nadpis, nadpis_korotko: uk.nadpis, ts: uk.ts, gost: true } });
   }
-  function sbrosit() { store.set('oknoUk', null); pok += 1; clearTimeout(kartT); Object.assign(O, pustoe()); store.set('okno', null); }
+  // Нажатая платная карточка без ответа — это деньги: при сбросе (выход, смена человека в другой вкладке) её знак не теряем,
+  // а кладём в отложенную запись того же человека; вернётся он — экран спросит сервер по знаку и покажет работу (М1).
+  function otlozhitNazhatye() {
+    const u = O.uid; if (!u) return;
+    const ks = O.lenta.map((m) => m.kartochka).filter((k) => k && (k.sost === 'idet' || k.sost === 'proverit') && k.znak && k.put !== GOLOS_PUT)
+      .map((k) => ({ znak: k.znak, put: k.put, nazhata_ts: k.nazhata_ts || Date.now() }));   /* без текста и тела: на общем устройстве следующему не видно даже темы */
+    if (!ks.length) return;
+    const bylo = store.get('oknoOzhid', null); const prezhnie = bylo && bylo.uid === u ? arr(bylo.karty) : [];
+    store.set('oknoOzhid', { uid: u, karty: prezhnie.concat(ks).slice(-20) });
+  }
+  function vernutOtlozhennye(u) {
+    const z = store.get('oknoOzhid', null); if (!z || z.uid !== u) return;
+    const t0 = Date.now(); const ks = arr(z.karty).filter((x) => x.znak && t0 - (x.nazhata_ts || 0) < ZNAK_ZHIVET);
+    store.set('oknoOzhid', null);
+    ks.forEach((x) => { if (!O.lenta.some((m) => m.kartochka && m.kartochka.znak === x.znak)) O.lenta.push({ kto: 'a', otvet: '', kartochka: { sost: 'proverit', znak: x.znak, put: x.put, nadpis: tr('Ваша работа'), nadpis_korotko: tr('Ваша работа'), ts: x.nazhata_ts, nazhata_ts: x.nazhata_ts } }); });
+  }
+  function sbrosit() { otlozhitNazhatye(); O.golosZapis = null; store.set('oknoUk', null); pok += 1; clearTimeout(kartT); Object.assign(O, pustoe()); store.set('okno', null); }
   function svoe() {
     if (S.me === undefined || S.me === null) return;   // /api/me ещё не ответил или не дошёл: не восстанавливаем и не стираем
     const u = kto();
@@ -59,12 +75,15 @@
     if (O.uid) return;
     O.lenta = []; O.post = null;   /* разговор из памяти страницы до входа — не наследуем (Н6) */
     const z = store.get('okno', null); O.uid = u;
+    if (!z || z.uid !== u) vernutOtlozhennye(u);   /* своей записи нет — отложенные знаки этого человека всё равно вернуть (М1) */
     if (!z || z.uid !== u) { if (z) store.set('okno', null); return; }
     O.lenta = arr(z.lenta); O.post = z.post || null;
     const t = Date.now();
     for (const m of O.lenta) { const k = m.kartochka; if (k && k.sost === 'zhdet' && !(k.ts && t - k.ts < KART_ZHIVET)) { k.sost = 'ustarela'; delete k.znak; delete k.telo; } }
     for (const m of O.lenta) { const k = m.kartochka; if (!k) continue; if (k.sost === 'idet') k.sost = 'proverit'; if (k.sost === 'proverit' && !(t - (k.nazhata_ts || k.ts || 0) < ZNAK_ZHIVET)) k.sost = 'neizvestno'; if (k.sost !== 'zhdet' && k.sost !== 'proverit') { delete k.znak; delete k.telo; } }   /* «Делаю…» после выгрузки вкладки не висит; знак держим только у нажатой без ответа — по нему сервер отдаст работу (Н9, Н10) */
     if (O.post && O.post.ruchnoe) delete O.post.ruchnoe;
+    for (const m of O.lenta) { const k = m.kartochka; if (k && k.put === GOLOS_PUT && (k.sost === 'zhdet' || k.sost === 'proverit')) { k.sost = k.sost === 'proverit' ? 'proverit' : 'ustarela'; if (k.sost === 'ustarela') { k.oshibka = tr('Запись не сохранилась (страница обновлялась) — скажите ещё раз.'); delete k.znak; delete k.telo; } } }   /* М2 */
+    vernutOtlozhennye(u);
     sohranit();
   }
   document.addEventListener('click', (e) => { if (e.target && e.target.closest && e.target.closest('#logout')) sbrosit(); }, true);   /* выход из кабинета стирает разговор */
@@ -117,6 +136,7 @@
   async function nazhat(k) {
     if (!k || k.sost !== 'zhdet') return;
     if (k.vid === 'platnoe' && k.hvataet === false) return;
+    if (k.put === GOLOS_PUT && !(O.golosZapis && O.golosZapis.b64)) { k.sost = 'ustarela'; k.oshibka = tr('Запись не сохранилась (страница обновлялась) — скажите ещё раз.'); delete k.znak; delete k.telo; sohranit(); return risovat(true); }   /* без записи знак не тратим (М2) */
     k.sost = 'idet'; k.oshibka = ''; k.nazhata_ts = Date.now(); sohranit(); risovat(true); const g = pok;   /* «идёт» — в хранилище: вкладку могут выгрузить посреди платного */
     try {
       const telo = k.put === GOLOS_PUT ? Object.assign({}, k.telo, { golos: O.golosZapis || null }) : (k.telo || {});   /* платный голос: запись — из памяти, в хранилище её нет */
@@ -126,7 +146,7 @@
     } catch (e) {
       if (g !== pok) return;
       if (e.kod === 'znak_ispolzovan') otvetPoZnaku(k, iz409(e));   /* карточка уже сработала — второй раз не платим, работу показываем (Н10) */
-      else if (e.kod === 'znak_negoden') { k.sost = 'ustarela'; k.oshibka = e.message; delete k.znak; delete k.telo; }
+      else if (e.kod === 'znak_negoden') { k.sost = 'ustarela'; k.oshibka = e.message; if (k.put === GOLOS_PUT) O.golosZapis = null; delete k.znak; delete k.telo; }
       else if (!e.status || e.status >= 500 || e.status === 429) { k.sost = 'proverit'; k.proverkaSboj = true; clearTimeout(sverkaT); sverkaT = setTimeout(sverit, 1500); }   /* обрыв, 5xx прокси, 429: сервер мог работу сделать — спрашиваем по знаку (Б2) */
       else if (PLATNYE.includes(k.put) || k.put === GOLOS_PUT) { k.sost = 'zhdet'; k.oshibka = e.message; }   /* отказ до запуска (мало кредитов и т. п.): можно нажать снова */
       else { k.sost = 'ustarela'; k.oshibka = e.message; delete k.znak; delete k.telo; }   /* бесплатное действие отказано — карточка гаснет: повтор дал бы «повтор» без дела */
@@ -143,7 +163,8 @@
     if (b.otvet) return { status: 'gotovo', otvet: b.otvet };
     if (b.itog) return zapas ? { status: 'gotovo', otvet: b.itog.image ? { image: b.itog.image } : { zid: b.itog.zid, result: { text: b.itog.tekst || '' } } } : { status: 'sprosit' };
     if (b.idet) return { status: 'idet' };
-    return { status: 'ne_poluchilos', spisano: b.spisano }; };
+    if (typeof b.spisano === 'number') return { status: 'ne_poluchilos', spisano: b.spisano };
+    return { status: 'neizvestno' }; };
   let sverkaT = null;
   function otvetPoZnaku(k, z) {
     const st = z && z.status;
@@ -152,7 +173,8 @@
     else if (st === 'sprosit') { k.sost = 'proverit'; clearTimeout(sverkaT); sverkaT = setTimeout(sverit, 0); }
     else if (st === 'ne_nazhata') { k.sost = 'zhdet'; k.ts = Date.now(); }
     else if (st === 'ne_poluchilos') { k.sost = 'ne_vyshlo'; k.spisano = typeof z.spisano === 'number' ? z.spisano : null; if (k.gost) store.set('oknoUk', null); delete k.znak; delete k.telo; }
-    else if (st === 'nazhata') { k.sost = 'ustarela'; k.oshibka = tr('Нажатие дошло до сервера. Чем закончилось — видно в «Что выйдет».'); delete k.znak; delete k.telo; }   /* знак потреблён — это ещё не «сделано» */
+    else if (st === 'neizvestno') { k.sost = 'neizvestno'; if (k.put === GOLOS_PUT) O.golosZapis = null; delete k.znak; delete k.telo; }
+    else if (st === 'nazhata') { k.sost = 'ustarela'; k.oshibka = k.put === GOLOS_PUT ? tr('Голос дошёл до сервера, но ответ потерялся. Скажите ещё раз; если кредиты за голос списались, а текста нет, — напишите нам.') : tr('Нажатие дошло до сервера. Чем закончилось — видно в «Что выйдет».'); if (k.put === GOLOS_PUT) O.golosZapis = null; delete k.znak; delete k.telo; }   /* знак потреблён — это ещё не «сделано» */
     else { k.sost = 'ustarela'; if (k.gost) store.set('oknoUk', null); delete k.znak; delete k.telo; }
     if (k.gost && k.sost === 'ustarela') { const i = O.lenta.findIndex((m) => m.kartochka === k); if (i >= 0) O.lenta.splice(i, 1); }   /* у гостя пустой указатель — просто пустой экран */
   }
@@ -169,8 +191,9 @@
       if (g !== pok) return;
       // ручки нет или сеть упала: то же нажатие с тем же знаком — второй раз сервер ничего не запускает и не списывает
       for (const k of ks) {
+        if (k.put === GOLOS_PUT) { otvetPoZnaku(k, { status: 'nazhata' }); continue; }
         try { const r = await api(k.put, k.telo || {}, { 'X-Operaciya': k.znak }); if (g !== pok) return; otvetPoZnaku(k, { status: 'gotovo', otvet: r }); }
-        catch (e2) { if (g !== pok) return; if (e2.kod === 'znak_ispolzovan') otvetPoZnaku(k, iz409(e2, true)); else if (e2.kod === 'znak_negoden') otvetPoZnaku(k, { status: 'net' }); else { k.proverkaSboj = true; clearTimeout(sverkaT); sverkaT = setTimeout(sverit, 18000); } }
+        catch (e2) { if (g !== pok) return; if (e2.kod === 'znak_ispolzovan') otvetPoZnaku(k, iz409(e2, true)); else if (e2.kod === 'znak_negoden') otvetPoZnaku(k, { status: 'net' }); else { k.proverkaSboj = true; k.sboev = (k.sboev || 0) + 1; if (k.sboev >= 6) { otvetPoZnaku(k, { status: 'neizvestno' }); continue; } clearTimeout(sverkaT); sverkaT = setTimeout(sverit, 18000); } }   /* проверить не выходит — после шести попыток честно «не знаем», поле свободно */
       }
     }
     sohranit(); risovat(true);
@@ -369,12 +392,12 @@
   function pusto() {
     return `<section class="ok-pusto"><h1>Что у вас сегодня?</h1><p class="ok-lead">Скажите или напишите — сделаю пост с картинкой. Кредиты тратятся только по вашему нажатию.</p>
       <div class="ok-povody"><span class="ok-caps">Можно начать с этого</span>
-      ${['Сделай пост про новинку недели', 'Что у меня выходит завтра', 'Сколько осталось кредитов'].map((p) => `<button type="button" class="ok-povod" data-skazat="${esc(tr(p))}"><span>${esc(p)}</span>${ico('i-chevr')}</button>`).join('')}</div></section>`;
+      ${['Сделай пост про новинку недели', 'Что у меня выходит завтра', 'Сколько осталось кредитов'].map((p) => `<button type="button" class="ok-povod" data-skazat="${esc(tr(p))}" aria-label="${esc(tr(p))}"><span>${esc(p)}</span>${ico('i-chevr')}</button>`).join('')}</div></section>`;
   }
   function kartochkaHtml(k, i) {
     if (k.sost === 'sdelano') return `<div class="ok-kart sdelano">${ico('i-check')}<span>${d(k.nadpis_korotko || k.nadpis)}</span></div>`;
     if (k.sost === 'ne_vyshlo') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">${k.spisano ? esc('Не получилось. За неудачную попытку списано ' + k.spisano + ' кр — скажите ещё раз, пришлю новую карточку.') : 'Работа по этой карточке не получилась — кредиты не списаны или возвращены. Скажите ещё раз — пришлю новую карточку.'}</p></div>`;
-    if (k.sost === 'neizvestno') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Не знаем, чем закончилась работа по этой карточке: прошло больше суток. Проверьте баланс в кабинете; если кредиты списаны, а работы нет, — напишите нам.</p></div>`;
+    if (k.sost === 'neizvestno') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">Не знаем, чем закончилась работа по этой карточке. Проверьте баланс в кабинете; если кредиты списаны, а работы нет, — напишите нам.</p></div>`;
     if (k.sost === 'proverit') return `<div class="ok-kart idet" role="status"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">${k.idet ? 'Работа ещё делается — покажу, как только будет готова. Нажимать ещё раз не нужно.' : k.proverkaSboj ? 'Связь прервалась, пока шла работа. Проверяю, дошло ли нажатие, — второй раз не спишем.' : 'Проверяю, что с вашей работой…'}</p></div>`;
     if (k.sost === 'ustarela') return `<div class="ok-kart ustarela"><b class="ok-kart-chto">${d(k.nadpis_korotko || k.nadpis)}</b><p class="ok-small">${k.oshibka ? d(k.oshibka) : 'Карточка устарела. Скажите ещё раз — пришлю новую.'}</p></div>`;
     const net = k.vid === 'platnoe' && k.hvataet === false;
@@ -553,7 +576,7 @@
     on('#ok-stop', () => { clearInterval(otschetT); O.otschet = null; risovat(); const x = $('#ok-t'); if (x) x.focus(); });
     on('[data-skazat]', (b) => skazat(b.dataset.skazat));
     on('[data-nazhat]', (b) => nazhat(O.lenta[+b.dataset.nazhat].kartochka));
-    on('[data-nenado]', (b) => { const k = O.lenta[+b.dataset.nenado].kartochka; k.sost = 'sdelano'; k.nadpis_korotko = tr('Не делаю'); delete k.znak; delete k.telo; sohranit(); risovat(); });
+    on('[data-nenado]', (b) => { const k = O.lenta[+b.dataset.nenado].kartochka; k.sost = 'sdelano'; k.nadpis_korotko = tr('Не делаю'); if (k.put === GOLOS_PUT) O.golosZapis = null; delete k.znak; delete k.telo; sohranit(); risovat(); });
     on('[data-pod]', (b) => { const [i, j] = b.dataset.pod.split(':').map(Number); const p = arr(O.lenta[i].podskazki)[j]; if (!p) return;
       if (p.vid === 'skazat') skazat(p.znachenie); else if (p.znachenie === '#ochered') { O.vid = 'ochered'; zagruzitOchered(); risovat(); } else location.hash = p.znachenie; });
     on('[data-izmenit]', (b) => { O.pole = O.lenta[+b.dataset.izmenit].tekst; risovat(); const x = $('#ok-t'); if (x) x.focus(); });
@@ -660,11 +683,11 @@
   window.addEventListener('storage', (e) => {
     if (e.key !== 'jasa:session' && e.key !== null) return;
     const ekranByl = !!document.getElementById('okw-mesto');
-    sbrosit();
+    S.session = store.get('session', null);   /* запросы этой вкладки — уже с новым входом (М1) */
     // прежний «Создать» у человека без окна не перерисовываем — набранное не пропадёт; окно — перерисовываем для нового человека
     Promise.resolve(J.loadMe ? J.loadMe() : null).then(() => { svoe(); return priznak(); }).then(() => {
       if (!naSozdat()) return;
-      if (ekranByl) { if (vkl()) risovat(true); else J.route(); } else posleProznaka();
+      if (ekranByl) { if (vkl()) { risovat(true); sverit(); } else J.route(); } else posleProznaka();
     });
   });   /* признак пришёл после первой отрисовки: новый экран или кнопка обратно */
 })();
