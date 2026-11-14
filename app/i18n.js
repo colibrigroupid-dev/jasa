@@ -148,6 +148,68 @@
     'Примеры сохраняются после входа через Telegram': ['Үлгілер Telegram арқылы кіргеннен кейін сақталады', 'References are saved after signing in with Telegram'],
     'картинки хранятся за вами и видны и в Telegram, и на компьютере': ['суреттер сізде сақталады және Telegram-да да, компьютерде де көрінеді', 'images stay yours and show both in Telegram and on the computer'],
     'Поиск своими словами: ночь, крупный план, тёплый свет, еда…': ['Өз сөзіңізбен іздеу: түн, ірі план, жылы жарық, тағам…', 'Search in your own words: night, close-up, warm light, food…'],
+    // ---- KZ кабинета, порция 8 (14.11): первые экраны «Мультиков» и «Презентаций» (названия типов и языков приходят с сервера по-русски) ----
+    'Все мультики': ['Барлық мультфильм', 'All cartoons'],
+    'Обучающий мультик к уроку': ['Сабаққа арналған оқыту мультфильмі', 'An educational cartoon for a lesson'],
+    'Два героя-зверёнка объясняют одну мысль урока: один знает, второй спрашивает. Вы утверждаете каждый шаг — сценарий, кадры, голоса, ролики. Цена видна до запуска, дорогое видео — только после ваших «да» на картинки.': ['Екі кейіпкер-жануар сабақтың бір ойын түсіндіреді: бірі біледі, екіншісі сұрайды. Әр қадамды өзіңіз бекітесіз — сценарий, кадрлар, дауыстар, роликтер. Баға іске қоспас бұрын көрініп тұрады, қымбат бейне — тек суреттерге «иә» дегеніңізден кейін.', 'Two animal characters explain one idea of the lesson: one knows, the other asks. You approve every step — script, shots, voices, clips. The price is shown before start, costly video comes only after your «yes» to the pictures.'],
+    'картинки, голос и ролики — примеры, кредиты считаются как настоящие.': ['суреттер, дауыс және роликтер — үлгі, кредиттер шынайыдай есептеледі.', 'pictures, voice and clips are samples; credits are counted as real.'],
+    'Готовый сценарий ·': ['Дайын сценарий ·', 'Ready script ·'],
+    'Сценарий, раскадровка и лист героев уже есть — утвердить бесплатно и сразу к озвучке.': ['Сценарий, раскадровка және кейіпкерлер парағы дайын — тегін бекітіп, бірден дыбыстауға көшесіз.', 'The script, storyboard and character sheet are ready — approve for free and go straight to voicing.'],
+    'Новый мультик': ['Жаңа мультфильм', 'New cartoon'],
+    'О чём урок': ['Сабақ не туралы', 'What the lesson is about'],
+    'Тема урока': ['Сабақ тақырыбы', 'Lesson topic'],
+    'Предмет': ['Пән', 'Subject'],
+    'Класс': ['Сынып', 'Grade'],
+    'Язык ролика': ['Ролик тілі', 'Video language'],
+    'Длительность': ['Ұзақтығы', 'Length'],
+    'Задание зрителю': ['Көрерменге тапсырма', 'A task for the viewer'],
+    'Ответь вслух · 7 с': ['Дауыстап жауап бер · 7 с', 'Answer aloud · 7 s'],
+    'Покажи жестом · 5 с': ['Ыммен көрсет · 5 с', 'Show with a gesture · 5 s'],
+    'Запиши в тетради · пауза': ['Дәптерге жаз · үзіліс', 'Write in your notebook · pause'],
+    'Цели урока, КСП или термины из учебника': ['Сабақ мақсаттары, ҚМЖ немесе оқулықтағы терминдер', 'Lesson goals, the short-term plan or textbook terms'],
+    '— по желанию, вставьте текст': ['— қалауыңызша, мәтінді қойыңыз', '— optional, paste the text'],
+    '— по желанию': ['— қалауыңызша', '— optional'],
+    'Где происходит': ['Оқиға қайда өтеді', 'Where it happens'],
+    'Герои — нарисованные зверята': ['Кейіпкерлер — салынған жануарлар', 'The characters are drawn animals'],
+    '+ третий герой': ['+ үшінші кейіпкер', '+ a third character'],
+    'Начать · бесплатно': ['Бастау · тегін', 'Start · free'],
+    'Какие бывают растения?': ['Өсімдіктер қандай болады?', 'What kinds of plants are there?'],
+    'Цели обучения, что дети должны понять, термины как в учебнике…': ['Оқу мақсаттары, балалар нені түсінуі керек, оқулықтағыдай терминдер…', 'Learning goals, what the children should understand, terms as in the textbook…'],
+    'Горная поляна у речки, начало осени': ['Өзен жағасындағы тау алаңқайы, күздің басы', 'A mountain glade by a stream, early autumn'],
+    'Имя': ['Аты', 'Name'],
+    'Кто: снежный барс, лисёнок…': ['Кім: қар барысы, түлкінің баласы…', 'Who: a snow leopard, a fox cub…'],
+    'Роль: объясняет / спрашивает': ['Рөлі: түсіндіреді / сұрайды', 'Role: explains / asks'],
+    'Все презентации': ['Барлық презентация', 'All presentations'],
+    'Презентация к защите или к питчу': ['Қорғауға немесе питчке арналған презентация', 'A deck for a defence or a pitch'],
+    'Скажите голосом или напишите, что за выступление, и приложите свою работу или цифры. Команда агентов ИИ соберёт слайды, текст к выступлению под каждым слайдом и тайминг — займёт 5–10 минут, платите только за шаги, которые запустите. JASA не добавляет цифр от себя: каждую цифру и источник код сверяет с вашими материалами, сомнительное подсвечено жёлтым. Перед выступлением проверьте сами.': ['Сөйлейтін сөзіңіз қандай екенін дауыспен айтыңыз немесе жазыңыз, жұмысыңызды не сандарыңызды қоса беріңіз. ЖИ агенттер командасы слайдтарды, әр слайдтың астындағы сөз мәтінін және уақыт есебін жинайды — 5–10 минут алады, тек өзіңіз іске қосқан қадамдарға ғана төлейсіз. JASA өз тарапынан сан қоспайды: әр сан мен дереккөзді код сіздің материалдарыңызбен салыстырады, күмәндісі сары түспен белгіленеді. Сөз сөйлер алдында өзіңіз тексеріп шығыңыз.', 'Say or write what kind of talk it is and attach your work or figures. A team of AI agents builds the slides, the speech under each slide and the timing — it takes 5–10 minutes, you pay only for the steps you start. JASA adds no figures of its own: code checks every number and source against your materials, doubtful ones are marked yellow. Check it yourself before you speak.'],
+    'Слайды, тексты и речь готовит ИИ.': ['Слайдтарды, мәтіндерді және сөзді ЖИ дайындайды.', 'Slides, texts and the speech are prepared by AI.'],
+    'тексты-примеры, кредиты не списываются.': ['мәтіндер — үлгі, кредиттер есептен шығарылмайды.', 'the texts are samples, no credits are charged.'],
+    'Новая презентация': ['Жаңа презентация', 'New presentation'],
+    'Для кого и о чём': ['Кімге және не туралы', 'For whom and about what'],
+    'Студенту': ['Студентке', 'For a student'],
+    'Бизнесу': ['Бизнеске', 'For a business'],
+    'Кафедра · защита, курсовая, доклад': ['Кафедра · қорғау, курстық жұмыс, баяндама', 'Faculty · defence, term paper, report'],
+    'Питч-команда · питч, грант, КП, отчёт': ['Питч-команда · питч, грант, коммерциялық ұсыныс, есеп', 'Pitch team · pitch, grant, proposal, report'],
+    'Что за выступление': ['Сөз сөйлеу түрі', 'What kind of talk'],
+    'Защита диплома ·': ['Диплом қорғау ·', 'Diploma defence ·'],
+    'Защита диплома': ['Диплом қорғау', 'Diploma defence'],
+    'Курсовая': ['Курстық жұмыс', 'Term paper'],
+    'Доклад': ['Баяндама', 'Report'],
+    'Проект': ['Жоба', 'Project'],
+    'Питч инвестору ·': ['Инвесторға питч ·', 'Investor pitch ·'],
+    'Питч инвестору': ['Инвесторға питч', 'Investor pitch'],
+    'Грант QazInnovations ·': ['QazInnovations гранты ·', 'QazInnovations grant ·'],
+    'Грант QazInnovations': ['QazInnovations гранты', 'QazInnovations grant'],
+    'Тема или задача — голосом или текстом': ['Тақырып немесе міндет — дауыспен не мәтінмен', 'Topic or task — by voice or text'],
+    'казахский': ['қазақша', 'Kazakh'],
+    'английский': ['ағылшынша', 'English'],
+    'Регламент': ['Регламент', 'Time limit'],
+    'Вуз, руководитель, требования кафедры': ['ЖОО, жетекші, кафедра талаптары', 'University, supervisor, faculty requirements'],
+    'Ваша работа — файлом или текстом (лучше целиком: возьмём введение, выводы, заключение и литературу)': ['Жұмысыңыз — файлмен не мәтінмен (толық болғаны дұрыс: кіріспесін, тұжырымдарын, қорытындысын және әдебиет тізімін аламыз)', 'Your work — as a file or text (better in full: we take the introduction, findings, conclusion and references)'],
+    'Материалы уходят к модели ИИ, хранятся 30 дней и удаляются вместе с проектом.': ['Материалдар ЖИ моделіне жіберіледі, 30 күн сақталады және жобамен бірге өшіріледі.', 'Materials go to the AI model, are kept for 30 days and are deleted together with the project.'],
+    'Собрать структуру · бесплатно': ['Құрылымын жинау · тегін', 'Build the outline · free'],
+    'Защита диплома по экономике, КазНУ, 7 минут, тема — цифровизация МСБ в Алматы': ['Экономикадан диплом қорғау, ҚазҰУ, 7 минут, тақырыбы — Алматыдағы ШОБ-ты цифрландыру', 'An economics diploma defence, KazNU, 7 minutes, topic — digitalisation of SMEs in Almaty'],
+    'Вставьте текст или перетащите файл .docx, .pdf, .txt': ['Мәтінді қойыңыз немесе .docx, .pdf, .txt файлын сүйреп әкеліңіз', 'Paste the text or drag in a .docx, .pdf or .txt file'],
     // ---- KZ кабинета, порция 7 (14.11): первый экран «Сценария» ----
     'Загрузите сценарий': ['Сценарийді жүктеңіз', 'Upload a script'],
     'Выпишем, что нельзя трогать, и разберём структуру, героев, диалоги, рынок и риски. Без вашего «да» ничего не меняется.': ['Нені өзгертуге болмайтынын жазып аламыз да, құрылымды, кейіпкерлерді, диалогтарды, нарық пен тәуекелдерді талдаймыз. Сіздің «иә» дегеніңізсіз ештеңе өзгермейді.', 'We write down what must not be touched and break down structure, characters, dialogue, market and risks. Nothing changes without your «yes».'],
@@ -416,6 +478,11 @@
   const postEn = (n) => (+n === 1 ? 'post' : 'posts');
   const L = (y, kz, en) => (y === 'kz' ? kz : en);
   const P = [
+    // «Мультики» и «Презентации» (14.11)
+    [/^Мультик такой длины ≈ ([\d\s  ,]+) кр в 720p \(≈ ([\d\s  ,]+) кр в 480p\); точную цену покажем перед каждым платным шагом\. Сначала — бесплатный черновик картинками с голосом, видео — только если понравилось\.$/, (m, y) => L(y, 'Мұндай ұзақтықтағы мультфильм ≈ ' + m[1] + ' кр, 720p (≈ ' + m[2] + ' кр, 480p); нақты бағаны әр ақылы қадамның алдында көрсетеміз. Алдымен — дауысы бар суреттерден тұратын тегін нобай, бейне — тек ұнаса ғана.', 'A cartoon of this length ≈ ' + m[1] + ' cr in 720p (≈ ' + m[2] + ' cr in 480p); the exact price is shown before each paid step. First — a free draft of pictures with voice; video only if you like it.')],
+    [/^пакет (\d+) кр$/, (m, y) => L(y, 'пакет ' + m[1] + ' кр', 'package ' + m[1] + ' cr')],
+    [/^Собрать структуру · до ([\d\s  ,]+) кр$/, (m, y) => L(y, 'Құрылымын жинау · ' + m[1] + ' кр дейін', 'Build the outline · up to ' + m[1] + ' cr')],
+    [/^ещё (\d+) раз сегодня бесплатно$/, (m, y) => L(y, 'бүгін тағы ' + m[1] + ' рет тегін', m[1] + ' more free today')],
     // «Сценарий» (14.11): шаги «2 · Четыре вопроса», цена разбора на кнопке и в подсказке
     [/^(\d) · (.+)$/, (m, y) => { const v = D[m[2]]; return v ? m[1] + ' · ' + L(y, v[0], v[1]) : null; }],
     [/^разбор · ([\d\s  ,]+) кр$/, (m, y) => L(y, 'талдау · ' + m[1] + ' кр', 'breakdown · ' + m[1] + ' cr')],
@@ -521,9 +588,10 @@
   const NE_TROGAT = '[data-no-i18n],script,style,textarea,input,.posttext,.iz-pre,.tgmsg,.q,.hooks,.kv dd,.sg-qq,.sg-z,.id-q,.ed-text,.posttext *,.final-body,.sheet .txt,code,pre';
   function perevodStroki(t) {
     if (ui === 'ru' || !t) return null;
-    const s = t.replace(/\s+/g, ' ').trim(); if (!s || s.length > 260 || !/[А-Яа-яЁё]/.test(s)) return null;
+    const s = t.replace(/\s+/g, ' ').trim(); if (!s || s.length > 700 || !/[А-Яа-яЁё]/.test(s)) return null;
     const i = ui === 'kz' ? 0 : 1;
-    if (Object.prototype.hasOwnProperty.call(D, s)) return D[s][i];
+    if (Object.prototype.hasOwnProperty.call(D, s)) return D[s][i];   // точное совпадение — при любой длине (вступления экранов бывают длинными)
+    if (s.length > 260) return null;   // шаблоны и регистр — только для коротких строк
     const S1 = s.charAt(0).toUpperCase() + s.slice(1); if (Object.prototype.hasOwnProperty.call(D, S1)) { const v = D[S1][i]; return ui === 'en' ? v.toLowerCase() : v.charAt(0).toLowerCase() + v.slice(1); }
     for (const [rx, f] of P) { const m = s.match(rx); if (m) { const r = f(m, ui); if (r) return r; } }
     return null;

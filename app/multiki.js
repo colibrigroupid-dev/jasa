@@ -41,7 +41,7 @@
       return;
     }
     box.innerHTML = intro() + (arr(L.proekty).length ? `<div class="mk-list">${L.proekty.map((x) => `<a class="card mk-pr" href="#/multiki?p=${esc(x.id)}"><b>${esc(x.nazvanie)}</b><span class="small muted">${x.gotov ? 'Готов' : 'Шаг: ' + esc(name(x.shag))} · потрачено ${kr(x.potracheno)}</span><span class="dim small">${esc(x.ts)}</span></a>`).join('')}</div>` : '') +
-      (arr(L.shablony).length ? `<section class="card mk-shab"><span class="caps">Готовый сценарий · ${esc(L.shablony[0].gruppa)}</span><p class="small muted" style="margin:6px 0 12px">Сценарий, раскадровка и лист героев уже есть — утвердить бесплатно и сразу к озвучке.</p><div class="mk-row">${L.shablony.map((x) => `<button class="btn sm" data-shab="${esc(x.kod)}">${esc(x.nazvanie)} · ${x.sek} с</button>`).join('')}</div></section>` : '') +
+      (arr(L.shablony).length ? `<section class="card mk-shab"><span class="caps">Готовый сценарий · <span data-no-i18n>${esc(L.shablony[0].gruppa)}</span></span><p class="small muted" style="margin:6px 0 12px">Сценарий, раскадровка и лист героев уже есть — утвердить бесплатно и сразу к озвучке.</p><div class="mk-row">${L.shablony.map((x) => `<button class="btn sm" data-shab="${esc(x.kod)}" data-no-i18n>${esc(x.nazvanie)} · ${x.sek} с</button>`).join('')}</div></section>` : '') +
       `<form class="card mk-brif" id="mkb" autocomplete="off"><span class="caps">Новый мультик</span><h3 style="margin:6px 0 16px">О чём урок</h3>${brifFields(null)}
       <div class="mk-row"><button class="btn accent" type="submit">Начать · бесплатно</button><span class="small muted" id="mksm"></span></div></form>`;
     bindBrif($('#mkb'), null);
