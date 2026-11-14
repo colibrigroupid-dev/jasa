@@ -112,7 +112,7 @@
       if (g !== pok) return;
       if (e.kod === 'znak_ispolzovan') { k.sost = 'uzhe'; delete k.znak; delete k.telo; }   /* карточка уже сработала — второй раз не платим (Н10) */
       else if (e.kod === 'znak_negoden') { k.sost = 'ustarela'; delete k.znak; delete k.telo; }
-      else { k.sost = 'zhdet'; k.oshibka = e.message; }
+      else { k.sost = 'zhdet'; k.oshibka = e.status ? e.message : tr('Связь прервалась. Нажмите ещё раз — дважды за одну карточку не спишем.'); }   /* знак карточки одноразовый: повтор не платный */
     }
     sohranit(); risovat(true);
   }
@@ -471,7 +471,7 @@
     on('#ok-stop', () => { clearInterval(otschetT); O.otschet = null; risovat(); const x = $('#ok-t'); if (x) x.focus(); });
     on('[data-skazat]', (b) => skazat(b.dataset.skazat));
     on('[data-nazhat]', (b) => nazhat(O.lenta[+b.dataset.nazhat].kartochka));
-    on('[data-nenado]', (b) => { const k = O.lenta[+b.dataset.nenado].kartochka; k.sost = 'sdelano'; k.nadpis_korotko = 'Не делаю'; sohranit(); risovat(); });
+    on('[data-nenado]', (b) => { const k = O.lenta[+b.dataset.nenado].kartochka; k.sost = 'sdelano'; k.nadpis_korotko = 'Не делаю'; delete k.znak; delete k.telo; sohranit(); risovat(); });
     on('[data-pod]', (b) => { const [i, j] = b.dataset.pod.split(':').map(Number); const p = arr(O.lenta[i].podskazki)[j]; if (!p) return;
       if (p.vid === 'skazat') skazat(p.znachenie); else if (p.znachenie === '#ochered') { O.vid = 'ochered'; zagruzitOchered(); risovat(); } else location.hash = p.znachenie; });
     on('[data-izmenit]', (b) => { O.pole = O.lenta[+b.dataset.izmenit].tekst; risovat(); const x = $('#ok-t'); if (x) x.focus(); });
