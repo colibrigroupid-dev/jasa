@@ -87,6 +87,9 @@
     if (TG) headers['X-Tg-Init'] = TG.initData;
     else if (S.session) headers['X-Session'] = S.session;
     headers['X-Ustrojstvo'] = USTR;
+    // Язык интерфейса — серверу, чтобы ответы моделей и ошибки шли на языке человека. Шлём, только если сервер сам назвал этот заголовок
+    // разрешённым (/api/ceny → zagolovki): серверу прежней версии незнакомый заголовок ломает все запросы страницы (14.11).
+    if (S.ceny && Array.isArray(S.ceny.zagolovki) && S.ceny.zagolovki.includes('X-Yazyk') && window.JASA_I18N) headers['X-Yazyk'] = window.JASA_I18N.ui;
     const r = await fetch(API_BASE + path, body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers });
     if (r.status === 429) throw Object.assign(new Error('Слишком много запросов — подождите минуту и попробуйте снова'), { status: 429 });
     const j = await r.json().catch(() => ({ error: 'Сервис временно недоступен, попробуйте через минуту' }));
