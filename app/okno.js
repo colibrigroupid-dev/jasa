@@ -16,6 +16,7 @@
   const klyuch = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'k' + Date.now() + Math.random().toString(16).slice(2));
   const kz = () => !!(window.JASA_I18N && window.JASA_I18N.ui === 'kz');
   const poYazyku = (o, pole) => (o ? (kz() ? o[pole + '_kz'] || o[pole + '_ru'] : o[pole + '_ru'] || o[pole + '_kz']) || '' : '');
+  /* ссылка «Открыть пост» — только http и https (замечание bezopasnost 14.11) */
   const absUrl = (u) => (J.absUrl ? J.absUrl(u) : u);
 
   // ---- признак сервера ----
@@ -27,9 +28,28 @@
   }
 
   // ---- состояние: лента разговора и нынешняя работа; живёт в хранилище — вкладка выгружается, пока человек в Telegram ----
-  const O = Object.assign({ lenta: [], post: null, vid: 'okno', list: null, kanal: null, pole: '', otschet: null, golos: null, ochered: null, perenos: null }, store.get('okno', {}) || {});
-  O.vid = 'okno'; O.list = null; O.kanal = null; O.golos = null; O.otschet = null;
-  const sohranit = () => store.set('okno', { lenta: O.lenta.slice(-40), post: O.post });
+  // Запись в хранилище — с номером человека: на общем планшете следующий не видит чужой разговор (находка bezopasnost Э2, 14.11).
+  // Восстанавливается только своя запись и только после ответа /api/me; чужая и запись при выходе стираются.
+  const KART_ZHIVET = 15 * 60e3;   // ненажатая карточка старше — знак уже мёртв, из хранилища не восстанавливается
+  const pustoe = () => ({ uid: '', lenta: [], post: null, vid: 'okno', list: null, kanal: null, pole: '', otschet: null, golos: null, ochered: null, perenos: null, kanaly: null, podskazka: null });
+  const O = pustoe();
+  const kto = () => (S.me && !S.me.guest && S.me.uid) || '';
+  const sohranit = () => { const u = kto(); if (u && O.uid === u) store.set('okno', { uid: u, lenta: O.lenta.slice(-40), post: O.post }); };
+  function sbrosit() { clearTimeout(kartT); Object.assign(O, pustoe()); store.set('okno', null); }
+  function svoe() {
+    if (S.me === undefined || S.me === null) return;   // /api/me ещё не ответил или не дошёл: не восстанавливаем и не стираем
+    const u = kto();
+    if (O.uid && O.uid !== u) sbrosit();
+    if (!u) { if (store.get('okno', null)) store.set('okno', null); return; }   // гость, истёкшая сессия: чужое не держим
+    if (O.uid) return;
+    const z = store.get('okno', null); O.uid = u;
+    if (!z || z.uid !== u) { if (z) store.set('okno', null); return; }
+    O.lenta = arr(z.lenta); O.post = z.post || null;
+    const t = Date.now();
+    for (const m of O.lenta) { const k = m.kartochka; if (k && k.sost === 'zhdet' && !(k.ts && t - k.ts < KART_ZHIVET)) { k.sost = 'ustarela'; delete k.znak; delete k.telo; } }
+    sohranit();
+  }
+  document.addEventListener('click', (e) => { if (e.target && e.target.closest && e.target.closest('#logout')) sbrosit(); }, true);   /* выход из кабинета стирает разговор */
   const zhdushchaya = () => { const m = [...O.lenta].reverse().find((x) => x.kartochka && x.kartochka.sost === 'zhdet'); return m ? m.kartochka : null; };
 
   // ---- время по Алматы ----
@@ -51,7 +71,7 @@
   const isoAlm = (ymd, hm) => ymd + 'T' + hm + ':00+05:00';
 
   // ---- разговор ----
-  function otA(o) { if (o.kartochka) o.kartochka.sost = 'zhdet'; O.lenta.push(Object.assign({ kto: 'a' }, o)); sohranit(); }
+  function otA(o) { if (o.kartochka) { o.kartochka.sost = 'zhdet'; o.kartochka.ts = Date.now(); } O.lenta.push(Object.assign({ kto: 'a' }, o)); sohranit(); }
   async function skazat(tekst, istochnik) {
     tekst = String(tekst || '').trim(); if (!tekst) return;
     clearInterval(otschetT); O.otschet = null; O.golosPusto = false;
@@ -306,7 +326,7 @@
       : st === 'otmenen' ? `<button type="button" class="ok-mini acc" data-vernut="${p.id}">Вернуть</button>`
       : st === 'oshibka' || st === 'neizvestno' || st === 'nuzhno_da' ? `<button type="button" class="ok-mini acc" data-povtorit="${p.id}" data-hesh="${esc(p.hesh || '')}">${st === 'nuzhno_da' ? 'Опубликовать сейчас' : 'Повторить'}</button><button type="button" class="ok-mini" data-otmenit="${p.id}">Отменить</button>`
       : st === 'napomnili' ? `<button type="button" class="ok-mini acc" data-nap="gotovo" data-napc="${c.id}">Выложено</button><button type="button" class="ok-mini" data-nap="pozzhe" data-napc="${c.id}">Через час</button>`
-      : st === 'opublikovan' && c.ssylka ? `<a class="ok-mini" href="${esc(c.ssylka)}" target="_blank" rel="noopener">Открыть пост</a>` : '';
+      : st === 'opublikovan' && /^https?:\/\//i.test(c.ssylka || '') ? `<a class="ok-mini" href="${esc(c.ssylka)}" target="_blank" rel="noopener">Открыть пост</a>` : '';
     const prich = poYazyku(c, 'prichina');
     return `<article class="ok-cel ${st}"><time data-no-i18n>${c.kogda_ts ? chas(c.kogda_ts * 1000) : '—'}</time>${p.kartinka ? `<img src="${esc(absUrl(p.kartinka))}" alt="" loading="lazy">` : '<i class="ok-bezk"></i>'}
       <div class="ok-cel-t"><p data-no-i18n>${esc(p.nachalo || '')}</p><span class="ok-cel-m"><span class="ok-chip" data-no-i18n>${esc((c.kanal || {}).nik || '')}</span><span class="ok-st ${st}">${STAT[st] || st}</span></span>${prich ? `<span class="ok-prich" data-no-i18n>${esc(prich)}</span>` : ''}</div>
@@ -379,6 +399,7 @@
   }
   function risovat(vniz) {
     if (!vkl() || !main || !document.getElementById('okw-mesto')) return;
+    if (O.uid !== kto()) svoe();   /* человек сменился без перезагрузки — чужое не показываем */
     const box = $('#okw-mesto'); const fok = document.activeElement && document.activeElement.id;
     box.innerHTML = verh() + (O.vid === 'ochered' ? ochered() : `<div class="ok-razgovor">${lenta()}</div>${pole()}`) + list() + kanalHtml();
     document.body.classList.toggle('okw-list', !!(O.list || O.kanal));   /* лист поверх нижней панели кабинета: панель прячется, пока он открыт */
@@ -472,5 +493,5 @@
   window.addEventListener('hashchange', () => document.body.classList.remove('okw-list'));
   J.okno = { priznak, vkl, O, vernutNovyj: () => { store.set('oknoStaryj', false); J.route(); } };
   const naSozdat = () => /^#?\/?(sozdat)?$/.test((location.hash || '').replace(/\?.*$/, '')) || (location.hash || '').startsWith('#/sozdat');
-  (S.meP || Promise.resolve()).then(priznak).then(() => { if (!naSozdat()) return; if (vkl()) J.route(); else knopkaNazad(); });   /* признак пришёл после первой отрисовки: новый экран или кнопка обратно */
+  (S.meP || Promise.resolve()).then(() => { svoe(); return priznak(); }).then(() => { if (!naSozdat()) return; if (vkl()) J.route(); else knopkaNazad(); });   /* признак пришёл после первой отрисовки: новый экран или кнопка обратно */
 })();
