@@ -10,11 +10,12 @@
   const J = window.JASA; if (!J) return;
   const { api, esc, $, $$, arr, toast, S, store } = J;
   const main = $('#main');
-  const VER = '6';
+  const VER = '7';
   const d = (s) => `<span data-no-i18n>${esc(s)}</span>`;
   const ico = (n) => `<svg class="ok-i" aria-hidden="true"><use href="#${n}"/></svg>`;
   const klyuch = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'k' + Date.now() + Math.random().toString(16).slice(2));
   const kz = () => !!(window.JASA_I18N && window.JASA_I18N.ui === 'kz');
+  const en = () => !!(window.JASA_I18N && window.JASA_I18N.ui === 'en');
   const poYazyku = (o, pole) => (o ? (kz() ? o[pole + '_kz'] || o[pole + '_ru'] : o[pole + '_ru'] || o[pole + '_kz']) || '' : '');
   /* ссылка «Открыть пост» — только http и https (замечание bezopasnost 14.11) */
   const absUrl = (u) => (J.absUrl ? J.absUrl(u) : u);
@@ -37,11 +38,22 @@
   const kto = () => (S.me && !S.me.guest && S.me.uid) || '';
   const sohranit = () => { const u = kto(); if (u && O.uid === u) store.set('okno', { uid: u, lenta: O.lenta.slice(-40), post: O.post }); };
   let pok = 0;   // поколение входа: ответ, пришедший после выхода или смены человека, к новому разговору не пишется (Н6)
-  function sbrosit() { pok += 1; clearTimeout(kartT); Object.assign(O, pustoe()); store.set('okno', null); }
+  // Гость: разговор на устройстве не храним (общий планшет), только указатель — знак последней оплаченной карточки, без текста.
+  // После перезагрузки (и смены языка — она перезагружает) пост берём с сервера по знаку; сервер отдаёт его только тому же гостю.
+  const PLATNYE = ['/api/ask', '/api/kartinka'];
+  function ukazatelGostya(k, znak) { if (kto() || !znak || !PLATNYE.includes(k.put)) return; store.set('oknoUk', { znak, put: k.put, nadpis: k.nadpis_korotko || k.nadpis || '', ts: Date.now() }); }
+  function vosstanovitGostya() {
+    const uk = store.get('oknoUk', null); if (!uk) return;
+    if (!uk.znak || !(Date.now() - (uk.ts || 0) < ZNAK_ZHIVET)) { store.set('oknoUk', null); return; }
+    if (O.lenta.length) return;
+    O.lenta.push({ kto: 'a', otvet: '', kartochka: { sost: 'proverit', znak: uk.znak, put: uk.put, nadpis: uk.nadpis, nadpis_korotko: uk.nadpis, ts: uk.ts, gost: true } });
+  }
+  function sbrosit() { store.set('oknoUk', null); pok += 1; clearTimeout(kartT); Object.assign(O, pustoe()); store.set('okno', null); }
   function svoe() {
     if (S.me === undefined || S.me === null) return;   // /api/me ещё не ответил или не дошёл: не восстанавливаем и не стираем
     const u = kto();
     if (O.uid && O.uid !== u) sbrosit();
+    if (u) store.set('oknoUk', null); else vosstanovitGostya();   /* указатель гостя — только гостю */
     if (!u) { if (store.get('okno', null)) store.set('okno', null); return; }   // гость, истёкшая сессия: чужое не держим
     if (O.uid) return;
     O.lenta = []; O.post = null;   /* разговор из памяти страницы до входа — не наследуем (Н6) */
@@ -63,15 +75,15 @@
   const chas = (ms) => alm(ms).toISOString().slice(11, 16);
   const tsIz = (iso) => (iso ? Date.parse(iso) : 0);
   // дни и время — в данных экрана (рядом с числами), поэтому по языку здесь, а не словарём
-  const MES = { ru: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'], kz: ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым', 'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан'] };
-  const DN = { ru: ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'], kz: ['жс', 'дс', 'сс', 'ср', 'бс', 'жм', 'сн'] };
-  const SLOVA = { ru: ['Сегодня', 'сегодня', 'Завтра', 'завтра'], kz: ['Бүгін', 'бүгін', 'Ертең', 'ертең'] };
-  const yz = () => (kz() ? 'kz' : 'ru');
+  const MES = { en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], ru: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'], kz: ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым', 'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан'] };
+  const DN = { en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], ru: ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'], kz: ['жс', 'дс', 'сс', 'ср', 'бс', 'жм', 'сн'] };
+  const SLOVA = { en: ['Today', 'today', 'Tomorrow', 'tomorrow'], ru: ['Сегодня', 'сегодня', 'Завтра', 'завтра'], kz: ['Бүгін', 'бүгін', 'Ертең', 'ертең'] };
+  const yz = () => (kz() ? 'kz' : en() ? 'en' : 'ru');
   const denSlovo = (ms, zagl) => { const dd = den(ms), seg = den(); const zav = den(Date.now() + 864e5); const S2 = SLOVA[yz()];
     if (dd === seg) return zagl ? S2[0] : S2[1]; if (dd === zav) return zagl ? S2[2] : S2[3];
     const a = alm(ms); return DN[yz()][a.getUTCDay()] + ', ' + a.getUTCDate() + ' ' + MES[yz()][a.getUTCMonth()]; };
-  const kogdaZagl = (ms) => denSlovo(ms, true) + (kz() ? ', ' : ' в ') + chas(ms);
-  const kogdaSlovami = (ms) => (kz() ? denSlovo(ms) + ', ' + chas(ms) : denSlovo(ms) + ' в ' + chas(ms));
+  const kogdaZagl = (ms) => denSlovo(ms, true) + (kz() || en() ? ', ' : ' в ') + chas(ms);
+  const kogdaSlovami = (ms) => (kz() || en() ? denSlovo(ms) + ', ' + chas(ms) : denSlovo(ms) + ' в ' + chas(ms));
   const tr = (ru) => (window.JASA_I18N ? window.JASA_I18N.t(ru) : ru);   // строка экрана, которая уходит в данные (ответ экрана, слова в поле)
   const isoAlm = (ymd, hm) => ymd + 'T' + hm + ':00+05:00';
 
@@ -108,7 +120,7 @@
     try {
       const r = await api(k.put, k.telo || {}, { 'X-Operaciya': k.znak });
       if (g !== pok) return;
-      k.sost = 'sdelano'; delete k.znak; delete k.telo; posle(k, r);
+      k.sost = 'sdelano'; ukazatelGostya(k, k.znak); delete k.znak; delete k.telo; posle(k, r);
     } catch (e) {
       if (g !== pok) return;
       if (e.kod === 'znak_ispolzovan') otvetPoZnaku(k, iz409(e));   /* карточка уже сработала — второй раз не платим, работу показываем (Н10) */
@@ -123,12 +135,13 @@
   let sverkaT = null;
   function otvetPoZnaku(k, z) {
     const st = z && z.status;
-    if (st === 'gotovo') { k.sost = 'sdelano'; delete k.znak; delete k.telo; posle(k, z.otvet || {}); }
+    if (st === 'gotovo') { k.sost = 'sdelano'; if (!k.gost) ukazatelGostya(k, k.znak); delete k.znak; delete k.telo; posle(k, z.otvet || {}); }
     else if (st === 'idet') { k.sost = 'proverit'; k.idet = true; clearTimeout(sverkaT); sverkaT = setTimeout(sverit, 18000); }
     else if (st === 'ne_nazhata') { k.sost = 'zhdet'; k.ts = Date.now(); }
-    else if (st === 'ne_poluchilos') { k.sost = 'ne_vyshlo'; delete k.znak; delete k.telo; }
+    else if (st === 'ne_poluchilos') { k.sost = 'ne_vyshlo'; if (k.gost) store.set('oknoUk', null); delete k.znak; delete k.telo; }
     else if (st === 'nazhata') { k.sost = 'sdelano'; delete k.znak; delete k.telo; }
-    else { k.sost = 'ustarela'; delete k.znak; delete k.telo; }
+    else { k.sost = 'ustarela'; if (k.gost) store.set('oknoUk', null); delete k.znak; delete k.telo; }
+    if (k.gost && k.sost === 'ustarela') { const i = O.lenta.findIndex((m) => m.kartochka === k); if (i >= 0) O.lenta.splice(i, 1); }   /* у гостя пустой указатель — просто пустой экран */
   }
   // после перезагрузки: по нажатым карточкам без ответа спрашиваем сервер; списаний и запусков здесь нет
   async function sverit() {
@@ -246,7 +259,7 @@
       store.set('oknoProshloe', L.kogda === 'sejchas' ? 'sejchas' : 'podskazka');
       const niki = O.kanaly.filter((x) => L.vybrany.includes(x.id)).map((x) => x.nik).join(', ');
       P.odobren = true; O.list = null; O.ochered = null;
-      otA({ otvet: kogda === 'seichas' ? (kz() ? 'Қабылданды. Жариялап жатырмын: ' : 'Принято. Публикую: ') + niki + '.' : (kz() ? 'Қабылданды. Шығады: ' + kogdaSlovami(tsIz(kogda)) + ', ' : 'Принято. Выйдет ' + kogdaSlovami(tsIz(kogda)) + ': ') + niki + '.', podskazki: [{ nadpis: tr('Что выйдет'), vid: 'otkryt', znachenie: '#ochered' }] });
+      otA({ otvet: kogda === 'seichas' ? (kz() ? 'Қабылданды. Жариялап жатырмын: ' : en() ? 'Done. Publishing to: ' : 'Принято. Публикую: ') + niki + '.' : (kz() ? 'Қабылданды. Шығады: ' + kogdaSlovami(tsIz(kogda)) + ', ' : en() ? 'Done. Goes out ' + kogdaSlovami(tsIz(kogda)) + ': ' : 'Принято. Выйдет ' + kogdaSlovami(tsIz(kogda)) + ': ') + niki + '.', podskazki: [{ nadpis: tr('Что выйдет'), vid: 'otkryt', znachenie: '#ochered' }] });
     } catch (e) {
       L.idet = false; L.oshibka = e.message;
       if (e.kod === 'hesh_ustarel') {   /* пост изменился: показываем новую версию сервера, «да» — уже на неё (Н5) */
@@ -331,7 +344,7 @@
     const net = k.vid === 'platnoe' && k.hvataet === false;
     return `<div class="ok-kart ${k.sost}"><b class="ok-kart-chto">${d(k.nadpis)}</b>
       ${k.ponyal ? `<p class="ok-ponyal"><span class="ok-caps">Понял так</span> ${d(k.ponyal)}</p>` : ''}
-      <button type="button" class="ok-btn acc ok-kart-btn" data-nazhat="${i}" ${k.sost !== 'zhdet' || net ? 'disabled' : ''}><span>${k.sost === 'idet' ? 'Делаю…' : 'Сделать'}</span>${typeof k.kr_do === 'number' ? `<span class="ok-cena">${k.kr_do ? 'до ' + esc(k.kr_do) + ' кр' : 'бесплатно'}</span>` : ''}</button>
+      <button type="button" class="ok-btn acc ok-kart-btn" data-nazhat="${i}" aria-label="${esc((k.sost === 'idet' ? tr('Делаю…') : tr('Сделать')) + (typeof k.kr_do === 'number' ? ' · ' + (k.kr_do ? tr('до ' + k.kr_do + ' кр') : tr('бесплатно')) : ''))}" ${k.sost !== 'zhdet' || net ? 'disabled' : ''}><span>${k.sost === 'idet' ? 'Делаю…' : 'Сделать'}</span>${typeof k.kr_do === 'number' ? `<span class="ok-cena">${k.kr_do ? 'до ' + esc(k.kr_do) + ' кр' : 'бесплатно'}</span>` : ''}</button>
       ${net ? `<p class="ok-note">${ico('i-warn')}<span>Кредитов меньше, чем нужно.</span></p><a class="ok-btn sm" href="#/tarify">Пополнить</a>` : typeof k.ostanetsya === 'number' && k.kr_do ? `<p class="ok-small">${esc('Спишем не больше — останется ' + k.ostanetsya + ' кр.')}</p>` : ''}
       ${k.oshibka ? `<p class="ok-small ok-err">${d(k.oshibka)}</p>` : ''}
       ${k.sost === 'zhdet' ? `<button type="button" class="ok-link" data-nenado="${i}">Не надо</button>` : ''}</div>`;
