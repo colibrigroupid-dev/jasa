@@ -38,11 +38,12 @@
   const host = (v) => { const h = chistyj(v, 200).toLowerCase(); return h.length <= 70 && /^[a-z0-9.-]+(:\d{1,5})?$/.test(h) ? h : ''; };   // обрезанный адрес «настоящим» не покажем — лучше никакого
   const kod = (v) => { const k = chistyj(v, 12); return /^\d{4,8}$/.test(k) ? k : ''; };
   const ssylka = (v) => { const s = chistyj(v, 300); return /^https:\/\/t\.me\/[A-Za-z0-9_]{3,64}\?start=[A-Za-z0-9_-]{1,64}$/.test(s) ? s : ''; };
-  function perehod(v) {
+  function perehod(v, h) {   // h — адрес возврата, который страница показала человеку: уходим ровно туда и больше никуда (bezopasnost)
     const s = String(v == null ? '' : v).trim(); if (!s || s.length > 4000 || EST_UPRAVL.test(s)) return '';
     let u; try { u = new URL(s); } catch (e) { return ''; }
     if (PLOHIE_SHEMY.test(u.protocol)) return '';   // страховка; по договору сервер и так отдаёт только https
     if (u.protocol !== 'https:') return '';   // своих схем и адресов своей машины в первой версии нет (договор 38426a4)
+    if (!h || u.host !== h || u.username || u.password) return '';
     return u.href;
   }
   function predel(p) {
@@ -86,7 +87,7 @@
 
   function ujti() {
     if (ushli) return;
-    const u = perehod(z && z.perehod);
+    const u = perehod(z && z.perehod, host(z && z.host));
     const a = $('[data-perehod]');
     if (!u) { if (a) a.hidden = true; return; }
     ushli = true;
