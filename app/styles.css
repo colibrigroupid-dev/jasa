@@ -711,7 +711,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .schet{display:flex;gap:14px;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line-soft)}.schet:last-of-type{border-bottom:0}.schet b.mono{font-weight:500;cursor:copy}.schet .st{margin-left:10px;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
 .schet.oplachen .st{background:var(--ok-soft);color:var(--ok)}.schet.vystavlen .st{background:var(--accent-soft);color:var(--accent-text)}.schet.istyok .st,.schet.otmenyon .st{opacity:.6}
 .schet .sr{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none}.schet .sr b{font-size:1.05rem;color:var(--ink);font-weight:500}
-.rekv{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;font-size:var(--fs-small);color:var(--muted)}.rekv b{color:var(--ink);font-weight:500;cursor:copy}
+.rekv{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;font-size:var(--fs-small);color:var(--muted)}.rekv b{color:var(--ink);font-weight:500;cursor:copy}.rekv>span{min-width:0;overflow-wrap:anywhere}
 .invite.den{background:var(--ink);color:var(--ink-fg)}.invite.den p{color:rgba(255,255,255,.72)}
 
 /* ======================================================================
