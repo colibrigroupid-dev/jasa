@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F4EFE4">
+<title>Подключение программы · JASA</title>
+<!-- Страница согласия MCP (KAK-CHASY/API-MCP.md §2.3, слова — KAK-CHASY/MCP-SLOVA.md §1; dizajn-ux 15.11.2026).
+     Статичный шаблон: сервер в разметку ничего не вписывает. Данные — GET /oauth/zapros, вставляются только как текст.
+     Пути — от корня (/app/…): шаблон отдаёт и /oauth/authorize. Ни встроенных скриптов, ни стилей, ни чужих адресов. -->
+<link rel="stylesheet" href="/app/podklyuchenie.css?v=1">
+<script src="/app/i18n.js?v=34"></script>
+</head>
+<body>
+<main class="pk" id="pk" aria-busy="true">
+  <header class="pk-shapka">
+    <span class="pk-logo"><i aria-hidden="true"></i>JASA</span>
+    <span class="pk-yaz" role="group" aria-label="Язык">
+      <button type="button" data-yaz="ru">RU</button><button type="button" data-yaz="kz">KZ</button><button type="button" data-yaz="en">EN</button>
+    </span>
+  </header>
+
+  <section class="pk-ekran" data-s="zagruzka">
+    <p class="pk-zhdem"><i aria-hidden="true"></i><span>Загружаем…</span></p>
+  </section>
+
+  <section class="pk-ekran" data-s="prosba" hidden>
+    <h1>Подключить программу к JASA</h1>
+    <div class="pk-prog">
+      <b class="pk-imya" data-no-i18n><span data-pole="programma"></span></b>
+      <span class="pk-host" data-no-i18n data-pole="host"></span>
+      <small>Просит доступ к вашему JASA.</small>
+      <small>Так назвала себя программа — JASA это имя не проверяет; адрес рядом — настоящий.</small>
+    </div>
+    <p class="pk-caps">Что сможет программа</p>
+    <ul class="pk-mozhet">
+      <li><span>Смотреть баланс кредитов, ваши бренды и очередь публикаций.</span></li>
+      <li><span><span data-fraza="posty"></span> <span class="pk-tiho" data-fraza="posty-tiho">Предел выберете в Telegram.</span></span></li>
+      <li><span>Готовить публикации — каждая выйдет только после вашего «да» в Telegram.</span></li>
+      <li class="net"><span>Не увидит оплаты и реквизиты, не подключит каналы.</span></li>
+    </ul>
+    <p class="pk-raskr" data-fraza="raskrytie"></p>
+    <a class="pk-btn" data-ssylka target="_blank" rel="noopener noreferrer">Подтвердить в Telegram</a>
+    <p class="pk-oshibka" data-net-ssylki hidden>Ссылка на бота не пришла. Обновите страницу.</p>
+    <p class="pk-podval">Отключить можно в любой момент: кабинет JASA → «Подключения» или команда боту /podklyucheniya.</p>
+  </section>
+
+  <section class="pk-ekran" data-s="zhdem" hidden>
+    <h1>Подтвердите в Telegram</h1>
+    <p>Бот прислал вопрос. Сверьте код — такой же должен быть в сообщении. Там же выберите, сколько программа может тратить в день.</p>
+    <div class="pk-kod"><span>Код сверки</span><b data-no-i18n data-pole="kod_sverki"></b></div>
+    <p class="pk-zhdem" role="status"><i aria-hidden="true"></i><span>Ждём ваш ответ в Telegram…</span></p>
+    <a class="pk-btn tihaya" data-ssylka target="_blank" rel="noopener noreferrer">Открыть Telegram</a>
+    <p class="pk-oshibka" data-net-ssylki hidden>Ссылка на бота не пришла. Обновите страницу.</p>
+    <p class="pk-podval">Ссылка живёт несколько минут. Не успели — начните подключение заново в программе.</p>
+  </section>
+
+  <section class="pk-ekran" data-s="gotovo" hidden>
+    <span class="pk-znak ok" aria-hidden="true"></span>
+    <h1>Подключено</h1>
+    <p role="status">Возвращаем вас в программу…</p>
+    <a class="pk-btn tihaya" data-perehod hidden>Вернуться в программу</a>
+  </section>
+
+  <section class="pk-ekran" data-s="otkaz" hidden>
+    <span class="pk-znak" aria-hidden="true"></span>
+    <h1>Не подключено</h1>
+    <p>Вы ответили «Нет» в Telegram. Программа доступа не получила.</p>
+  </section>
+
+  <section class="pk-ekran" data-s="vremya_vyshlo" hidden>
+    <span class="pk-znak" aria-hidden="true"></span>
+    <h1>Время вышло</h1>
+    <p>Подтверждения не было. Начните подключение заново в программе.</p>
+  </section>
+
+  <section class="pk-ekran" data-s="pochta" hidden>
+    <h1>Нужен вход через Telegram</h1>
+    <p>Подключение работает только с входом через Telegram: «да» на каждую публикацию приходит туда.</p>
+    <a class="pk-btn" data-ssylka target="_blank" rel="noopener noreferrer">Войти через Telegram</a>
+  </section>
+
+  <section class="pk-ekran" data-s="vyklyucheno" hidden>
+    <span class="pk-znak" aria-hidden="true"></span>
+    <h1>Пока не всем</h1>
+    <p>Подключение пока открыто не всем.</p>
+  </section>
+
+  <section class="pk-ekran" data-s="nevernaya_ssylka" hidden>
+    <span class="pk-znak" aria-hidden="true"></span>
+    <h1>Ссылка неправильная</h1>
+    <p>Эта ссылка подключения не работает. Начните подключение заново в программе.</p>
+  </section>
+
+  <section class="pk-ekran" data-s="sboj" hidden>
+    <span class="pk-znak" aria-hidden="true"></span>
+    <h1>Что-то пошло не так</h1>
+    <p>Начните подключение заново в программе.</p>
+  </section>
+
+  <p class="pk-svyaz" data-svyaz role="status" hidden>Нет связи с JASA — пробуем ещё раз…</p>
+</main>
+<noscript><p class="pk-noscript">Включите JavaScript, чтобы подключить программу. · Бағдарламаны қосу үшін JavaScript-ті қосыңыз. · Turn on JavaScript to connect the app.</p></noscript>
+<script src="/app/podklyuchenie.js?v=1"></script>
+</body>
+</html>
