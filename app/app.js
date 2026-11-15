@@ -291,7 +291,18 @@
   window.addEventListener('hashchange', route);
 
   // 11.11: язык интерфейса — компьютер: три кнопки в верхней строке; телефон: одна кнопка в шапке, нажатие — следующий язык
-  function UI() { return window.JASA_I18N ? window.JASA_I18N.ui : 'ru'; }   // объявление функцией: шапка рисуется раньше этой строки
+  function UI() { return window.JASA_I18N ? window.JASA_I18N.ui : 'ru'; }
+  // 16.11 (kod-chistka 4903377): подпись счёта и имена пакетов сервер даёт на трёх языках — берём на языке человека, а не переводим
+  // русскую строку по образцу (в английском было «“Студент” pack»). Нет поля — старый путь: русская строка через словарь.
+  function podpisSchet(s) {
+    const y = UI(), py = s.podpis_yaz && typeof s.podpis_yaz === 'object' ? s.podpis_yaz[y] : '';
+    return typeof py === 'string' && py ? `<p class="small" data-no-i18n>${esc(py)}</p>` : `<p class="small">${esc(s.podpis)}</p>`;
+  }
+  function imenaPaketov(opl) {
+    const y = UI(), ru = opl.nazvaniya || {}, yz = opl.nazvaniya_yaz && typeof opl.nazvaniya_yaz === 'object' ? opl.nazvaniya_yaz : {}, out = {};
+    for (const k of new Set(Object.keys(ru).concat(Object.keys(yz)))) { const v = yz[k] && typeof yz[k][y] === 'string' && yz[k][y] ? yz[k][y] : ru[k]; if (v) out[k] = v; }
+    return out;
+  }   // объявление функцией: шапка рисуется раньше этой строки
   function uiSeg() { return (window.JASA_I18N ? `<span class="ui-seg" role="group" aria-label="Язык интерфейса" data-no-i18n>${window.JASA_I18N.YAZ.map((y) => `<button type="button" data-ui="${y}" class="${y === UI() ? 'on' : ''}" aria-pressed="${y === UI()}" title="${window.JASA_I18N.NAZV[y]}${y === 'kz' ? ' · аударма тексерілуде' : ''}">${window.JASA_I18N.KOD[y]}</button>`).join('')}</span>` : ''); }
   function smenitUi(y) {
     const I = window.JASA_I18N; if (!I || !I.YAZ.includes(y) || y === I.ui) return;
@@ -1725,7 +1736,7 @@
     const rk = m.rekvizity || {};
     const rekv = rk.gotovo ? `<div class="rekv">${['poluchatel', 'kaspi', 'iban', 'bin'].filter((k) => rk[k]).map((k) => `<span><span>${({ poluchatel: 'Получатель', kaspi: 'Kaspi', iban: 'IBAN', bin: 'БИН' })[k]}</span>: <b data-copy="${esc(rk[k])}" data-no-i18n title="Скопировать">${esc(rk[k])}</b></span>`).join('')}</div>` : `<p class="small muted" style="margin-top:8px">${esc(rk.tekst || '')}</p>`;
     return `<div class="card" style="margin-top:22px"><span class="caps">Счета</span>
-      ${sc.map((s) => `<div class="schet ${s.status}" id="schet-${esc(s.id)}"><div><b class="mono" data-copy="${esc(s.id)}" title="Скопировать номер">${esc(s.id)}</b><span class="st">${esc(s.status_imya)}</span><p class="small">${esc(s.podpis)}</p>${s.status === 'vystavlen' ? `<p class="small dim">назначение платежа: <b data-copy="${esc(s.naznachenie)}">${esc(s.naznachenie)}</b> · <span>Оплатить до:</span> <span data-no-i18n>${esc(s.do)}</span></p>` : `<p class="small dim"><span data-no-i18n>${esc(s.ts)}</span>${s.payment_id ? ' · <span>чек</span> <span data-no-i18n>' + esc(s.payment_id) + '</span>' : ''}</p>`}</div>
+      ${sc.map((s) => `<div class="schet ${s.status}" id="schet-${esc(s.id)}"><div><b class="mono" data-copy="${esc(s.id)}" title="Скопировать номер">${esc(s.id)}</b><span class="st">${esc(s.status_imya)}</span>${podpisSchet(s)}${s.status === 'vystavlen' ? `<p class="small dim">назначение платежа: <b data-copy="${esc(s.naznachenie)}">${esc(s.naznachenie)}</b> · <span>Оплатить до:</span> <span data-no-i18n>${esc(s.do)}</span></p>` : `<p class="small dim"><span data-no-i18n>${esc(s.ts)}</span>${s.payment_id ? ' · <span>чек</span> <span data-no-i18n>' + esc(s.payment_id) + '</span>' : ''}</p>`}</div>
         <div class="sr"><b class="mono">${tng(s.tenge)}</b>${s.status === 'vystavlen' ? `<button class="btn sm ghost" data-otmena="${esc(s.id)}">Отменить</button>` : ''}</div></div>`).join('')}
       ${sc.some((s) => s.status === 'vystavlen') ? rekv : ''}</div>`;
   }
@@ -1863,7 +1874,7 @@
   function tarify(povtor) {
     if (!S.me && !povtor) loadMe().then(() => { if ((location.hash || '').startsWith('#/tarify')) tarify(true); });   // цены пакетов приходят с сервера: дорисуем, когда ответит
     const opl = (S.ceny && S.ceny.oplata) || (S.me && S.me.ceny_oplaty) || {};
-    const pak = Object.assign({}, opl.pakety && Object.keys(opl.pakety).length ? opl.pakety : PAKETY_ZAPAS); let imena = opl.nazvaniya || {}; const pod = opl.podpiska || null;
+    const pak = Object.assign({}, opl.pakety && Object.keys(opl.pakety).length ? opl.pakety : PAKETY_ZAPAS); let imena = imenaPaketov(opl); const pod = opl.podpiska || null;
     let klyuchi = Object.keys(pak).map(Number).filter((k) => k > 0 && +pak[k] > 0).sort((x, y) => x - y);
     if (!klyuchi.length) { Object.keys(pak).forEach((k) => delete pak[k]); Object.assign(pak, PAKETY_ZAPAS); imena = {}; klyuchi = Object.keys(pak).map(Number).sort((x, y) => x - y); }
     const zd = S.ceny.zadanie || {}, cena = (tip) => (tip === 'image' ? +S.ceny.image || 12 : +zd[tip] || (tip === 'rils' || tip === 'plan' ? 6 : 21));
