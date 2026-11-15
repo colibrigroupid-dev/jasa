@@ -1978,7 +1978,7 @@
     try { const x = new URL(u); if (/^https?:$/.test(x.protocol) && SVOI_HOSTY.test(x.hostname)) return x.href; } catch (e) { /* не адрес */ }
     return '';
   }
-  window.JASA = { opKlyuch, opGotovo, openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl, nishaIdei, GRUPPA_URL };
+  window.JASA = { istChto, opKlyuch, opGotovo, openSec, api, esc, toast, voice, spend, $, $$, arr, lightbox, routes, route, S, store, topbar, toB64, compose, trimAlpha, loadImg, API_BASE, TG: !!TG, loadMe, shrink, confirm: askConfirm, prompt: askPrompt, bsheet, bsHead, blokName, dotfix: dotfix2, slej: slej2, absUrl, nishaIdei, GRUPPA_URL };
   window.addEventListener('jasa:ready', route);
   if (!window.JASA_DEFER) route();
 })();
