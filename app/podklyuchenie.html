@@ -9,9 +9,9 @@
 <title>Подключение программы · JASA</title>
 <!-- Страница согласия MCP (KAK-CHASY/API-MCP.md §2.3, слова — KAK-CHASY/MCP-SLOVA.md §1; dizajn-ux 15.11.2026).
      Статичный шаблон: сервер в разметку ничего не вписывает. Данные — GET /oauth/zapros, вставляются только как текст.
-     Пути — от корня (/app/…): шаблон отдаёт и /oauth/authorize. Ни встроенных скриптов, ни стилей, ни чужих адресов. -->
-<link rel="stylesheet" href="/app/podklyuchenie.css?v=1">
-<script src="/app/i18n.js?v=34"></script>
+     Файлы — с api по /oauth/app/<имя> (договор 9470ca4): страницу отдаёт GET /oauth/authorize. Ни встроенных скриптов, ни стилей, ни чужих адресов. -->
+<link rel="stylesheet" href="/oauth/app/podklyuchenie.css?v=2">
+<script src="/oauth/app/i18n.js?v=34"></script>
 </head>
 <body>
 <main class="pk" id="pk" aria-busy="true">
@@ -103,6 +103,6 @@
   <p class="pk-svyaz" data-svyaz role="status" hidden>Нет связи с JASA — пробуем ещё раз…</p>
 </main>
 <noscript><p class="pk-noscript">Включите JavaScript, чтобы подключить программу. · Бағдарламаны қосу үшін JavaScript-ті қосыңыз. · Turn on JavaScript to connect the app.</p></noscript>
-<script src="/app/podklyuchenie.js?v=1"></script>
+<script src="/oauth/app/podklyuchenie.js?v=2"></script>
 </body>
 </html>

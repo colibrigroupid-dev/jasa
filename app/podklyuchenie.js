@@ -10,7 +10,7 @@
     try { window.top.location = window.self.location.href; } catch (e) { /* чужой фрейм не пускает — страница остаётся пустой */ }
     return;
   }
-  const BASE = /^(www\.)?jasa\.asia$/.test(location.hostname) ? 'https://api.jasa.asia' : '';
+  const BASE = '';   // страницу отдаёт api.jasa.asia (GET /oauth/authorize): ручка — тот же адрес, connect-src 'self'
   const I = window.JASA_I18N || null;
   const t = (ru) => (I ? I.t(ru) : ru);
   const SOST = ['prosba', 'zhdem', 'gotovo', 'otkaz', 'vremya_vyshlo', 'pochta', 'vyklyucheno', 'nevernaya_ssylka'];
@@ -41,8 +41,8 @@
   function perehod(v) {
     const s = String(v == null ? '' : v).trim(); if (!s || s.length > 4000 || EST_UPRAVL.test(s)) return '';
     let u; try { u = new URL(s); } catch (e) { return ''; }
-    if (PLOHIE_SHEMY.test(u.protocol)) return '';
-    if (u.protocol === 'http:' && !/^(127\.0\.0\.1|localhost|\[::1\])$/.test(u.hostname)) return '';   // http — только своя машина (программа на компьютере)
+    if (PLOHIE_SHEMY.test(u.protocol)) return '';   // страховка; по договору сервер и так отдаёт только https
+    if (u.protocol !== 'https:') return '';   // своих схем и адресов своей машины в первой версии нет (договор 38426a4)
     return u.href;
   }
   function predel(p) {
@@ -106,7 +106,7 @@
     idet = true; clearTimeout(tajmer);
     let r = null; let d = null;
     try {
-      r = await fetch(BASE + '/oauth/zapros', { credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' } });
+      r = await fetch(BASE + '/oauth/zapros', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
       d = await r.json().catch(() => null);
     } catch (e) { r = null; }
     idet = false;
