@@ -10,8 +10,8 @@
 <!-- Страница согласия MCP (KAK-CHASY/API-MCP.md §2.3, слова — KAK-CHASY/MCP-SLOVA.md §1; dizajn-ux 15.11.2026).
      Статичный шаблон: сервер в разметку ничего не вписывает. Данные — GET /oauth/zapros, вставляются только как текст.
      Файлы — с api по /oauth/app/<имя> (договор 9470ca4): страницу отдаёт GET /oauth/authorize. Ни встроенных скриптов, ни стилей, ни чужих адресов. -->
-<link rel="stylesheet" href="/oauth/app/podklyuchenie.css?v=2">
-<script src="/oauth/app/i18n.js?v=36"></script>
+<link rel="stylesheet" href="/oauth/app/podklyuchenie.css?v=3">
+<script src="/oauth/app/i18n.js?v=37"></script>
 </head>
 <body>
 <main class="pk" id="pk" aria-busy="true">
@@ -49,12 +49,23 @@
 
   <section class="pk-ekran" data-s="zhdem" hidden>
     <h1>Подтвердите в Telegram</h1>
-    <p>Бот прислал вопрос. Сверьте код — такой же должен быть в сообщении. Там же выберите, сколько программа может тратить в день.</p>
-    <div class="pk-kod"><span>Код сверки</span><b data-no-i18n data-pole="kod_sverki"></b></div>
-    <p class="pk-zhdem" role="status"><i aria-hidden="true"></i><span>Ждём ваш ответ в Telegram…</span></p>
+    <ol class="pk-shagi">
+      <li>Откройте бота и выберите, сколько программа может тратить в день.</li>
+      <li>Бот пришлёт код из шести цифр.</li>
+      <li>Введите код здесь.</li>
+    </ol>
     <a class="pk-btn tihaya" data-ssylka target="_blank" rel="noopener noreferrer">Открыть Telegram</a>
     <p class="pk-oshibka" data-net-ssylki hidden>Ссылка на бота не пришла. Обновите страницу.</p>
-    <p class="pk-podval">Ссылка живёт несколько минут. Не успели — начните подключение заново в программе.</p>
+    <div class="pk-vvod">
+      <label for="pk-kod">Код из Telegram</label>
+      <div class="pk-vvod-str">
+        <input id="pk-kod" type="text" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" enterkeyhint="done" aria-describedby="pk-kod-osh">
+        <button type="button" class="pk-btn" data-kod-otpr>Подключить</button>
+      </div>
+      <p class="pk-oshibka" id="pk-kod-osh" data-kod-osh role="alert" hidden></p>
+    </div>
+    <p class="pk-zhdem" role="status"><i aria-hidden="true"></i><span data-st-zhdem>Ждём ваш ответ в Telegram…</span><span data-st-vvod hidden>Бот прислал код — введите его выше.</span></p>
+    <p class="pk-podval">Код и ссылка живут несколько минут. Не успели — начните подключение заново в программе.</p>
   </section>
 
   <section class="pk-ekran" data-s="gotovo" hidden>
@@ -103,6 +114,6 @@
   <p class="pk-svyaz" data-svyaz role="status" hidden>Нет связи с JASA — пробуем ещё раз…</p>
 </main>
 <noscript><p class="pk-noscript">Включите JavaScript, чтобы подключить программу. · Бағдарламаны қосу үшін JavaScript-ті қосыңыз. · Turn on JavaScript to connect the app.</p></noscript>
-<script src="/oauth/app/podklyuchenie.js?v=2"></script>
+<script src="/oauth/app/podklyuchenie.js?v=3"></script>
 </body>
 </html>
