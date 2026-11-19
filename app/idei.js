@@ -5,7 +5,7 @@
   'use strict';
   const J = window.JASA; if (!J) return;
   const { esc, $, $$, arr, topbar, toast, bsheet, bsHead } = J;
-  const VER = '2';
+  const VER = '3';
   const TIP = { post: 'Пост', afisha: 'Афиша', karusel: 'Карусель', rils: 'Рилс', plan: 'План' };
   let D = null, filtr = '', filtrPo = null;   // filtrPo — для какого дела фильтр уже выставлен сам
 
@@ -20,6 +20,10 @@
 .id-card img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;background:var(--surface-2)}
 .id-cap{display:flex;flex-direction:column;gap:4px;padding:10px 12px 12px;min-width:0}
 .id-cap b{font-weight:600;color:var(--ink);font-size:var(--fs-small);line-height:1.25}
+.id-foto{position:relative;display:block}
+.id-nisha{display:inline-block;margin-left:2px;padding:2px 8px;border-radius:999px;background:var(--nc,var(--surface-2));color:#15192A;font-weight:600}
+.id-n-kofejnya{--nc:#FFC48A}.id-n-pekarnya{--nc:#FFE066}.id-n-barber{--nc:#8FD3FF}.id-n-salon{--nc:#FFB3D1}.id-n-studiya{--nc:#C9B6FF}.id-n-magazin{--nc:#F6C1FF}.id-n-cvety{--nc:#C8F06A}.id-n-ucheba{--nc:#7FE0C4}.id-n-deti{--nc:#FF9E9E}.id-n-uslugi{--nc:#A8E6F0}
+.id-novoe{position:absolute;bottom:10px;right:10px;padding:5px 10px;border-radius:999px;background:#FFFDF8;border:2px solid #15192A;box-shadow:2px 2px 0 #15192A;color:#15192A;font:700 12px/1 var(--body);transform:rotate(-4deg)}
 .id-cap small{color:var(--dim);font-size:12px;line-height:1.35}
 .id-prim{display:inline-block;font:600 11px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:4px 7px;border-radius:999px;background:var(--surface-2);color:var(--muted);margin-right:6px}
 .id-note{margin-top:18px;font-size:var(--fs-small);color:var(--dim);max-width:62ch}
@@ -33,18 +37,24 @@
 
   const nishaN = (kod) => ((arr(D && D.nishi).find((x) => x.kod === kod) || {}).n || '');
   const zagol = (i) => [TIP[i.tip] || 'Пост', nishaN(i.nisha)].filter(Boolean).join(' · ');   // «Пост · Кофейня»; без ниши — просто «Пост»
-  const zagolHtml = (i) => [TIP[i.tip] || 'Пост', nishaN(i.nisha)].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join(' · ');   // части отдельными узлами — словарь переводит каждую
+  // 19.11 дизайн 2026: ниша — цветной меткой (у каждой ниши свой цвет), тип — словом; части отдельными узлами — словарь переводит каждую
+  const zagolHtml = (i) => `<span>${esc(TIP[i.tip] || 'Пост')}</span>${nishaN(i.nisha) ? ` <span class="id-nisha id-n-${esc(String(i.nisha).replace(/[^a-z]/g, ''))}">${esc(nishaN(i.nisha))}</span>` : ''}`;
+  const NOVOE_DNEJ = 10;   // наклейка «Новое» — только последняя добавленная партия идей и не старше 10 дней (иначе «новое» везде и ничего не выделяет)
+  let poslednyaya = '';
+  const novoe = (i) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(i.data || '')); if (!m || i.data !== poslednyaya) return false; const t = Date.UTC(+m[1], +m[2] - 1, +m[3]); const d = Date.now() - t; return d >= 0 && d < NOVOE_DNEJ * 864e5; };
   const cena = (tip) => { const c = J.S && J.S.ceny && J.S.ceny.zadanie; return (c && c[tip]) || 21; };
   const imgUrl = (i) => (/^idei-[\w.\-]+\.(webp|jpg|png)$/.test(String(i.img || '')) ? i.img : '');   // только свои файлы рядом: idei-<имя>.webp
 
   function kartochka(i, n) {
-    return `<button type="button" class="id-card rv" data-i="${n}"><img src="${esc(imgUrl(i))}" alt="${esc(i.podpis || i.na_kartinke || '')}" loading="${n < 4 ? 'eager' : 'lazy'}" decoding="async" width="800" height="1000">
+    return `<button type="button" class="id-card rv" data-i="${n}"><span class="id-foto"><img src="${esc(imgUrl(i))}" alt="${esc(i.podpis || i.na_kartinke || '')}" loading="${n < 4 ? 'eager' : 'lazy'}" decoding="async" width="800" height="1000">${novoe(i) ? '<span class="id-novoe">Новое</span>' : ''}</span>
       <span class="id-cap"><b>${zagolHtml(i)}</b><small><span class="id-prim">Пример</span><span data-no-i18n>${esc(i.na_kartinke || '')}</span></small></span></button>`;   // надпись на картинке — данные примера, её язык — язык картинки
   }
 
   function risovat() {
     const box = $('#idbox'); if (!box) return;
     const vse = arr(D && D.idei).filter((i) => imgUrl(i) && i.zapros && zhiva(i));
+    poslednyaya = vse.map((i) => String(i.data || '')).filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x)).sort().pop() || '';
+    if (vse.filter((i) => i.data === poslednyaya).length * 2 >= vse.length) poslednyaya = '';   // свежая партия — половина каталога и больше: новым выглядит всё, наклейку не ставим
     if (!vse.length) { box.innerHTML = '<p class="muted">Идеи скоро появятся. А пока — напишите, что нужно, в «Создать».</p><p style="margin-top:12px"><a class="btn accent sm" href="#/sozdat">Создать</a></p>'; return; }
     const nishi = arr(D.nishi).filter((n) => vse.some((i) => i.nisha === n.kod));
     const spisok = vse.filter((i) => !filtr || i.nisha === filtr);
