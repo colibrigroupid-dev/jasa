@@ -119,6 +119,13 @@
   const rechTxt = (dlyaKnopki) => { const r = S.ceny && S.ceny.rech; if (r && +r.kr_za_minutu > 0) { const m = Math.round((+r.max_sek || 300) / 60); return dlyaKnopki ? 'Голос — ' + r.kr_za_minutu + ' кр за минуту записи, до ' + m + ' мин' : 'Говорите · ' + r.kr_za_minutu + ' кр за минуту, до ' + m + ' мин'; } const k = +S.ceny.transcribe || 1; return dlyaKnopki ? 'Голос стоит ' + k + ' кр отдельно' : 'Говорите · ' + k + ' кр'; };
   const gostKr = () => Math.floor(+(S.ceny && (S.ceny.gost_razovo || S.ceny.gost_den)) || 50);   // 11.11: гостю — один раз, без пополнения на новый день
   const postSl = (x) => { const a = x % 10, b = x % 100; return a === 1 && b !== 11 ? 'пост' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'поста' : 'постов'; };
+  // 19.11 решение Александра: одна мера бесплатного — в кредитах и сколько это постов с картинкой (лендинг, шапка, плашка, кабинет).
+  // Числа — с сервера (гостевой подарок, пробные после входа, цена поста); слова — одни везде.
+  const postCena = () => +((S.ceny && S.ceny.zadanie || {}).post) || 21;
+  const trialKr = () => Math.floor(+(S.me && S.me.trial) || +(S.ceny && S.ceny.trial) || 135);
+  const okoloPostov = (n) => (n % 10 === 1 && n % 100 !== 11 ? 'поста' : 'постов');   // «около 1 поста», «около 6 постов»
+  const podarokFraza = () => { const n = Math.floor(gostKr() / postCena()); return gostKr() + ' кредитов в подарок — хватит на ' + n + ' ' + postSl(n) + ' с картинкой'; };
+  const trialFraza = () => { const n = Math.floor(trialKr() / postCena()); return 'ещё ' + trialKr() + ' кредитов — около ' + n + ' ' + okoloPostov(n); };
   const postovHvatit = () => Math.floor(dostupno('post') / (+((S.ceny.zadanie || {}).post) || 21));   // на сколько постов с одной картинкой хватает сейчас
   const denStroka = (pod) => (pod && typeof pod.chto === 'string' && pod.chto && +pod.v_den > 0 ? Math.round(+pod.v_den) + ' кредитов каждое утро: ' + pod.chto : 'Кредиты каждое утро на посты и картинки');
   // 10.11: на что идут дневные кредиты подписки — список с сервера; null — сервер старый, дневные идут на всё
@@ -393,7 +400,9 @@
       comp.classList.toggle('has', has); comp.classList.toggle('low', low);
       $('#price').innerHTML = UI() === 'ru' ? `<span class="du">до </span>${p} кр` : esc(window.JASA_I18N.t('до ' + p + ' кр'));   // в других языках порядок слов свой: «21 кр дейін», «up to 21 cr»
       const gostKonec = low && S.me && S.me.guest && !TG;
-      $('#cwarntx').textContent = gostKonec ? `Пробные ${gostKr()} кредитов закончились. Войдите через Telegram — ещё ${Math.floor(+S.me.trial || +(S.ceny && S.ceny.trial) || 135)} пробных.` : vne ? `С подписки ${(TIPS_SHORT[S.tip] || 'это').toLowerCase()} не идёт: нужно до ${p} личных кр, у вас ${Math.floor(d)}` : `Не хватает: нужно до ${p} кр, у вас ${Math.floor(d)}`;
+      // «закончились» — только при нуле; остаток есть — честно, сколько осталось (находка шлифовки 15.11)
+      const ost = Math.floor(d), vhodT = 'Войдите через Telegram: ' + trialFraza() + '.';
+      $('#cwarntx').textContent = gostKonec ? (ost >= 1 ? `Осталось ${ost} кр — ${S.tip === 'post' ? 'на пост не хватит' : 'нужно до ' + p + ' кр'}. ${vhodT}` : `Подарочные ${gostKr()} кредитов закончились. ${vhodT}`) : vne ? `С подписки ${(TIPS_SHORT[S.tip] || 'это').toLowerCase()} не идёт: нужно до ${p} личных кр, у вас ${Math.floor(d)}` : `Не хватает: нужно до ${p} кр, у вас ${Math.floor(d)}`;
       $('#go').firstChild.textContent = gostKonec ? 'Войти ' : low ? 'Пополнить ' : 'Сделать ';
       $('#go').classList.toggle('low', low);
       $('#price').style.display = low ? 'none' : '';
@@ -402,7 +411,9 @@
       const st = $('#stik');   // наклейка: на сколько постов с картинкой хватает прямо сейчас — в постах, не в кредитах
       if (st) {
         const p1 = +((S.ceny.zadanie || {}).post) || 21, k = postovHvatit(), gost = S.me ? !!S.me.guest : !(S.session || TG);
-        st.innerHTML = k >= 1 ? `<b>${k} ${postSl(k)}</b><small>${gost ? 'бесплатно, без входа' : 'с картинкой на счету'}</small>` : `<b>${p1} кр</b><small>пост с картинкой</small>`;
+        const krG = S.me ? Math.floor(+S.me.kredity || 0) : gostKr();   // гость: подарок целиком или сколько осталось — той же мерой
+        st.innerHTML = k >= 1 && gost ? `<b>${krG >= gostKr() ? gostKr() + ' кр в подарок' : 'Осталось ' + krG + ' кр'}</b><small>хватит на ${k} ${postSl(k)} с картинкой</small>`
+          : k >= 1 ? `<b>${k} ${postSl(k)}</b><small>с картинкой на счету</small>` : `<b>${p1} кр</b><small>пост с картинкой</small>`;
         st.hidden = false;
       }
       $('#modetx').textContent = TIPS_SHORT[S.tip] + ' · до ' + priceOf(S.tip) + ' кр';
@@ -1754,7 +1765,7 @@
       k.innerHTML = `<section style="max-width:760px;margin-bottom:26px"><h2>Войдите в аккаунт</h2><p class="muted" style="margin-top:10px">Без паролей, через Telegram. Посты, бренд и кредиты будут и в приложении, и на компьютере.</p></section>
         ${podsvet() ? `<p class="skoro" style="margin:0 0 16px">Пакет ${esc(S.podsvetPaket)} кр — войдите через Telegram, и мы откроем «Пополнить» с ним.</p>` : ''}
         <div class="two"><div class="card" id="logincard"><span class="caps">Вход</span><div style="margin-top:12px"><button class="btn accent" id="login">Войти через Telegram</button></div><div id="loginbox" style="margin-top:16px"></div>${S.ceny && S.ceny.vhod_pochta === true ? pochtaHtml() : ''}</div>
-        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px">Сейчас у вас ${esc(Math.floor(m.kredity))} кр. Без входа — ${esc(gostKr())} кредитов один раз. После входа через Telegram — ещё ${esc(m.trial)} пробных: три поста с тремя картинками или шесть с одной.${S.ceny && S.ceny.vhod_pochta === true && +S.ceny.trial_pochta > 0 ? ' По почте — ещё ' + esc(Math.floor(+S.ceny.trial_pochta)) + '.' : ''}</p></div></div>`;
+        <div class="card"><span class="caps">Пока вы гость</span><p class="small muted" style="margin-top:8px"><span>Сейчас у вас ${esc(Math.floor(m.kredity))} кр.</span> <span>${esc(podarokFraza())}, один раз.</span> <span>После входа через Telegram: ${esc(trialFraza())}.</span>${S.ceny && S.ceny.vhod_pochta === true && +S.ceny.trial_pochta > 0 ? ' <span>По почте — ещё ' + esc(Math.floor(+S.ceny.trial_pochta)) + ' кр.</span>' : ''}</p></div></div>`;
       k.insertAdjacentHTML('beforeend', langCard()); langBind();
       $('#login').addEventListener('click', startLogin);
       pochtaBind();
@@ -1856,7 +1867,7 @@
   }
   // Цены — один список тарифов для кабинета и лендинга (site/index.html, секция #ceny): строки, цены и числа постов сверяет test_tarify_sovpadenie.py.
   /*TARIFY*/const TARIFY = [
-    {"n": "Бесплатно", "p": "0 ₸", "per": "", "kto": "Попробовать", "li": ["2 поста с картинкой без входа, один раз", "после входа — ещё 6 постов в подарок", "внутри: 50 кредитов один раз без входа, после входа ещё 135 пробных"], "knopka": "Попробовать бесплатно"},
+    {"n": "Бесплатно", "p": "0 ₸", "per": "", "kto": "Попробовать", "li": ["50 кредитов в подарок — хватит на 2 поста с картинкой", "один раз, без входа и без пополнения", "после входа через Telegram: ещё 135 кредитов — около 6 постов"], "knopka": "Попробовать бесплатно"},
     {"n": "Каждый день", "p": "3 990 ₸", "per": "за 30 дней", "kto": "Кафе, салон, магазин", "li": ["{chto} каждый день", "посты, афиши, карусели, картинки", "внутри: {v_den} кредитов каждое утро, не копятся"], "li_zapas": ["пост с картинкой каждый день", "посты, афиши, карусели, картинки", "дневные кредиты не копятся"], "knopka": "Оформить", "podpiska": true, "hot": true},
     {"n": "Студент", "p": "1 990 ₸", "per": "разово", "kto": "Учусь", "li": ["защита диплома со слайдами и речью — 99 кредитов", "и ещё 4 поста с картинкой", "внутри: 200 кредитов, не сгорают"], "knopka": "Выбрать", "paket": "200"},
     {"n": "Pro", "p": "24 990 ₸", "per": "разово", "kto": "SMM, агентство", "li": ["119 постов с картинкой — или 55 с тремя вариантами", "до 10 брендов клиентов", "внутри: 2 500 кредитов, не сгорают"], "knopka": "Выбрать", "paket": "2500"}
@@ -1922,7 +1933,7 @@
     const dejstviya = [['Пост с картинкой', p1], ['Пост с тремя вариантами картинки', p3], ['Афиша или карусель', cena('afisha')], ['Сценарий рилса или план на неделю', cena('rils')], ['Ещё одна картинка', cena('image')]].concat(S.ceny.video && S.ceny.video['720p'] ? [['Видео 5 секунд', +S.ceny.video['720p']]] : [], S.ceny.kino && S.ceny.kino.razbor ? [['Разбор сценария кино', +S.ceny.kino.razbor]] : []);
     const gostPostov = Math.floor(gostKr() / p1);
     main.innerHTML = `<div class="cn">
-      <div class="cn-top"><h1>Цены</h1><span class="stik cn-stik"><b>${gostPostov} ${postSl(gostPostov)} бесплатно</b><small>без входа, один раз</small></span></div>
+      <div class="cn-top"><h1>Цены</h1><span class="stik cn-stik"><b>${gostKr()} кр в подарок</b><small>хватит на ${gostPostov} ${postSl(gostPostov)} с картинкой</small></span></div>
       <p class="cn-lead">Выберите, кто вы, — покажем ваш месяц в тенге.</p>
       <div class="cn-kto" role="group" aria-label="Кто вы">${MESYAC.map((m) => `<button type="button" class="chip ${m.kod === kto ? 'on' : ''}" data-kto="${m.kod}" aria-pressed="${m.kod === kto}">${esc(m.chip)}</button>`).join('')}<button type="button" class="chip ${kto === 'svoj' ? 'on' : ''}" data-kto="svoj" aria-pressed="${kto === 'svoj'}">Другое: посчитать самому</button></div>
       <div class="cn-pan" id="cnpan">${panel()}</div>
